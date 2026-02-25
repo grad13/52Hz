@@ -2,7 +2,7 @@
 # テスト用スクリプト: tauri devを経由せず直接バイナリを実行
 set -e
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/../code"
 
 echo "=== Step 1: Vite dev server 起動 ==="
 npx vite --port 1420 &
@@ -13,7 +13,7 @@ echo ""
 echo "=== Step 2: バイナリ直接実行 (Ctrl+C で終了) ==="
 echo "=== もしすぐにプロンプトが戻ったら、バイナリが落ちています ==="
 echo ""
-./src-tauri/target/debug/restrun
+./tauri/target/debug/restrun
 BINARY_EXIT=$?
 
 echo ""

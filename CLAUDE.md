@@ -11,32 +11,35 @@ Tauri v2 + Svelte 5 + Rust で構成。
 
 ```
 27-RestRun/
+├── .claude/                # Claude Code 設定・スキル
 ├── CLAUDE.md
 ├── project-meta.json
-├── documents/
-│   ├── spec/           # 振る舞い仕様
-│   ├── plan/           # 計画
-│   ├── reference/      # 参照資料
-│   ├── reports/        # レポート
-│   └── archive/        # アーカイブ
-├── src/                # フロントエンド（Svelte 5）
-│   ├── App.svelte
-│   ├── lib/
-│   │   ├── Settings.svelte
-│   │   ├── BreakOverlay.svelte
-│   │   └── timer.ts
-│   └── app.css
-├── src-tauri/          # バックエンド（Rust / Tauri v2）
-│   ├── src/
-│   │   ├── lib.rs      # Tauriセットアップ、コマンド、オーバーレイ管理
-│   │   ├── timer.rs    # タイマーロジック（ユニットテスト内蔵）
-│   │   └── main.rs
-│   ├── tests/
-│   │   └── app_lifecycle.rs  # 統合テスト
-│   ├── Cargo.toml
-│   └── tauri.conf.json
-└── .claude/
-    └── skills/         # スキル定義
+│
+├── code/                   # アプリを動かすためのコード
+│   ├── frontend/           # フロントエンド（Svelte 5）
+│   │   ├── App.svelte
+│   │   ├── components/     # UI コンポーネント
+│   │   │   ├── Settings.svelte
+│   │   │   └── BreakOverlay.svelte
+│   │   └── lib/            # 純粋ロジック
+│   │       └── timer.ts
+│   └── tauri/              # バックエンド（Rust / Tauri v2）
+│       ├── src/
+│       │   ├── lib.rs      # Tauriセットアップ、コマンド、オーバーレイ管理
+│       │   ├── timer.rs    # タイマーロジック（ユニットテスト内蔵）
+│       │   └── main.rs
+│       ├── Cargo.toml
+│       └── tauri.conf.json
+│
+├── tests/                  # テスト関係
+│   ├── integration/
+│   │   └── app_lifecycle.rs  # 統合テスト（正本）
+│   └── test-run.sh
+│
+├── documents/              # ドキュメント
+│   ├── spec/ plan/ reference/ reports/ archive/
+│
+└── externals/              # ユーザが渡す資料
 ```
 
 ## ゴミを置かない
@@ -48,35 +51,36 @@ Tauri v2 + Svelte 5 + Rust で構成。
 ### ビルド
 
 ```bash
-cd src-tauri && cargo build
+cd code/tauri && cargo build
 ```
 
 ### ユニットテスト（Rust）
 
 ```bash
-cd src-tauri && cargo test --lib
+cd code/tauri && cargo test --lib
 ```
 
-タイマーロジックのテストは `src-tauri/src/timer.rs` にインラインで定義（69テスト）。
+タイマーロジックのテストは `code/tauri/src/timer.rs` にインラインで定義（69テスト）。
 
 ### 統合テスト
 
 ```bash
-cd src-tauri && cargo test --test app_lifecycle -- --test-threads=1
+cd code/tauri && cargo test --test app_lifecycle -- --test-threads=1
 ```
 
 プロセス起動 → stderr ログ検査のパターン。Vite dev server の有無で分岐。
+`code/tauri/tests/app_lifecycle.rs` は `tests/integration/app_lifecycle.rs` へのシンボリックリンク。
 
 ### フロントエンド型チェック
 
 ```bash
-npx svelte-check
+cd code && npx svelte-check
 ```
 
 ## テスト方針
 
 - ユニットテスト: `#[cfg(test)]` インライン（timer.rs）
-- 統合テスト: `src-tauri/tests/app_lifecycle.rs`（プロセス起動 + stderr ログアサーション）
+- 統合テスト: `tests/integration/app_lifecycle.rs`（プロセス起動 + stderr ログアサーション）
 - フロントエンド: `svelte-check` による型検査
 
 ## macOS 固有の実装

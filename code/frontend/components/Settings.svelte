@@ -10,7 +10,7 @@
     updateSettings,
     onTimerTick,
     quitApp,
-  } from "./timer";
+  } from "../lib/timer";
   import { load } from "@tauri-apps/plugin-store";
 
   let timerState: TimerState | null = $state(null);
