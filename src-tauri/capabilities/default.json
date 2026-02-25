@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capabilities for RestRun",
+  "windows": ["main", "break-overlay"],
+  "permissions": [
+    "core:default",
+    "notification:default",
+    "store:default",
+    "positioner:default",
+    "core:window:allow-close",
+    "core:window:allow-show",
+    "core:window:allow-hide",
+    "core:window:allow-set-focus",
+    "core:window:allow-center"
+  ]
+}
