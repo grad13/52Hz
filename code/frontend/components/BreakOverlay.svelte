@@ -9,7 +9,7 @@
     skipBreak,
     onTimerTick,
     onBreakEnd,
-  } from "./timer";
+  } from "../lib/timer";
   import { getCurrentWindow } from "@tauri-apps/api/window";
 
   let remaining = $state("--:--");
