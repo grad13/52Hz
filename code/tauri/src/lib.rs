@@ -1,3 +1,4 @@
+mod commands;
 mod timer;
 
 use std::sync::Arc;
@@ -12,108 +13,6 @@ use timer::{PhaseEvent, TimerSettings, TimerState};
 use tokio::sync::Mutex;
 
 pub type SharedTimerState = Arc<Mutex<TimerState>>;
-
-#[tauri::command]
-async fn get_timer_state(
-    state: tauri::State<'_, SharedTimerState>,
-) -> Result<TimerState, String> {
-    let s = state.lock().await;
-    Ok(s.clone())
-}
-
-#[tauri::command]
-async fn pause_timer(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, SharedTimerState>,
-) -> Result<(), String> {
-    let mut s = state.lock().await;
-    s.paused = true;
-    drop(s);
-    sync_tray_pause_label(&app, true);
-    Ok(())
-}
-
-#[tauri::command]
-async fn resume_timer(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, SharedTimerState>,
-) -> Result<(), String> {
-    let mut s = state.lock().await;
-    s.paused = false;
-    drop(s);
-    sync_tray_pause_label(&app, false);
-    Ok(())
-}
-
-#[tauri::command]
-async fn toggle_pause(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, SharedTimerState>,
-) -> Result<bool, String> {
-    let mut s = state.lock().await;
-    s.paused = !s.paused;
-    let paused = s.paused;
-    let state_clone = s.clone();
-    drop(s);
-
-    sync_tray_pause_label(&app, paused);
-    let _ = app.emit("timer-tick", state_clone);
-    Ok(paused)
-}
-
-#[tauri::command]
-async fn skip_break(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, SharedTimerState>,
-) -> Result<(), String> {
-    let mut s = state.lock().await;
-    let events = s.skip_break();
-    if !events.is_empty() {
-        let _ = app.emit("break-end", ());
-        let _ = app.emit("phase-changed", s.clone());
-    }
-    Ok(())
-}
-
-#[tauri::command]
-async fn update_settings(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, SharedTimerState>,
-    settings: TimerSettings,
-) -> Result<(), String> {
-    let mut s = state.lock().await;
-    s.apply_settings(settings);
-    let _ = app.emit("timer-tick", s.clone());
-    Ok(())
-}
-
-#[tauri::command]
-async fn open_break_overlay(app: tauri::AppHandle) -> Result<(), String> {
-    let handle = app.clone();
-    app.run_on_main_thread(move || {
-        let _ = create_break_overlay(&handle);
-    })
-    .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn quit_app() {
-    if cfg!(debug_assertions) {
-        eprintln!("[RestRun] quit_app command invoked");
-    }
-    std::process::exit(0);
-}
-
-#[tauri::command]
-async fn close_break_overlay(app: tauri::AppHandle) -> Result<(), String> {
-    let handle = app.clone();
-    app.run_on_main_thread(move || {
-        if let Some(window) = handle.get_webview_window("break-overlay") {
-            let _ = window.close();
-        }
-    })
-    .map_err(|e| e.to_string())
-}
 
 /// Update the tray menu's pause/resume label to match the current state.
 fn sync_tray_pause_label(app: &tauri::AppHandle, paused: bool) {
@@ -307,15 +206,15 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(timer_state.clone())
         .invoke_handler(tauri::generate_handler![
-            get_timer_state,
-            pause_timer,
-            resume_timer,
-            toggle_pause,
-            skip_break,
-            update_settings,
-            open_break_overlay,
-            close_break_overlay,
-            quit_app,
+            commands::get_timer_state,
+            commands::pause_timer,
+            commands::resume_timer,
+            commands::toggle_pause,
+            commands::skip_break,
+            commands::update_settings,
+            commands::open_break_overlay,
+            commands::close_break_overlay,
+            commands::quit_app,
         ])
         .setup(move |app| {
             if cfg!(debug_assertions) {
@@ -359,14 +258,7 @@ pub fn run() {
                         let app = app.clone();
                         tauri::async_runtime::spawn(async move {
                             if let Some(state) = app.try_state::<SharedTimerState>() {
-                                let mut s = state.lock().await;
-                                s.paused = !s.paused;
-                                let paused = s.paused;
-                                let state_clone = s.clone();
-                                drop(s);
-
-                                sync_tray_pause_label(&app, paused);
-                                let _ = app.emit("timer-tick", state_clone);
+                                commands::do_toggle_pause(&app, &state).await;
                             }
                         });
                     }
