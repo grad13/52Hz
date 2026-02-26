@@ -6,9 +6,11 @@
  * Runtime: JS-ESM (Svelte 5)
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
 import TimerControls from '../../../../code/frontend/components/TimerControls.svelte';
+
+afterEach(() => { cleanup(); });
 
 describe('TimerControls', () => {
   it('2-1: paused=false のとき "⏸ 一時停止" が表示される', () => {

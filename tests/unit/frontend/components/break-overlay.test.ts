@@ -6,9 +6,31 @@
  * Runtime: JS-ESM (Svelte 5)
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
 import BreakOverlay from '../../../../code/frontend/components/BreakOverlay.svelte';
+
+afterEach(() => { cleanup(); });
+
+// --- Hoisted mocks (vi.mock factories are hoisted, so variables must be too) ---
+
+const {
+  mockClose,
+  mockGetTimerState,
+  mockSkipBreak,
+  mockOnTimerTick,
+  mockOnBreakEnd,
+  mockRemainingSecs,
+  mockFormatTime,
+} = vi.hoisted(() => ({
+  mockClose: vi.fn(),
+  mockGetTimerState: vi.fn(),
+  mockSkipBreak: vi.fn(),
+  mockOnTimerTick: vi.fn().mockResolvedValue(vi.fn()),
+  mockOnBreakEnd: vi.fn().mockResolvedValue(vi.fn()),
+  mockRemainingSecs: vi.fn(),
+  mockFormatTime: vi.fn(),
+}));
 
 // --- Tauri API mocks ---
 
@@ -16,7 +38,6 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
-const mockClose = vi.fn();
 vi.mock('@tauri-apps/api/window', () => ({
   getCurrentWindow: vi.fn().mockReturnValue({
     close: mockClose,
@@ -28,13 +49,6 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 
 // --- timer.ts mock ---
-
-const mockGetTimerState = vi.fn();
-const mockSkipBreak = vi.fn();
-const mockOnTimerTick = vi.fn().mockResolvedValue(vi.fn());
-const mockOnBreakEnd = vi.fn().mockResolvedValue(vi.fn());
-const mockRemainingSecs = vi.fn();
-const mockFormatTime = vi.fn();
 
 vi.mock('../../../../code/frontend/lib/timer', () => ({
   remainingSecs: (...args: unknown[]) => mockRemainingSecs(...args),

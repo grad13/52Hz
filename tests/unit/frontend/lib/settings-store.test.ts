@@ -8,10 +8,12 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockStore = {
-  get: vi.fn(),
-  set: vi.fn(),
-};
+const { mockStore } = vi.hoisted(() => ({
+  mockStore: {
+    get: vi.fn(),
+    set: vi.fn(),
+  },
+}));
 vi.mock('@tauri-apps/plugin-store', () => ({
   load: vi.fn().mockResolvedValue(mockStore),
 }));
