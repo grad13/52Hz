@@ -1,8 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use std::time::Duration;
-use tauri::Emitter;
-use tokio::sync::Mutex;
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum TimerPhase {
@@ -174,69 +170,6 @@ impl TimerState {
         self.advance();
         self.try_transition()
     }
-}
-
-pub type SharedTimerState = Arc<Mutex<TimerState>>;
-
-pub fn spawn_timer(app_handle: tauri::AppHandle, state: SharedTimerState) {
-    tauri::async_runtime::spawn(async move {
-        let mut interval = tokio::time::interval(Duration::from_secs(1));
-        // tokio::time::interval fires immediately on the first tick.
-        // Skip it so the first real tick happens after 1 second.
-        interval.tick().await;
-        loop {
-            interval.tick().await;
-
-            let mut s = state.lock().await;
-
-            // Step 1: Advance the timer (increment elapsed).
-            s.advance();
-
-            // Step 2: Emit the current state BEFORE checking for transitions.
-            // This ensures the frontend sees remaining=0 before the phase changes.
-            let title = s.tray_title();
-            let handle = app_handle.clone();
-            let _ = app_handle.run_on_main_thread(move || {
-                if let Some(tray) = handle.tray_by_id("main-tray") {
-                    let _ = tray.set_title(Some(&title));
-                }
-            });
-            let _ = app_handle.emit("timer-tick", s.clone());
-
-            // Step 3: Check for phase transition.
-            let events = s.try_transition();
-
-            // Step 4: Emit phase events (and a second timer-tick with the new state).
-            if !events.is_empty() {
-                let _ = app_handle.emit("timer-tick", s.clone());
-            }
-            for event in &events {
-                match event {
-                    PhaseEvent::PhaseChanged => {
-                        if cfg!(debug_assertions) {
-                            eprintln!(
-                                "[RestRun] phase-changed → {:?} (duration={}s)",
-                                s.phase, s.phase_duration_secs
-                            );
-                        }
-                        let _ = app_handle.emit("phase-changed", s.clone());
-                    }
-                    PhaseEvent::BreakStart => {
-                        if cfg!(debug_assertions) {
-                            eprintln!("[RestRun] break-start → {:?}", s.phase);
-                        }
-                        let _ = app_handle.emit("break-start", s.clone());
-                    }
-                    PhaseEvent::BreakEnd => {
-                        if cfg!(debug_assertions) {
-                            eprintln!("[RestRun] break-end → back to Focus");
-                        }
-                        let _ = app_handle.emit("break-end", ());
-                    }
-                }
-            }
-        }
-    });
 }
 
 #[cfg(test)]
