@@ -132,9 +132,8 @@ fn sync_tray_pause_label(app: &tauri::AppHandle, paused: bool) {
 }
 
 fn create_break_overlay(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    // In test mode, skip creating the actual overlay window to avoid blocking the screen.
-    // Debug logs are still emitted so integration tests can assert on them.
-    if std::env::var("RESTRUN_TEST_FAST_TIMER").is_ok() {
+    // Headless mode: emit logs but skip actual window creation.
+    if std::env::var("RESTRUN_HEADLESS").is_ok() {
         if cfg!(debug_assertions) {
             eprintln!("[RestRun] presentation-options → locked");
         }
@@ -392,8 +391,8 @@ pub fn run() {
                     eprintln!("[RestRun] break-end → closing overlay");
                 }
 
-                // In test mode, no overlay was created — just emit the log.
-                if std::env::var("RESTRUN_TEST_FAST_TIMER").is_ok() {
+                // Headless mode: no overlay was created — just emit the log.
+                if std::env::var("RESTRUN_HEADLESS").is_ok() {
                     if cfg!(debug_assertions) {
                         eprintln!("[RestRun] presentation-options → default");
                     }
