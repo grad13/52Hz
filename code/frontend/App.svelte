@@ -1,6 +1,6 @@
 <script lang="ts">
   import "./app.css";
-  import Settings from "./components/Settings.svelte";
+  import TrayPanel from "./components/TrayPanel.svelte";
   import BreakOverlay from "./components/BreakOverlay.svelte";
 
   const params = new URLSearchParams(window.location.search);
@@ -10,5 +10,5 @@
 {#if view === "break"}
   <BreakOverlay />
 {:else}
-  <Settings />
+  <TrayPanel />
 {/if}
