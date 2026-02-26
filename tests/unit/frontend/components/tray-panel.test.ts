@@ -6,9 +6,11 @@
  * Runtime: JS-ESM (Svelte 5)
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
 import TrayPanel from '../../../../code/frontend/components/TrayPanel.svelte';
+
+afterEach(() => { cleanup(); });
 
 // --- Tauri API mocks ---
 

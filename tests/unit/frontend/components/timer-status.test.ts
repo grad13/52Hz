@@ -6,9 +6,11 @@
  * Runtime: JS-ESM (Svelte 5)
  */
 
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { describe, it, expect, afterEach } from 'vitest';
+import { render, screen, cleanup } from '@testing-library/svelte';
 import TimerStatus from '../../../../code/frontend/components/TimerStatus.svelte';
+
+afterEach(() => { cleanup(); });
 
 describe('TimerStatus', () => {
   it('1-1: phaseLabel が表示される', () => {
