@@ -1,5 +1,5 @@
 use crate::timer::TimerSettings;
-use crate::{create_break_overlay, sync_tray_pause_label, SharedTimerState};
+use crate::{overlay, sync_tray_pause_label, SharedTimerState};
 use tauri::{Emitter, Manager};
 
 pub(crate) async fn do_toggle_pause(app: &tauri::AppHandle, state: &SharedTimerState) -> bool {
@@ -85,7 +85,7 @@ pub(crate) async fn update_settings(
 pub(crate) async fn open_break_overlay(app: tauri::AppHandle) -> Result<(), String> {
     let handle = app.clone();
     app.run_on_main_thread(move || {
-        let _ = create_break_overlay(&handle);
+        let _ = overlay::create_break_overlay(&handle);
     })
     .map_err(|e| e.to_string())
 }
