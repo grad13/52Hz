@@ -2,7 +2,6 @@
   import { onMount, onDestroy } from "svelte";
   import {
     type TimerState,
-    type TimerSettings,
     remainingSecs,
     formatTime,
     getTimerState,
@@ -11,7 +10,11 @@
     onTimerTick,
     quitApp,
   } from "../lib/timer";
-  import { load } from "@tauri-apps/plugin-store";
+  import {
+    loadSettings,
+    saveSettings,
+    toTimerSettings,
+  } from "../lib/settings-store";
 
   let timerState: TimerState | null = $state(null);
   let remaining = $state("--:--");
@@ -44,49 +47,19 @@
   }
 
   async function handleSaveSettings() {
-    const settings: TimerSettings = {
-      focus_duration_secs: focusMinutes * 60,
-      short_break_duration_secs: shortBreakSecs,
-      long_break_duration_secs: longBreakMinutes * 60,
-      short_breaks_before_long: shortBreaksBeforeLong,
-    };
-    await updateSettings(settings);
-
-    // Persist to store
-    const store = await load("settings.json", { autoSave: true });
-    await store.set("focus_minutes", focusMinutes);
-    await store.set("short_break_secs", shortBreakSecs);
-    await store.set("long_break_minutes", longBreakMinutes);
-    await store.set("short_breaks_before_long", shortBreaksBeforeLong);
+    const display = { focusMinutes, shortBreakSecs, longBreakMinutes, shortBreaksBeforeLong };
+    await updateSettings(toTimerSettings(display));
+    await saveSettings(display);
   }
 
   async function loadSavedSettings() {
-    try {
-      const store = await load("settings.json", { autoSave: true });
-      const fm = await store.get<number>("focus_minutes");
-      const sbs = await store.get<number>("short_break_secs");
-      const lbm = await store.get<number>("long_break_minutes");
-      const sbbl = await store.get<number>("short_breaks_before_long");
-
-      const hasSaved = fm != null || sbs != null || lbm != null || sbbl != null;
-
-      if (fm != null) focusMinutes = fm;
-      if (sbs != null) shortBreakSecs = sbs;
-      if (lbm != null) longBreakMinutes = lbm;
-      if (sbbl != null) shortBreaksBeforeLong = sbbl;
-
-      // Only push to backend if the store had saved values.
-      // Otherwise keep the backend's own defaults (or env-var overrides).
-      if (hasSaved) {
-        await updateSettings({
-          focus_duration_secs: focusMinutes * 60,
-          short_break_duration_secs: shortBreakSecs,
-          long_break_duration_secs: longBreakMinutes * 60,
-          short_breaks_before_long: shortBreaksBeforeLong,
-        });
-      }
-    } catch {
-      // No saved settings, use defaults
+    const saved = await loadSettings();
+    if (saved) {
+      focusMinutes = saved.focusMinutes;
+      shortBreakSecs = saved.shortBreakSecs;
+      longBreakMinutes = saved.longBreakMinutes;
+      shortBreaksBeforeLong = saved.shortBreaksBeforeLong;
+      await updateSettings(toTimerSettings(saved));
     }
   }
 
