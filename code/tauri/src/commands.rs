@@ -1,5 +1,5 @@
 use crate::timer::TimerSettings;
-use crate::{overlay, sync_tray_pause_label, SharedTimerState};
+use crate::{overlay, tray, SharedTimerState};
 use tauri::{Emitter, Manager};
 
 pub(crate) async fn do_toggle_pause(app: &tauri::AppHandle, state: &SharedTimerState) -> bool {
@@ -9,7 +9,7 @@ pub(crate) async fn do_toggle_pause(app: &tauri::AppHandle, state: &SharedTimerS
     let state_clone = s.clone();
     drop(s);
 
-    sync_tray_pause_label(app, paused);
+    tray::sync_tray_pause_label(app, paused);
     let _ = app.emit("timer-tick", state_clone);
     paused
 }
@@ -30,7 +30,7 @@ pub(crate) async fn pause_timer(
     let mut s = state.lock().await;
     s.paused = true;
     drop(s);
-    sync_tray_pause_label(&app, true);
+    tray::sync_tray_pause_label(&app, true);
     Ok(())
 }
 
@@ -42,7 +42,7 @@ pub(crate) async fn resume_timer(
     let mut s = state.lock().await;
     s.paused = false;
     drop(s);
-    sync_tray_pause_label(&app, false);
+    tray::sync_tray_pause_label(&app, false);
     Ok(())
 }
 
