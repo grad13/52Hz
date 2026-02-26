@@ -79,6 +79,7 @@ fn write_settings_store(json: &str) {
 fn run_and_check_alive(env_vars: &[(&str, &str)], test_name: &str, secs: u64) -> String {
     let mut cmd = Command::new(binary_path());
     cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+    cmd.env("RESTRUN_HEADLESS", "1");
     for (k, v) in env_vars {
         cmd.env(k, v);
     }
