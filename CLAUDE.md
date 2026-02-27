@@ -1,16 +1,16 @@
-# CLAUDE.md (RestRun)
+# CLAUDE.md (52Hz)
 
-RestRun アプリ固有のガイダンス。
+52Hz アプリ固有のガイダンス。
 
 ## プロジェクト概要
 
-RestRun - macOS 休憩リマインダーアプリ（DeskRest クローン）。
+52Hz - macOS 休憩リマインダーアプリ（DeskRest クローン）。
 Tauri v2 + Svelte 5 + Rust で構成。
 
 ## ディレクトリ構成
 
 ```
-27-RestRun/
+27-52Hz/
 ├── .claude/                # Claude Code 設定・スキル
 ├── CLAUDE.md
 ├── project-meta.json

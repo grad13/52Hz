@@ -4,9 +4,9 @@ pub(crate) fn create_break_overlay(
     app: &tauri::AppHandle,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Headless mode: emit logs but skip actual window creation.
-    if std::env::var("RESTRUN_HEADLESS").is_ok() {
+    if std::env::var("FIFTYTWOHZ_HEADLESS").is_ok() {
         if cfg!(debug_assertions) {
-            eprintln!("[RestRun] presentation-options → locked");
+            eprintln!("[52Hz] presentation-options → locked");
         }
         return Ok(());
     }
@@ -77,7 +77,7 @@ pub(crate) fn create_break_overlay(
                 | NSApplicationPresentationOptions::DisableForceQuit,
         );
         if cfg!(debug_assertions) {
-            eprintln!("[RestRun] presentation-options → locked");
+            eprintln!("[52Hz] presentation-options → locked");
         }
     }
 
@@ -97,6 +97,6 @@ pub(crate) fn unlock_presentation() {
         ns_app.setPresentationOptions(NSApplicationPresentationOptions::Default);
     }
     if cfg!(debug_assertions) {
-        eprintln!("[RestRun] presentation-options → default");
+        eprintln!("[52Hz] presentation-options → default");
     }
 }

@@ -93,7 +93,7 @@ pub(crate) async fn open_break_overlay(app: tauri::AppHandle) -> Result<(), Stri
 #[tauri::command]
 pub(crate) fn quit_app() {
     if cfg!(debug_assertions) {
-        eprintln!("[RestRun] quit_app command invoked");
+        eprintln!("[52Hz] quit_app command invoked");
     }
     std::process::exit(0);
 }

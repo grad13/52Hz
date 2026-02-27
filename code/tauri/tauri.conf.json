@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "RestRun",
-  "version": "0.1.0",
-  "identifier": "com.restrun.app",
+  "productName": "52Hz",
+  "version": "0.2.0",
+  "identifier": "com.hz52.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",

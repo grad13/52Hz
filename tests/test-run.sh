@@ -13,7 +13,7 @@ echo ""
 echo "=== Step 2: バイナリ直接実行 (Ctrl+C で終了) ==="
 echo "=== もしすぐにプロンプトが戻ったら、バイナリが落ちています ==="
 echo ""
-./tauri/target/debug/restrun
+./tauri/target/debug/hz52
 BINARY_EXIT=$?
 
 echo ""

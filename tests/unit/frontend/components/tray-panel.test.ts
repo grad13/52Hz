@@ -193,11 +193,11 @@ describe('TrayPanel', () => {
   // 3. UI rendering
   // =========================================================================
 
-  it('3-1: "RestRun" ヘッダーが表示される', async () => {
+  it('3-1: "52Hz" ヘッダーが表示される', async () => {
     render(TrayPanel);
 
     await vi.waitFor(() => {
-      expect(screen.getByText('RestRun')).toBeTruthy();
+      expect(screen.getByText('52Hz')).toBeTruthy();
     });
   });
 

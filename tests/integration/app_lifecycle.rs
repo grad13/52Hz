@@ -3,7 +3,7 @@ use std::io::Read;
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 
-const BINARY: &str = "restrun";
+const BINARY: &str = "hz52";
 const PROJECT_ROOT: &str = env!("CARGO_MANIFEST_DIR");
 
 // ---------------------------------------------------------------
@@ -56,7 +56,7 @@ fn start_vite() -> ViteGuard {
 fn store_dir() -> std::path::PathBuf {
     dirs::data_dir()
         .expect("no data dir")
-        .join("com.restrun.app")
+        .join("com.hz52.app")
 }
 
 fn clear_settings_store() {
@@ -79,7 +79,7 @@ fn write_settings_store(json: &str) {
 fn run_and_check_alive(env_vars: &[(&str, &str)], test_name: &str, secs: u64) -> String {
     let mut cmd = Command::new(binary_path());
     cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-    cmd.env("RESTRUN_HEADLESS", "1");
+    cmd.env("FIFTYTWOHZ_HEADLESS", "1");
     for (k, v) in env_vars {
         cmd.env(k, v);
     }
@@ -289,7 +289,7 @@ fn fast_timer_90s_phase_transitions_with_vite() {
     let _vite = start_vite();
 
     let stderr = run_and_check_alive(
-        &[("RESTRUN_TEST_FAST_TIMER", "1")],
+        &[("FIFTYTWOHZ_TEST_FAST_TIMER", "1")],
         "fast_timer_90s_vite",
         90,
     );
@@ -312,7 +312,7 @@ fn fast_timer_60s_phase_transitions_without_vite() {
     clear_settings_store();
 
     let stderr = run_and_check_alive(
-        &[("RESTRUN_TEST_FAST_TIMER", "1")],
+        &[("FIFTYTWOHZ_TEST_FAST_TIMER", "1")],
         "fast_timer_60s_no_vite",
         60,
     );
@@ -344,7 +344,7 @@ fn store_empty_fast_timer_durations_correct() {
     let _vite = start_vite();
 
     let stderr = run_and_check_alive(
-        &[("RESTRUN_TEST_FAST_TIMER", "1")],
+        &[("FIFTYTWOHZ_TEST_FAST_TIMER", "1")],
         "store_empty_durations",
         30,
     );
@@ -377,7 +377,7 @@ fn store_values_override_fast_timer() {
     let _vite = start_vite();
 
     let stderr = run_and_check_alive(
-        &[("RESTRUN_TEST_FAST_TIMER", "1")],
+        &[("FIFTYTWOHZ_TEST_FAST_TIMER", "1")],
         "store_overrides_fast_timer",
         30,
     );

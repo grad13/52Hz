@@ -1100,7 +1100,7 @@
     }
 
     // ---------------------------------------------------------------
-    // Fast timer settings (matching RESTRUN_TEST_FAST_TIMER)
+    // Fast timer settings (matching FIFTYTWOHZ_TEST_FAST_TIMER)
     // ---------------------------------------------------------------
 
     #[test]

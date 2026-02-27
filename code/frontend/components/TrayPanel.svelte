@@ -80,7 +80,7 @@
 
 <div class="tray-panel">
   <header>
-    <h2>RestRun</h2>
+    <h2>52Hz</h2>
   </header>
 
   <TimerStatus {phaseLabel} {remaining} {paused} />

@@ -1,5 +1,5 @@
 {
-  "name": "restrun",
+  "name": "hz52",
   "category": "experiment",
   "description": "macOS休憩リマインダーアプリ（DeskRestクローン）。Tauri v2 + Svelte 5 + Rust"
 }

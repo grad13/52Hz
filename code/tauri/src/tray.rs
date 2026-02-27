@@ -37,7 +37,7 @@ pub(crate) fn build_tray(
     let _state = state; // keep for potential future use
     let tray = TrayIconBuilder::with_id("main-tray")
         .icon(app.default_window_icon().unwrap().clone())
-        .tooltip("RestRun")
+        .tooltip("52Hz")
         .title(title)
         .menu(&menu)
         .show_menu_on_left_click(false)
@@ -89,7 +89,7 @@ pub(crate) fn build_tray(
                             #[allow(deprecated)]
                             ns_app.activateIgnoringOtherApps(true);
                             if cfg!(debug_assertions) {
-                                eprintln!("[RestRun] app activated for popup focus");
+                                eprintln!("[52Hz] app activated for popup focus");
                             }
                         }
                     }
