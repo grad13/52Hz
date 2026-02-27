@@ -48,7 +48,7 @@ fn spawn_timer(app_handle: tauri::AppHandle, state: SharedTimerState) {
                     PhaseEvent::PhaseChanged => {
                         if cfg!(debug_assertions) {
                             eprintln!(
-                                "[RestRun] phase-changed → {:?} (duration={}s)",
+                                "[52Hz] phase-changed → {:?} (duration={}s)",
                                 s.phase, s.phase_duration_secs
                             );
                         }
@@ -56,13 +56,13 @@ fn spawn_timer(app_handle: tauri::AppHandle, state: SharedTimerState) {
                     }
                     PhaseEvent::BreakStart => {
                         if cfg!(debug_assertions) {
-                            eprintln!("[RestRun] break-start → {:?}", s.phase);
+                            eprintln!("[52Hz] break-start → {:?}", s.phase);
                         }
                         let _ = app_handle.emit("break-start", s.clone());
                     }
                     PhaseEvent::BreakEnd => {
                         if cfg!(debug_assertions) {
-                            eprintln!("[RestRun] break-end → back to Focus");
+                            eprintln!("[52Hz] break-end → back to Focus");
                         }
                         let _ = app_handle.emit("break-end", ());
                     }
@@ -74,8 +74,8 @@ fn spawn_timer(app_handle: tauri::AppHandle, state: SharedTimerState) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let timer_settings = if std::env::var("RESTRUN_TEST_FAST_TIMER").is_ok() {
-        eprintln!("[RestRun] Using fast timer settings for testing");
+    let timer_settings = if std::env::var("FIFTYTWOHZ_TEST_FAST_TIMER").is_ok() {
+        eprintln!("[52Hz] Using fast timer settings for testing");
         TimerSettings {
             focus_duration_secs: 5,
             short_break_duration_secs: 3,
@@ -92,7 +92,7 @@ pub fn run() {
         s.tray_title()
     };
 
-    eprintln!("[RestRun] Starting...");
+    eprintln!("[52Hz] Starting...");
     tauri::Builder::default()
         .plugin(tauri_plugin_positioner::init())
         .plugin(tauri_plugin_notification::init())
@@ -124,7 +124,7 @@ pub fn run() {
                 "main",
                 WebviewUrl::App("index.html".into()),
             )
-            .title("RestRun")
+            .title("52Hz")
             .inner_size(320.0, 420.0)
             .visible(false)
             .resizable(false)
@@ -156,7 +156,7 @@ pub fn run() {
             let app_handle = app.handle().clone();
             app.listen("break-start", move |_event| {
                 if cfg!(debug_assertions) {
-                    eprintln!("[RestRun] break-start → opening overlay");
+                    eprintln!("[52Hz] break-start → opening overlay");
                 }
                 let handle = app_handle.clone();
                 let _ = app_handle.run_on_main_thread(move || {
@@ -168,11 +168,11 @@ pub fn run() {
             let app_handle2 = app.handle().clone();
             app.listen("break-end", move |_event| {
                 if cfg!(debug_assertions) {
-                    eprintln!("[RestRun] break-end → closing overlay");
+                    eprintln!("[52Hz] break-end → closing overlay");
                 }
 
                 // Headless mode: no overlay was created — just emit the log.
-                if std::env::var("RESTRUN_HEADLESS").is_ok() {
+                if std::env::var("FIFTYTWOHZ_HEADLESS").is_ok() {
                     overlay::unlock_presentation();
                     return;
                 }

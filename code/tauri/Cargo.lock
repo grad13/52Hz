@@ -1640,6 +1640,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "hz52"
+version = "0.1.0"
+dependencies = [
+ "dirs",
+ "log",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-log",
+ "tauri-plugin-notification",
+ "tauri-plugin-positioner",
+ "tauri-plugin-store",
+ "tokio",
+]
+
+[[package]]
 name = "iana-time-zone"
 version = "0.1.65"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3137,27 +3158,6 @@ dependencies = [
  "wasm-bindgen-futures",
  "wasm-streams",
  "web-sys",
-]
-
-[[package]]
-name = "restrun"
-version = "0.1.0"
-dependencies = [
- "dirs",
- "log",
- "objc2",
- "objc2-app-kit",
- "objc2-foundation",
- "serde",
- "serde_json",
- "serial_test",
- "tauri",
- "tauri-build",
- "tauri-plugin-log",
- "tauri-plugin-notification",
- "tauri-plugin-positioner",
- "tauri-plugin-store",
- "tokio",
 ]
 
 [[package]]
