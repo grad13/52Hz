@@ -13,6 +13,7 @@ export default defineConfig({
       '@code': codeRoot,
       '@tauri-apps/api': path.resolve(codeRoot, 'node_modules/@tauri-apps/api'),
       '@tauri-apps/plugin-store': path.resolve(codeRoot, 'node_modules/@tauri-apps/plugin-store'),
+      '@tauri-apps/plugin-autostart': path.resolve(codeRoot, 'node_modules/@tauri-apps/plugin-autostart'),
       '@testing-library/svelte': path.resolve(codeRoot, 'node_modules/@testing-library/svelte'),
       '@testing-library/jest-dom': path.resolve(codeRoot, 'node_modules/@testing-library/jest-dom'),
     },

@@ -33,7 +33,7 @@
 
   // Settings form values (in minutes/seconds for display)
   let focusMinutes = $state(20);
-  let shortBreakMinutes = $state(1);
+  let shortBreakSecs = $state(20);
   let longBreakMinutes = $state(3);
   let shortBreaksBeforeLong = $state(3);
 
@@ -61,7 +61,7 @@
   }
 
   async function handleSaveSettings() {
-    const display = { focusMinutes, shortBreakMinutes, longBreakMinutes, shortBreaksBeforeLong };
+    const display = { focusMinutes, shortBreakSecs, longBreakMinutes, shortBreaksBeforeLong };
     await updateSettings(toTimerSettings(display));
     await saveSettings(display);
   }
@@ -83,7 +83,7 @@
     const saved = await loadSettings();
     if (saved) {
       focusMinutes = saved.focusMinutes;
-      shortBreakMinutes = saved.shortBreakMinutes;
+      shortBreakSecs = saved.shortBreakSecs;
       longBreakMinutes = saved.longBreakMinutes;
       shortBreaksBeforeLong = saved.shortBreaksBeforeLong;
       await updateSettings(toTimerSettings(saved));
@@ -118,7 +118,7 @@
   <TimerControls {paused} onTogglePause={handleTogglePause} onQuit={quitApp} />
   <SettingsForm
     bind:focusMinutes
-    bind:shortBreakMinutes
+    bind:shortBreakSecs
     bind:longBreakMinutes
     bind:shortBreaksBeforeLong
     {autostartEnabled}
