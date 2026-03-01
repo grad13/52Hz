@@ -8,7 +8,7 @@
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
-import SettingsForm from '../../../../code/frontend/components/SettingsForm.svelte';
+import SettingsForm from '@code/frontend/components/SettingsForm.svelte';
 
 afterEach(() => { cleanup(); });
 

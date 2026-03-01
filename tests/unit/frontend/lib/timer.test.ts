@@ -22,7 +22,7 @@ import {
   onPhaseChanged,
   onBreakStart,
   onBreakEnd,
-} from '../../../../code/frontend/lib/timer';
+} from '@code/frontend/lib/timer';
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),

@@ -18,8 +18,8 @@ vi.mock('@tauri-apps/plugin-store', () => ({
   load: vi.fn().mockResolvedValue(mockStore),
 }));
 
-import { toTimerSettings, toDisplaySettings, loadSettings, saveSettings } from '../../../../code/frontend/lib/settings-store';
-import type { DisplaySettings } from '../../../../code/frontend/lib/settings-store';
+import { toTimerSettings, toDisplaySettings, loadSettings, saveSettings } from '@code/frontend/lib/settings-store';
+import type { DisplaySettings } from '@code/frontend/lib/settings-store';
 
 // ---------------------------------------------------------------------------
 // 3.1 Unit conversion: toTimerSettings (Decision Table)

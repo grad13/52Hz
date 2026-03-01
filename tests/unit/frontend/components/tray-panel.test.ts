@@ -8,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
-import TrayPanel from '../../../../code/frontend/components/TrayPanel.svelte';
+import TrayPanel from '@code/frontend/components/TrayPanel.svelte';
 
 afterEach(() => { cleanup(); });
 
@@ -30,26 +30,36 @@ vi.mock('@tauri-apps/api/window', () => ({
 
 // --- timer.ts mock ---
 
-const mockGetTimerState = vi.fn();
-const mockTogglePause = vi.fn();
-const mockUpdateSettings = vi.fn();
-const mockQuitApp = vi.fn();
-const mockOnTimerTick = vi.fn().mockResolvedValue(vi.fn());
-const mockRemainingSecs = vi.fn();
-const mockFormatTime = vi.fn();
+const {
+  mockGetTimerState,
+  mockTogglePause,
+  mockUpdateSettings,
+  mockQuitApp,
+  mockOnTimerTick,
+  mockRemainingSecs,
+  mockFormatTime,
+} = vi.hoisted(() => ({
+  mockGetTimerState: vi.fn(),
+  mockTogglePause: vi.fn(),
+  mockUpdateSettings: vi.fn(),
+  mockQuitApp: vi.fn(),
+  mockOnTimerTick: vi.fn().mockResolvedValue(vi.fn()),
+  mockRemainingSecs: vi.fn(),
+  mockFormatTime: vi.fn(),
+}));
 
-vi.mock('../../../../code/frontend/lib/timer', () => ({
-  remainingSecs: (...args: unknown[]) => mockRemainingSecs(...args),
-  formatTime: (...args: unknown[]) => mockFormatTime(...args),
-  getTimerState: (...args: unknown[]) => mockGetTimerState(...args),
+vi.mock('@code/frontend/lib/timer', () => ({
+  remainingSecs: mockRemainingSecs,
+  formatTime: mockFormatTime,
+  getTimerState: mockGetTimerState,
   pauseTimer: vi.fn(),
   resumeTimer: vi.fn(),
-  togglePause: (...args: unknown[]) => mockTogglePause(...args),
+  togglePause: mockTogglePause,
   skipBreak: vi.fn(),
-  updateSettings: (...args: unknown[]) => mockUpdateSettings(...args),
+  updateSettings: mockUpdateSettings,
   closeBreakOverlay: vi.fn(),
-  quitApp: (...args: unknown[]) => mockQuitApp(...args),
-  onTimerTick: (...args: unknown[]) => mockOnTimerTick(...args),
+  quitApp: mockQuitApp,
+  onTimerTick: mockOnTimerTick,
   onPhaseChanged: vi.fn().mockResolvedValue(vi.fn()),
   onBreakStart: vi.fn().mockResolvedValue(vi.fn()),
   onBreakEnd: vi.fn().mockResolvedValue(vi.fn()),
@@ -57,16 +67,23 @@ vi.mock('../../../../code/frontend/lib/timer', () => ({
 
 // --- settings-store mock ---
 
-const mockLoadSettings = vi.fn();
-const mockSaveSettings = vi.fn();
-const mockToTimerSettings = vi.fn();
-const mockToDisplaySettings = vi.fn();
+const {
+  mockLoadSettings,
+  mockSaveSettings,
+  mockToTimerSettings,
+  mockToDisplaySettings,
+} = vi.hoisted(() => ({
+  mockLoadSettings: vi.fn(),
+  mockSaveSettings: vi.fn(),
+  mockToTimerSettings: vi.fn(),
+  mockToDisplaySettings: vi.fn(),
+}));
 
-vi.mock('../../../../code/frontend/lib/settings-store', () => ({
-  loadSettings: (...args: unknown[]) => mockLoadSettings(...args),
-  saveSettings: (...args: unknown[]) => mockSaveSettings(...args),
-  toTimerSettings: (...args: unknown[]) => mockToTimerSettings(...args),
-  toDisplaySettings: (...args: unknown[]) => mockToDisplaySettings(...args),
+vi.mock('@code/frontend/lib/settings-store', () => ({
+  loadSettings: mockLoadSettings,
+  saveSettings: mockSaveSettings,
+  toTimerSettings: mockToTimerSettings,
+  toDisplaySettings: mockToDisplaySettings,
 }));
 
 // --- Helpers ---

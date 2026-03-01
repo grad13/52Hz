@@ -10,6 +10,7 @@ export default defineConfig({
   resolve: {
     conditions: ['browser'],
     alias: {
+      '@code': codeRoot,
       '@tauri-apps/api': path.resolve(codeRoot, 'node_modules/@tauri-apps/api'),
       '@tauri-apps/plugin-store': path.resolve(codeRoot, 'node_modules/@tauri-apps/plugin-store'),
       '@testing-library/svelte': path.resolve(codeRoot, 'node_modules/@testing-library/svelte'),
