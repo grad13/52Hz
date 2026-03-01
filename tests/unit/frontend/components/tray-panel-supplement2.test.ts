@@ -165,6 +165,24 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
 
   describe('handleAutostartChange', () => {
     it('5-1: 自動起動を有効にするとき enable() が呼ばれる', async () => {
+      mockIsEnabled.mockResolvedValue(false);
+
+      render(TrayPanel);
+
+      await vi.waitFor(() => {
+        expect(mockGetTimerState).toHaveBeenCalled();
+      });
+
+      const toggle = document.getElementById('autostart') as HTMLInputElement;
+      expect(toggle).toBeTruthy();
+      await fireEvent.click(toggle!);
+
+      await vi.waitFor(() => {
+        expect(mockEnable).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('5-2: 自動起動を無効にするとき disable() が呼ばれる', async () => {
       mockIsEnabled.mockResolvedValue(true);
 
       render(TrayPanel);
@@ -174,35 +192,12 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
       });
 
       const toggle = document.getElementById('autostart') as HTMLInputElement;
-      if (toggle) {
-        await fireEvent.click(toggle);
-
-        await vi.waitFor(() => {
-          expect(mockEnable).toHaveBeenCalledTimes(1);
-        });
-      }
-    });
-
-    it('5-2: 自動起動を無効にするとき disable() が呼ばれる', async () => {
-      mockIsEnabled.mockResolvedValue(false);
-
-      render(TrayPanel);
+      expect(toggle).toBeTruthy();
+      await fireEvent.click(toggle!);
 
       await vi.waitFor(() => {
-        expect(mockGetTimerState).toHaveBeenCalled();
+        expect(mockDisable).toHaveBeenCalledTimes(1);
       });
-
-      // First enable, then disable
-      const toggle = document.getElementById('autostart') as HTMLInputElement;
-      if (toggle) {
-        // Toggle to enable first
-        mockIsEnabled.mockResolvedValue(true);
-        await fireEvent.click(toggle);
-
-        await vi.waitFor(() => {
-          expect(mockEnable).toHaveBeenCalled();
-        });
-      }
     });
   });
 

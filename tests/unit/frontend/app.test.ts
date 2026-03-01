@@ -50,6 +50,10 @@ const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => ({
     onPhaseChanged: vi.fn().mockResolvedValue(vi.fn()),
     onBreakStart: vi.fn().mockResolvedValue(vi.fn()),
     onBreakEnd: vi.fn().mockResolvedValue(vi.fn()),
+    getTodaySessions: vi.fn().mockResolvedValue(0),
+    acceptBreak: vi.fn(),
+    extendFocus: vi.fn(),
+    skipBreakFromFocus: vi.fn(),
   },
   mockSettingsStoreModule: {
     loadSettings: vi.fn().mockResolvedValue(null),
@@ -64,6 +68,12 @@ vi.mock('@code/frontend/lib/settings-store', () => mockSettingsStoreModule);
 
 vi.mock('@tauri-apps/api/window', () => ({
   getCurrentWindow: vi.fn().mockReturnValue({ close: vi.fn() }),
+}));
+
+vi.mock('@tauri-apps/plugin-autostart', () => ({
+  isEnabled: vi.fn().mockResolvedValue(false),
+  enable: vi.fn().mockResolvedValue(undefined),
+  disable: vi.fn().mockResolvedValue(undefined),
 }));
 
 let originalLocation: Location;

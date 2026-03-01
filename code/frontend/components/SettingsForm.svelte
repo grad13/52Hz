@@ -1,7 +1,7 @@
 <script lang="ts">
   let {
     focusMinutes = $bindable(),
-    shortBreakMinutes = $bindable(),
+    shortBreakSecs = $bindable(),
     longBreakMinutes = $bindable(),
     shortBreaksBeforeLong = $bindable(),
     autostartEnabled = false,
@@ -9,7 +9,7 @@
     onAutostartChange,
   }: {
     focusMinutes: number;
-    shortBreakMinutes: number;
+    shortBreakSecs: number;
     longBreakMinutes: number;
     shortBreaksBeforeLong: number;
     autostartEnabled: boolean;
@@ -39,11 +39,11 @@
       <input
         id="short-break"
         type="number"
-        min="1"
-        max="30"
-        bind:value={shortBreakMinutes}
+        min="5"
+        max="300"
+        bind:value={shortBreakSecs}
       />
-      <span class="unit">分</span>
+      <span class="unit">秒</span>
     </div>
   </div>
 

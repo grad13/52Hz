@@ -63,6 +63,16 @@ vi.mock('@code/frontend/lib/timer', () => ({
   onPhaseChanged: vi.fn().mockResolvedValue(vi.fn()),
   onBreakStart: vi.fn().mockResolvedValue(vi.fn()),
   onBreakEnd: vi.fn().mockResolvedValue(vi.fn()),
+  getTodaySessions: vi.fn().mockResolvedValue(0),
+  acceptBreak: vi.fn(),
+  extendFocus: vi.fn(),
+  skipBreakFromFocus: vi.fn(),
+}));
+
+vi.mock('@tauri-apps/plugin-autostart', () => ({
+  isEnabled: vi.fn().mockResolvedValue(false),
+  enable: vi.fn().mockResolvedValue(undefined),
+  disable: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- settings-store mock ---
