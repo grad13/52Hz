@@ -66,6 +66,14 @@ fn spawn_timer(app_handle: tauri::AppHandle, state: SharedTimerState) {
                         }
                         let _ = app_handle.emit("break-end", ());
                     }
+                    PhaseEvent::FocusDone => {
+                        if cfg!(debug_assertions) {
+                            eprintln!("[52Hz] focus-done → paused, awaiting user choice");
+                        }
+                        // Always emit focus-done so the listener handles it
+                        // (both HEADLESS and normal mode).
+                        let _ = app_handle.emit("focus-done", s.clone());
+                    }
                 }
             }
         }
@@ -97,6 +105,10 @@ pub fn run() {
         .plugin(tauri_plugin_positioner::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .manage(timer_state.clone())
         .invoke_handler(tauri::generate_handler![
             commands::get_timer_state,
@@ -105,6 +117,10 @@ pub fn run() {
             commands::toggle_pause,
             commands::skip_break,
             commands::update_settings,
+            commands::accept_break,
+            commands::extend_focus,
+            commands::skip_break_from_focus,
+            commands::get_today_sessions,
             commands::open_break_overlay,
             commands::close_break_overlay,
             commands::quit_app,
@@ -125,7 +141,7 @@ pub fn run() {
                 WebviewUrl::App("index.html".into()),
             )
             .title("52Hz")
-            .inner_size(320.0, 420.0)
+            .inner_size(320.0, 500.0)
             .visible(false)
             .resizable(false)
             .decorations(false)
@@ -185,6 +201,166 @@ pub fn run() {
                     overlay::unlock_presentation();
                 });
             });
+
+            // Listen for focus-done: open popup (normal) or auto-accept (headless)
+            let app_handle3 = app.handle().clone();
+            let focus_done_state = timer_state.clone();
+            app.listen("focus-done", move |_event| {
+                if std::env::var("FIFTYTWOHZ_HEADLESS").is_ok() {
+                    // Headless: skip popup, auto-accept break
+                    eprintln!("[52Hz] focus-done-popup → skipped (headless)");
+                    let state = focus_done_state.clone();
+                    let handle = app_handle3.clone();
+                    tauri::async_runtime::spawn(async move {
+                        let mut s = state.lock().await;
+                        let events = s.accept_break();
+                        let state_clone = s.clone();
+                        drop(s);
+                        for event in &events {
+                            match event {
+                                PhaseEvent::PhaseChanged => {
+                                    if cfg!(debug_assertions) {
+                                        eprintln!(
+                                            "[52Hz] phase-changed → {:?} (duration={}s)",
+                                            state_clone.phase, state_clone.phase_duration_secs
+                                        );
+                                    }
+                                    let _ = handle.emit("phase-changed", state_clone.clone());
+                                }
+                                PhaseEvent::BreakStart => {
+                                    if cfg!(debug_assertions) {
+                                        eprintln!(
+                                            "[52Hz] break-start → {:?}",
+                                            state_clone.phase
+                                        );
+                                    }
+                                    let _ = handle.emit("break-start", state_clone.clone());
+                                }
+                                _ => {}
+                            }
+                        }
+                        let _ = handle.emit("timer-tick", state_clone);
+                    });
+                    return;
+                }
+
+                // Normal mode: open focus-done popup
+                if cfg!(debug_assertions) {
+                    eprintln!("[52Hz] focus-done-popup → creating");
+                }
+                let handle = app_handle3.clone();
+                let _ = app_handle3.run_on_main_thread(move || {
+                    // Close existing popup if any
+                    if let Some(w) = handle.get_webview_window("focus-done-popup") {
+                        let _ = w.close();
+                    }
+                    // macOS: activate app BEFORE showing window
+                    // (Accessory policy apps need explicit activation)
+                    #[cfg(target_os = "macos")]
+                    {
+                        use objc2::MainThreadMarker;
+                        use objc2_app_kit::NSApplication;
+                        let mtm = unsafe { MainThreadMarker::new_unchecked() };
+                        let ns_app = NSApplication::sharedApplication(mtm);
+                        #[allow(deprecated)]
+                        ns_app.activateIgnoringOtherApps(true);
+                    }
+
+                    let popup_w = 300.0_f64;
+                    let popup_h = 200.0_f64;
+                    let margin = 20.0_f64;
+
+                    let (x, y) = if let Some(monitor) = handle
+                        .get_webview_window("main")
+                        .and_then(|w| w.primary_monitor().ok().flatten())
+                    {
+                        let scale = monitor.scale_factor();
+                        let phys = monitor.size();
+                        let lw = phys.width as f64 / scale;
+                        let lh = phys.height as f64 / scale;
+                        (
+                            (lw - popup_w - margin).max(0.0),
+                            (lh * 0.05).max(margin), // 画面上端 5% の位置
+                        )
+                    } else {
+                        (margin, margin)
+                    };
+
+                    match WebviewWindowBuilder::new(
+                        &handle,
+                        "focus-done-popup",
+                        WebviewUrl::App("index.html?view=focus-done".into()),
+                    )
+                    .title("Focus Complete")
+                    .inner_size(popup_w, popup_h)
+                    .position(x, y)
+                    .visible(false) // create hidden, then show after setting level
+                    .resizable(false)
+                    .decorations(false)
+                    .skip_taskbar(true)
+                    .always_on_top(true)
+                    .focused(true)
+                    .build()
+                    {
+                        Ok(window) => {
+                            #[cfg(target_os = "macos")]
+                            {
+                                use objc2::rc::Retained;
+                                use objc2_app_kit::NSWindow;
+                                if let Ok(ns_window) = window.ns_window() {
+                                    unsafe {
+                                        let ns_win: Retained<NSWindow> =
+                                            Retained::retain(ns_window as *mut NSWindow)
+                                                .unwrap();
+                                        ns_win.setLevel(25); // NSStatusWindowLevel
+                                        ns_win.makeKeyAndOrderFront(None);
+                                    }
+                                }
+                            }
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                            eprintln!("[52Hz] focus-done-popup → created");
+                        }
+                        Err(e) => {
+                            eprintln!("[52Hz] focus-done-popup → FAILED: {}", e);
+                        }
+                    }
+                });
+            });
+
+            // Load saved settings from store before starting the timer
+            {
+                use tauri_plugin_store::StoreExt;
+                match app.store("settings.json") {
+                    Ok(store) => {
+                        let fm = store.get("focus_minutes").and_then(|v| v.as_f64());
+                        let sbs = store.get("short_break_minutes").and_then(|v| v.as_f64());
+                        let lbm = store.get("long_break_minutes").and_then(|v| v.as_f64());
+                        let sbbl = store.get("short_breaks_before_long").and_then(|v| v.as_f64());
+                        if fm.is_some() || sbs.is_some() || lbm.is_some() || sbbl.is_some() {
+                            let settings = TimerSettings {
+                                focus_duration_secs: fm
+                                    .map(|v| (v * 60.0) as u64)
+                                    .unwrap_or(1200),
+                                short_break_duration_secs: sbs
+                                    .map(|v| (v * 60.0) as u64)
+                                    .unwrap_or(60),
+                                long_break_duration_secs: lbm
+                                    .map(|v| (v * 60.0) as u64)
+                                    .unwrap_or(180),
+                                short_breaks_before_long: sbbl
+                                    .map(|v| v as u32)
+                                    .unwrap_or(3),
+                            };
+                            timer_state.try_lock().unwrap().apply_settings(settings);
+                            eprintln!("[52Hz] Loaded saved settings from store");
+                        }
+                    }
+                    Err(_) => {
+                        eprintln!("[52Hz] No settings store found, using defaults");
+                    }
+                }
+            }
 
             // Start the timer
             spawn_timer(app.handle().clone(), timer_state.clone());

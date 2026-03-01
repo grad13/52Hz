@@ -1,6 +1,15 @@
-use crate::timer::TimerSettings;
+use crate::timer::{PhaseEvent, TimerSettings};
 use crate::{overlay, tray, SharedTimerState};
 use tauri::{Emitter, Manager};
+use tauri_plugin_store::StoreExt;
+
+fn increment_today_sessions(app: &tauri::AppHandle) {
+    let today = chrono::Local::now().format("sessions_%Y-%m-%d").to_string();
+    if let Ok(store) = app.store("settings.json") {
+        let current = store.get(&today).and_then(|v| v.as_u64()).unwrap_or(0);
+        store.set(&today, serde_json::json!(current + 1));
+    }
+}
 
 pub(crate) async fn do_toggle_pause(app: &tauri::AppHandle, state: &SharedTimerState) -> bool {
     let mut s = state.lock().await;
@@ -79,6 +88,74 @@ pub(crate) async fn update_settings(
     s.apply_settings(settings);
     let _ = app.emit("timer-tick", s.clone());
     Ok(())
+}
+
+#[tauri::command]
+pub(crate) async fn accept_break(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, SharedTimerState>,
+) -> Result<(), String> {
+    let mut s = state.lock().await;
+    let events = s.accept_break();
+    let state_clone = s.clone();
+    drop(s);
+
+    for event in &events {
+        match event {
+            PhaseEvent::PhaseChanged => {
+                let _ = app.emit("phase-changed", state_clone.clone());
+            }
+            PhaseEvent::BreakStart => {
+                let _ = app.emit("break-start", state_clone.clone());
+            }
+            _ => {}
+        }
+    }
+    let _ = app.emit("timer-tick", state_clone);
+    increment_today_sessions(&app);
+    Ok(())
+}
+
+#[tauri::command]
+pub(crate) async fn extend_focus(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, SharedTimerState>,
+    secs: u64,
+) -> Result<(), String> {
+    let mut s = state.lock().await;
+    s.extend_focus(secs);
+    let _ = app.emit("timer-tick", s.clone());
+    Ok(())
+}
+
+#[tauri::command]
+pub(crate) async fn skip_break_from_focus(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, SharedTimerState>,
+) -> Result<(), String> {
+    let mut s = state.lock().await;
+    let events = s.skip_break_from_focus();
+    let state_clone = s.clone();
+    drop(s);
+
+    for event in &events {
+        if let PhaseEvent::PhaseChanged = event {
+            let _ = app.emit("phase-changed", state_clone.clone());
+        }
+    }
+    let _ = app.emit("timer-tick", state_clone);
+    increment_today_sessions(&app);
+    Ok(())
+}
+
+#[tauri::command]
+pub(crate) async fn get_today_sessions(app: tauri::AppHandle) -> Result<u64, String> {
+    let today = chrono::Local::now().format("sessions_%Y-%m-%d").to_string();
+    if let Ok(store) = app.store("settings.json") {
+        Ok(store.get(&today).and_then(|v| v.as_u64()).unwrap_or(0))
+    } else {
+        Ok(0)
+    }
 }
 
 #[tauri::command]

@@ -19,7 +19,7 @@ impl Default for TimerSettings {
     fn default() -> Self {
         Self {
             focus_duration_secs: 20 * 60,
-            short_break_duration_secs: 20,
+            short_break_duration_secs: 60,
             long_break_duration_secs: 3 * 60,
             short_breaks_before_long: 3,
         }
@@ -32,6 +32,7 @@ pub enum PhaseEvent {
     BreakStart,
     BreakEnd,
     PhaseChanged,
+    FocusDone,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -124,49 +125,96 @@ impl TimerState {
         }
 
         // Phase complete — transition
-        let old_phase = self.phase;
-
-        let next_phase = match self.phase {
+        match self.phase {
             TimerPhase::Focus => {
+                // Focus done: pause and emit FocusDone.
+                // The actual Break transition happens via accept_break().
                 self.short_break_count += 1;
-                if self.short_break_count > self.settings.short_breaks_before_long {
-                    self.short_break_count = 0;
-                    TimerPhase::LongBreak
-                } else {
-                    TimerPhase::ShortBreak
-                }
+                self.paused = true;
+                vec![PhaseEvent::FocusDone]
             }
-            TimerPhase::ShortBreak | TimerPhase::LongBreak => TimerPhase::Focus,
+            TimerPhase::ShortBreak | TimerPhase::LongBreak => {
+                let old_phase = self.phase;
+                self.phase = TimerPhase::Focus;
+                self.elapsed_secs = 0;
+                self.phase_duration_secs = self.settings.focus_duration_secs;
+
+                let mut events = vec![PhaseEvent::PhaseChanged];
+                if old_phase == TimerPhase::ShortBreak || old_phase == TimerPhase::LongBreak {
+                    events.push(PhaseEvent::BreakEnd);
+                }
+                events
+            }
+        }
+    }
+
+    /// Accept break after FocusDone. Transitions from Focus (paused) to
+    /// ShortBreak or LongBreak based on short_break_count.
+    /// Pre-condition: phase == Focus && paused == true.
+    pub fn accept_break(&mut self) -> Vec<PhaseEvent> {
+        if self.phase != TimerPhase::Focus || !self.paused {
+            return vec![];
+        }
+
+        let next_phase = if self.short_break_count > self.settings.short_breaks_before_long {
+            self.short_break_count = 0;
+            TimerPhase::LongBreak
+        } else {
+            TimerPhase::ShortBreak
         };
 
         self.phase = next_phase;
         self.elapsed_secs = 0;
         self.phase_duration_secs = match next_phase {
-            TimerPhase::Focus => self.settings.focus_duration_secs,
             TimerPhase::ShortBreak => self.settings.short_break_duration_secs,
             TimerPhase::LongBreak => self.settings.long_break_duration_secs,
+            TimerPhase::Focus => unreachable!(),
         };
+        self.paused = false;
 
-        let mut events = vec![PhaseEvent::PhaseChanged];
-        match next_phase {
-            TimerPhase::ShortBreak | TimerPhase::LongBreak => {
-                events.push(PhaseEvent::BreakStart);
-            }
-            TimerPhase::Focus => {
-                if old_phase == TimerPhase::ShortBreak || old_phase == TimerPhase::LongBreak {
-                    events.push(PhaseEvent::BreakEnd);
-                }
-            }
+        vec![PhaseEvent::PhaseChanged, PhaseEvent::BreakStart]
+    }
+
+    /// Extend focus duration after FocusDone.
+    /// Pre-condition: phase == Focus && paused == true.
+    pub fn extend_focus(&mut self, secs: u64) {
+        if self.phase != TimerPhase::Focus || !self.paused {
+            return;
         }
+        self.phase_duration_secs = self.phase_duration_secs.saturating_add(secs);
+        self.paused = false;
+    }
 
-        events
+    /// Skip break from FocusDone and start next Focus immediately.
+    /// Pre-condition: phase == Focus && paused == true.
+    pub fn skip_break_from_focus(&mut self) -> Vec<PhaseEvent> {
+        if self.phase != TimerPhase::Focus || !self.paused {
+            return vec![];
+        }
+        self.elapsed_secs = 0;
+        self.phase_duration_secs = self.settings.focus_duration_secs;
+        self.paused = false;
+        vec![PhaseEvent::PhaseChanged]
     }
 
     /// Convenience: advance + try_transition in one call.
-    /// Used in tests and any context where the intermediate remaining=0
-    /// state doesn't need to be observed.
+    /// Auto-accepts FocusDone so existing cycle tests work unchanged.
+    /// Use tick_raw() to observe FocusDone directly.
     #[cfg(test)]
     pub fn tick(&mut self) -> Vec<PhaseEvent> {
+        self.advance();
+        let events = self.try_transition();
+        if events.contains(&PhaseEvent::FocusDone) {
+            let mut all = events;
+            all.extend(self.accept_break());
+            return all;
+        }
+        events
+    }
+
+    /// Raw advance + try_transition without auto-accepting FocusDone.
+    #[cfg(test)]
+    pub fn tick_raw(&mut self) -> Vec<PhaseEvent> {
         self.advance();
         self.try_transition()
     }

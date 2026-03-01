@@ -74,12 +74,19 @@ fn write_settings_store(json: &str) {
     eprintln!("[test] Wrote store: {}", json);
 }
 
-/// Run binary and assert it stays alive for `secs` seconds.
-/// Returns the captured stderr output for further assertions.
-fn run_and_check_alive(env_vars: &[(&str, &str)], test_name: &str, secs: u64) -> String {
+/// Run binary with given env vars for `secs` seconds, then kill and return stderr.
+/// If `headless` is true, sets FIFTYTWOHZ_HEADLESS=1.
+fn run_app(
+    env_vars: &[(&str, &str)],
+    test_name: &str,
+    secs: u64,
+    headless: bool,
+) -> String {
     let mut cmd = Command::new(binary_path());
     cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-    cmd.env("FIFTYTWOHZ_HEADLESS", "1");
+    if headless {
+        cmd.env("FIFTYTWOHZ_HEADLESS", "1");
+    }
     for (k, v) in env_vars {
         cmd.env(k, v);
     }
@@ -142,6 +149,11 @@ fn run_and_check_alive(env_vars: &[(&str, &str)], test_name: &str, secs: u64) ->
         test_name, secs
     );
     stderr
+}
+
+/// Run binary in HEADLESS mode. Shorthand for existing tests.
+fn run_and_check_alive(env_vars: &[(&str, &str)], test_name: &str, secs: u64) -> String {
+    run_app(env_vars, test_name, secs, true)
 }
 
 /// Assert overlay lifecycle from stderr log.
@@ -212,6 +224,40 @@ fn assert_presentation_options_lifecycle(stderr: &str, min_locks: usize, min_res
         "Too many unmatched presentation-options locks: locked={}, restored={}.\nStderr:\n{}",
         locked,
         restored,
+        stderr
+    );
+}
+
+/// Assert focus-done event chain is complete:
+/// 1. FocusDone fires (focus-done → paused)
+/// 2. Popup handling runs (focus-done-popup → skipped/created)
+/// 3. Break starts after
+fn assert_focus_done_lifecycle(stderr: &str, min_focus_done: usize) {
+    let focus_done_fired = stderr.matches("focus-done → paused").count();
+    let popup_handled = stderr.matches("focus-done-popup").count();
+
+    eprintln!(
+        "[assert_focus_done] fired={}, popup_handled={}",
+        focus_done_fired, popup_handled
+    );
+
+    assert!(
+        focus_done_fired >= min_focus_done,
+        "Expected at least {} focus-done events, got {}.\nStderr:\n{}",
+        min_focus_done,
+        focus_done_fired,
+        stderr
+    );
+
+    // Every focus-done must be handled (popup created or skipped).
+    // This catches the bug where HEADLESS auto-accepts in spawn_timer
+    // and never reaches the listener.
+    assert!(
+        popup_handled >= min_focus_done,
+        "Expected at least {} popup handling events, got {}.\n\
+         The focus-done listener is not being reached.\nStderr:\n{}",
+        min_focus_done,
+        popup_handled,
         stderr
     );
 }
@@ -294,6 +340,7 @@ fn fast_timer_90s_phase_transitions_with_vite() {
         90,
     );
 
+    assert_focus_done_lifecycle(&stderr, 5);
     assert_overlay_lifecycle(&stderr, 5, 5);
     assert_fast_timer_durations(&stderr);
     assert_presentation_options_lifecycle(&stderr, 5, 5);
@@ -334,6 +381,63 @@ fn fast_timer_60s_phase_transitions_without_vite() {
 // Tests: Store interaction
 // ---------------------------------------------------------------
 
+// ---------------------------------------------------------------
+// Tests: Focus-done popup (NON-HEADLESS — tests real popup creation)
+// ---------------------------------------------------------------
+
+/// Verify the focus-done popup is actually created (not just the event chain).
+/// Runs WITHOUT HEADLESS so the real WebviewWindow creation path is exercised.
+///
+/// Fast timer: focus=5s. After ~5s, FocusDone fires and the listener
+/// attempts to create the popup window. Timer stays paused (no break
+/// overlay, no UI lockdown).
+///
+/// Asserts:
+///   1. "focus-done → paused" appears (FocusDone event fired)
+///   2. "focus-done-popup → created" appears (window creation succeeded)
+///   3. "focus-done-popup → FAILED" does NOT appear
+#[test]
+#[serial]
+fn focus_done_popup_actually_created() {
+    build_binary();
+    clear_settings_store();
+    let _vite = start_vite();
+
+    // NOT headless — exercises the real popup creation path
+    let stderr = run_app(
+        &[("FIFTYTWOHZ_TEST_FAST_TIMER", "1")],
+        "focus_done_popup_real",
+        15,
+        false,
+    );
+
+    // FocusDone event must have fired
+    assert!(
+        stderr.contains("focus-done → paused"),
+        "FocusDone event never fired.\nStderr:\n{}",
+        stderr
+    );
+
+    // Popup creation must NOT have failed
+    let failure_lines: Vec<&str> = stderr
+        .lines()
+        .filter(|l| l.contains("focus-done-popup → FAILED"))
+        .collect();
+    assert!(
+        failure_lines.is_empty(),
+        "Popup creation failed:\n{}\nFull stderr:\n{}",
+        failure_lines.join("\n"),
+        stderr
+    );
+
+    // Popup must have been created
+    assert!(
+        stderr.contains("focus-done-popup → created"),
+        "Popup was never created. The listener may not be receiving the event.\nStderr:\n{}",
+        stderr
+    );
+}
+
 /// When the store is empty, fast timer env-var settings are not overridden.
 /// All logged phase durations must match the env-var values (5s/3s/5s).
 #[test]
@@ -372,7 +476,7 @@ fn store_empty_fast_timer_durations_correct() {
 fn store_values_override_fast_timer() {
     build_binary();
     write_settings_store(
-        r#"{"focus_minutes":1,"short_break_secs":3,"long_break_minutes":1,"short_breaks_before_long":2}"#,
+        r#"{"focus_minutes":1,"short_break_minutes":0.05,"long_break_minutes":1,"short_breaks_before_long":2}"#,
     );
     let _vite = start_vite();
 
@@ -407,7 +511,7 @@ fn store_values_override_fast_timer() {
 fn store_values_applied_on_normal_startup() {
     build_binary();
     write_settings_store(
-        r#"{"focus_minutes":1,"short_break_secs":5,"long_break_minutes":1,"short_breaks_before_long":2}"#,
+        r#"{"focus_minutes":1,"short_break_minutes":0.05,"long_break_minutes":1,"short_breaks_before_long":2}"#,
     );
     let _vite = start_vite();
 
