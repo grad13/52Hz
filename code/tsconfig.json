@@ -9,6 +9,9 @@
     "checkJs": true,
     "isolatedModules": true,
     "moduleDetection": "force",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "@code/*": ["./*"]
+    }
   }
 }

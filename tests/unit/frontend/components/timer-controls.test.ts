@@ -8,7 +8,7 @@
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
-import TimerControls from '../../../../code/frontend/components/TimerControls.svelte';
+import TimerControls from '@code/frontend/components/TimerControls.svelte';
 
 afterEach(() => { cleanup(); });
 

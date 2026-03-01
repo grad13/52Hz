@@ -8,7 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
-import BreakOverlay from '../../../../code/frontend/components/BreakOverlay.svelte';
+import BreakOverlay from '@code/frontend/components/BreakOverlay.svelte';
 
 afterEach(() => { cleanup(); });
 
@@ -50,26 +50,26 @@ vi.mock('@tauri-apps/api/event', () => ({
 
 // --- timer.ts mock ---
 
-vi.mock('../../../../code/frontend/lib/timer', () => ({
-  remainingSecs: (...args: unknown[]) => mockRemainingSecs(...args),
-  formatTime: (...args: unknown[]) => mockFormatTime(...args),
-  getTimerState: (...args: unknown[]) => mockGetTimerState(...args),
+vi.mock('@code/frontend/lib/timer', () => ({
+  remainingSecs: mockRemainingSecs,
+  formatTime: mockFormatTime,
+  getTimerState: mockGetTimerState,
   pauseTimer: vi.fn(),
   resumeTimer: vi.fn(),
   togglePause: vi.fn(),
-  skipBreak: (...args: unknown[]) => mockSkipBreak(...args),
+  skipBreak: mockSkipBreak,
   updateSettings: vi.fn(),
   closeBreakOverlay: vi.fn(),
   quitApp: vi.fn(),
-  onTimerTick: (...args: unknown[]) => mockOnTimerTick(...args),
+  onTimerTick: mockOnTimerTick,
   onPhaseChanged: vi.fn().mockResolvedValue(vi.fn()),
   onBreakStart: vi.fn().mockResolvedValue(vi.fn()),
-  onBreakEnd: (...args: unknown[]) => mockOnBreakEnd(...args),
+  onBreakEnd: mockOnBreakEnd,
 }));
 
 // --- settings-store mock ---
 
-vi.mock('../../../../code/frontend/lib/settings-store', () => ({
+vi.mock('@code/frontend/lib/settings-store', () => ({
   loadSettings: vi.fn(),
   saveSettings: vi.fn(),
   toTimerSettings: vi.fn(),

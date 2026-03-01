@@ -8,7 +8,7 @@
 
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/svelte';
-import TimerStatus from '../../../../code/frontend/components/TimerStatus.svelte';
+import TimerStatus from '@code/frontend/components/TimerStatus.svelte';
 
 afterEach(() => { cleanup(); });
 
