@@ -80,3 +80,19 @@ export function onBreakStart(callback: (state: TimerState) => void) {
 export function onBreakEnd(callback: () => void) {
   return listen("break-end", () => callback());
 }
+
+export async function acceptBreak(): Promise<void> {
+  return invoke("accept_break");
+}
+
+export async function extendFocus(secs: number): Promise<void> {
+  return invoke("extend_focus", { secs });
+}
+
+export async function skipBreakFromFocus(): Promise<void> {
+  return invoke("skip_break_from_focus");
+}
+
+export async function getTodaySessions(): Promise<number> {
+  return invoke("get_today_sessions");
+}

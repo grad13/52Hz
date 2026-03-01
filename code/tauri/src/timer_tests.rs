@@ -22,6 +22,15 @@
         last_events
     }
 
+    /// Tick n times using tick_raw (no FocusDone auto-accept).
+    fn tick_n_raw(state: &mut TimerState, n: usize) -> Vec<PhaseEvent> {
+        let mut last_events = vec![];
+        for _ in 0..n {
+            last_events = state.tick_raw();
+        }
+        last_events
+    }
+
     /// Tick n times and return all events collected from every tick.
     fn tick_n_all_events(state: &mut TimerState, n: usize) -> Vec<Vec<PhaseEvent>> {
         (0..n).map(|_| state.tick()).collect()
@@ -1205,23 +1214,23 @@
     /// The frontend reads those and constructs TimerSettings.
     #[test]
     fn store_json_to_timer_settings() {
-        let store_json = r#"{"focus_minutes":1,"short_break_secs":3,"long_break_minutes":1,"short_breaks_before_long":2}"#;
+        let store_json = r#"{"focus_minutes":1,"short_break_minutes":2,"long_break_minutes":1,"short_breaks_before_long":2}"#;
         let store: serde_json::Value = serde_json::from_str(store_json).unwrap();
 
         let focus_minutes = store["focus_minutes"].as_u64().unwrap();
-        let short_break_secs = store["short_break_secs"].as_u64().unwrap();
+        let short_break_minutes = store["short_break_minutes"].as_u64().unwrap();
         let long_break_minutes = store["long_break_minutes"].as_u64().unwrap();
         let short_breaks_before_long = store["short_breaks_before_long"].as_u64().unwrap() as u32;
 
         let settings = TimerSettings {
             focus_duration_secs: focus_minutes * 60,
-            short_break_duration_secs: short_break_secs,
+            short_break_duration_secs: short_break_minutes * 60,
             long_break_duration_secs: long_break_minutes * 60,
             short_breaks_before_long,
         };
 
         assert_eq!(settings.focus_duration_secs, 60);
-        assert_eq!(settings.short_break_duration_secs, 3);
+        assert_eq!(settings.short_break_duration_secs, 120);
         assert_eq!(settings.long_break_duration_secs, 60);
         assert_eq!(settings.short_breaks_before_long, 2);
     }
@@ -1248,30 +1257,38 @@
             focus_remaining.push(s.remaining_secs());
             let events = s.try_transition();
             if !events.is_empty() {
-                // Transition happened
+                // FocusDone: timer pauses, remaining=0 is observable
+                assert!(events.contains(&PhaseEvent::FocusDone));
                 break;
             }
         }
 
-        // The user sees: 3, 2, 1, 0 then transition to break
+        // The user sees: 3, 2, 1, 0 then FocusDone (paused)
         // (remaining=0 is observable between advance() and try_transition())
         assert_eq!(
             focus_remaining,
             vec![3, 2, 1, 0],
-            "Countdown should show [3, 2, 1, 0] before transition, got {:?}",
+            "Countdown should show [3, 2, 1, 0] before FocusDone, got {:?}",
             focus_remaining
         );
+        // Phase stays Focus (paused) until accept_break
+        assert_eq!(s.phase, TimerPhase::Focus);
+        assert!(s.paused);
+
+        // After accept_break, transitions to break
+        let events = s.accept_break();
         assert_eq!(s.phase, TimerPhase::ShortBreak);
+        assert!(events.contains(&PhaseEvent::BreakStart));
     }
 
     #[test]
     fn default_settings_match_frontend_defaults() {
         let defaults = TimerSettings::default();
 
-        // Frontend defaults: focusMinutes=20, shortBreakSecs=20,
+        // Frontend defaults: focusMinutes=20, shortBreakMinutes=1,
         // longBreakMinutes=3, shortBreaksBeforeLong=3
         let frontend_focus_minutes: u64 = 20;
-        let frontend_short_break_secs: u64 = 20;
+        let frontend_short_break_minutes: u64 = 1;
         let frontend_long_break_minutes: u64 = 3;
         let frontend_short_breaks_before_long: u32 = 3;
 
@@ -1282,7 +1299,7 @@
         );
         assert_eq!(
             defaults.short_break_duration_secs,
-            frontend_short_break_secs,
+            frontend_short_break_minutes * 60,
             "Short break duration mismatch between frontend and backend defaults"
         );
         assert_eq!(
@@ -1389,4 +1406,254 @@
             events,
             s.phase
         );
+    }
+
+    // ---------------------------------------------------------------
+    // FocusDone: intermediate state after Focus completion
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn focus_done_returns_event_and_pauses() {
+        let mut s = TimerState::new(test_settings()); // focus=3
+        // Use tick_raw to observe FocusDone directly
+        let events = tick_n_raw(&mut s, 3);
+        assert!(events.contains(&PhaseEvent::FocusDone));
+        assert_eq!(s.phase, TimerPhase::Focus); // stays Focus
+        assert!(s.paused);
+    }
+
+    #[test]
+    fn focus_done_increments_short_break_count() {
+        let mut s = TimerState::new(test_settings());
+        assert_eq!(s.short_break_count, 0);
+        tick_n_raw(&mut s, 3); // FocusDone
+        assert_eq!(s.short_break_count, 1);
+    }
+
+    #[test]
+    fn focus_done_does_not_change_phase() {
+        let mut s = TimerState::new(test_settings());
+        tick_n_raw(&mut s, 3);
+        // Phase remains Focus, not ShortBreak
+        assert_eq!(s.phase, TimerPhase::Focus);
+        assert_eq!(s.elapsed_secs, 3); // elapsed preserved
+    }
+
+    // ---------------------------------------------------------------
+    // accept_break: FocusDone → Break
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn accept_break_to_short_break() {
+        let mut s = TimerState::new(test_settings()); // threshold=2
+        tick_n_raw(&mut s, 3); // FocusDone (count=1)
+        let events = s.accept_break();
+        assert_eq!(s.phase, TimerPhase::ShortBreak);
+        assert_eq!(s.elapsed_secs, 0);
+        assert_eq!(s.phase_duration_secs, 1); // short_break_duration
+        assert!(!s.paused);
+        assert!(events.contains(&PhaseEvent::PhaseChanged));
+        assert!(events.contains(&PhaseEvent::BreakStart));
+    }
+
+    #[test]
+    fn accept_break_to_long_break() {
+        let mut s = TimerState::new(test_settings()); // threshold=2
+        // Cycle through to count > threshold
+        // F(3)→FD→accept→S(1)→F(3)→FD→accept→S(1)→F(3)→FD (count=3, 3>2)
+        tick_n(&mut s, 3 + 1 + 3 + 1); // through 2 short cycles
+        tick_n_raw(&mut s, 3); // FocusDone (count=3)
+        assert_eq!(s.short_break_count, 3);
+        let events = s.accept_break();
+        assert_eq!(s.phase, TimerPhase::LongBreak);
+        assert_eq!(s.short_break_count, 0); // reset
+        assert_eq!(s.phase_duration_secs, 2); // long_break_duration
+        assert!(events.contains(&PhaseEvent::BreakStart));
+    }
+
+    #[test]
+    fn accept_break_unpauses() {
+        let mut s = TimerState::new(test_settings());
+        tick_n_raw(&mut s, 3);
+        assert!(s.paused);
+        s.accept_break();
+        assert!(!s.paused);
+    }
+
+    #[test]
+    fn accept_break_during_break_is_noop() {
+        let mut s = TimerState::new(test_settings());
+        s.phase = TimerPhase::ShortBreak;
+        s.phase_duration_secs = 1;
+        s.paused = true;
+        let events = s.accept_break();
+        assert!(events.is_empty());
+        assert_eq!(s.phase, TimerPhase::ShortBreak);
+    }
+
+    #[test]
+    fn accept_break_during_unpaused_focus_is_noop() {
+        let mut s = TimerState::new(test_settings());
+        s.tick(); // Focus, elapsed=1, not paused
+        let events = s.accept_break();
+        assert!(events.is_empty());
+        assert_eq!(s.phase, TimerPhase::Focus);
+        assert_eq!(s.elapsed_secs, 1);
+    }
+
+    // ---------------------------------------------------------------
+    // extend_focus: FocusDone → extend + resume
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn extend_focus_increases_duration() {
+        let mut s = TimerState::new(test_settings()); // focus=3
+        tick_n_raw(&mut s, 3); // FocusDone
+        assert_eq!(s.phase_duration_secs, 3);
+        s.extend_focus(60); // +1 minute
+        assert_eq!(s.phase_duration_secs, 63);
+    }
+
+    #[test]
+    fn extend_focus_unpauses() {
+        let mut s = TimerState::new(test_settings());
+        tick_n_raw(&mut s, 3);
+        assert!(s.paused);
+        s.extend_focus(60);
+        assert!(!s.paused);
+    }
+
+    #[test]
+    fn extend_focus_preserves_elapsed() {
+        let mut s = TimerState::new(test_settings()); // focus=3
+        tick_n_raw(&mut s, 3); // elapsed=3
+        s.extend_focus(60);
+        assert_eq!(s.elapsed_secs, 3); // preserved
+        assert_eq!(s.remaining_secs(), 60); // 63 - 3
+    }
+
+    #[test]
+    fn extend_focus_multiple_times() {
+        let mut s = TimerState::new(test_settings()); // focus=3
+        tick_n_raw(&mut s, 3); // FocusDone, elapsed=3, duration=3
+        s.extend_focus(60); // duration=63, unpaused
+        // Timer continues; advance to new FocusDone
+        for _ in 0..60 {
+            let events = s.tick_raw();
+            if events.contains(&PhaseEvent::FocusDone) {
+                // Second FocusDone
+                assert_eq!(s.elapsed_secs, 63);
+                s.extend_focus(30); // duration=93
+                assert_eq!(s.phase_duration_secs, 93);
+                assert_eq!(s.remaining_secs(), 30);
+                return;
+            }
+        }
+        panic!("Expected second FocusDone after extending");
+    }
+
+    #[test]
+    fn extend_focus_during_break_is_noop() {
+        let mut s = TimerState::new(test_settings());
+        s.phase = TimerPhase::ShortBreak;
+        s.phase_duration_secs = 1;
+        s.paused = true;
+        s.extend_focus(60);
+        assert_eq!(s.phase_duration_secs, 1); // unchanged
+        assert!(s.paused); // still paused
+    }
+
+    // ---------------------------------------------------------------
+    // skip_break_from_focus: FocusDone → next Focus
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn skip_break_from_focus_resets_to_focus() {
+        let mut s = TimerState::new(test_settings()); // focus=3
+        tick_n_raw(&mut s, 3); // FocusDone
+        let events = s.skip_break_from_focus();
+        assert_eq!(s.phase, TimerPhase::Focus);
+        assert_eq!(s.elapsed_secs, 0);
+        assert_eq!(s.phase_duration_secs, 3); // focus_duration
+        assert!(!s.paused);
+        assert!(events.contains(&PhaseEvent::PhaseChanged));
+        assert!(!events.contains(&PhaseEvent::BreakStart));
+        assert!(!events.contains(&PhaseEvent::BreakEnd));
+    }
+
+    #[test]
+    fn skip_break_from_focus_preserves_count() {
+        let mut s = TimerState::new(test_settings());
+        tick_n_raw(&mut s, 3); // FocusDone, count=1
+        assert_eq!(s.short_break_count, 1);
+        s.skip_break_from_focus();
+        assert_eq!(s.short_break_count, 1); // unchanged
+    }
+
+    #[test]
+    fn skip_break_from_focus_during_break_is_noop() {
+        let mut s = TimerState::new(test_settings());
+        s.phase = TimerPhase::ShortBreak;
+        s.phase_duration_secs = 1;
+        s.paused = true;
+        let events = s.skip_break_from_focus();
+        assert!(events.is_empty());
+        assert_eq!(s.phase, TimerPhase::ShortBreak);
+    }
+
+    // ---------------------------------------------------------------
+    // Full cycle with FocusDone
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn full_cycle_with_focus_done_accept() {
+        // Verify a full cycle using raw tick + explicit accept_break
+        let mut s = TimerState::new(test_settings()); // focus=3, short=1, long=2, threshold=2
+
+        // Focus(3) → FocusDone → accept → ShortBreak
+        let events = tick_n_raw(&mut s, 3);
+        assert!(events.contains(&PhaseEvent::FocusDone));
+        s.accept_break();
+        assert_eq!(s.phase, TimerPhase::ShortBreak);
+
+        // ShortBreak(1) → Focus
+        tick_n(&mut s, 1);
+        assert_eq!(s.phase, TimerPhase::Focus);
+
+        // Focus(3) → FocusDone → accept → ShortBreak
+        tick_n_raw(&mut s, 3);
+        s.accept_break();
+        assert_eq!(s.phase, TimerPhase::ShortBreak);
+
+        // ShortBreak(1) → Focus
+        tick_n(&mut s, 1);
+        assert_eq!(s.phase, TimerPhase::Focus);
+
+        // Focus(3) → FocusDone → accept → LongBreak (count=3 > 2)
+        tick_n_raw(&mut s, 3);
+        s.accept_break();
+        assert_eq!(s.phase, TimerPhase::LongBreak);
+        assert_eq!(s.short_break_count, 0);
+
+        // LongBreak(2) → Focus
+        tick_n(&mut s, 2);
+        assert_eq!(s.phase, TimerPhase::Focus);
+    }
+
+    #[test]
+    fn full_cycle_with_focus_done_skip() {
+        let mut s = TimerState::new(test_settings()); // threshold=2
+
+        // Focus(3) → FocusDone → skip → Focus (count stays 1)
+        tick_n_raw(&mut s, 3);
+        assert_eq!(s.short_break_count, 1);
+        s.skip_break_from_focus();
+        assert_eq!(s.phase, TimerPhase::Focus);
+        assert_eq!(s.short_break_count, 1);
+
+        // Focus(3) → FocusDone → accept → ShortBreak (count=2)
+        tick_n_raw(&mut s, 3);
+        assert_eq!(s.short_break_count, 2);
+        s.accept_break();
+        assert_eq!(s.phase, TimerPhase::ShortBreak);
     }

@@ -1,16 +1,20 @@
 <script lang="ts">
   let {
     focusMinutes = $bindable(),
-    shortBreakSecs = $bindable(),
+    shortBreakMinutes = $bindable(),
     longBreakMinutes = $bindable(),
     shortBreaksBeforeLong = $bindable(),
+    autostartEnabled = false,
     onSave,
+    onAutostartChange,
   }: {
     focusMinutes: number;
-    shortBreakSecs: number;
+    shortBreakMinutes: number;
     longBreakMinutes: number;
     shortBreaksBeforeLong: number;
+    autostartEnabled: boolean;
     onSave: () => void;
+    onAutostartChange: (enabled: boolean) => void;
   } = $props();
 </script>
 
@@ -35,11 +39,11 @@
       <input
         id="short-break"
         type="number"
-        min="5"
-        max="300"
-        bind:value={shortBreakSecs}
+        min="1"
+        max="30"
+        bind:value={shortBreakMinutes}
       />
-      <span class="unit">秒</span>
+      <span class="unit">分</span>
     </div>
   </div>
 
@@ -69,6 +73,19 @@
       />
       <span class="unit">回</span>
     </div>
+  </div>
+
+  <div class="field">
+    <label for="autostart">ログイン時に自動起動</label>
+    <label class="toggle">
+      <input
+        id="autostart"
+        type="checkbox"
+        checked={autostartEnabled}
+        onchange={(e) => onAutostartChange(e.currentTarget.checked)}
+      />
+      <span class="slider"></span>
+    </label>
   </div>
 
   <button class="save-btn" onclick={onSave}>設定を保存</button>
@@ -121,6 +138,48 @@
     font-size: 0.8rem;
     color: var(--text-secondary);
     width: 1.5em;
+  }
+
+  .toggle {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    cursor: pointer;
+  }
+
+  .toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    transition: background 0.2s;
+  }
+
+  .slider::before {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    left: 3px;
+    bottom: 3px;
+    background: var(--text);
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+
+  .toggle input:checked + .slider {
+    background: var(--success);
+  }
+
+  .toggle input:checked + .slider::before {
+    transform: translateX(16px);
   }
 
   .save-btn {
