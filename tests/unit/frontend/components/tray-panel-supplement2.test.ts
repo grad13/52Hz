@@ -112,6 +112,8 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
   saveSettings: mockSaveSettings,
   toTimerSettings: mockToTimerSettings,
   toDisplaySettings: vi.fn(),
+  loadPauseMediaOnBreak: vi.fn().mockResolvedValue(false),
+  savePauseMediaOnBreak: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- Helpers ---
