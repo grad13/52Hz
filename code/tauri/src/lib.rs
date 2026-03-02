@@ -30,11 +30,8 @@ fn spawn_timer(app_handle: tauri::AppHandle, state: SharedTimerState) {
             // Step 2: Emit the current state BEFORE checking for transitions.
             // This ensures the frontend sees remaining=0 before the phase changes.
             let title = s.tray_title();
-            let handle = app_handle.clone();
             let _ = app_handle.run_on_main_thread(move || {
-                if let Some(tray) = handle.tray_by_id("main-tray") {
-                    let _ = tray.set_title(Some(&title));
-                }
+                tray::update_tray_title(&title);
             });
             let _ = app_handle.emit("timer-tick", s.clone());
 
@@ -153,7 +150,7 @@ pub fn run() {
             .build()?;
 
             // Build tray icon with menu
-            let _tray = tray::build_tray(app, &initial_tray_title, timer_state.clone())?;
+            tray::build_tray(app, &initial_tray_title)?;
 
             // Hide from Dock
             #[cfg(target_os = "macos")]
