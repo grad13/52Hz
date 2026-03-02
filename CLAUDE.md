@@ -46,6 +46,12 @@ Tauri v2 + Svelte 5 + Rust で構成。
 
 上記構造に含まれないファイルを作成しない。
 
+## externals/ のルール
+
+- `externals/` はユーザが配置する資料置き場。Claude が直接改変しない。
+- 参照・加工する場合は `code/_prototype/` 等にコピーしてから作業すること。
+- Claude が生成した試作物・中間ファイルは `code/_prototype/` に保存する。
+
 ## ビルド・テスト
 
 ### ビルド
