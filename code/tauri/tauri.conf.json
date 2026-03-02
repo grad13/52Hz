@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "52Hz",
-  "version": "0.2.1",
+  "version": "0.4.0",
   "identifier": "com.hz52.app",
   "build": {
     "frontendDist": "../dist",
