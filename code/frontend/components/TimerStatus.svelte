@@ -1,8 +1,11 @@
 <script lang="ts">
-  let { phaseLabel, remaining, paused }: {
+  let { phaseLabel, remaining, paused, cycleCompleted, cycleTotal, isLongBreak }: {
     phaseLabel: string;
     remaining: string;
     paused: boolean;
+    cycleCompleted: number;
+    cycleTotal: number;
+    isLongBreak: boolean;
   } = $props();
 </script>
 
@@ -12,6 +15,11 @@
   {#if paused}
     <div class="paused-badge">一時停止中</div>
   {/if}
+  <div class="cycle-dots">
+    {#each Array(cycleTotal) as _, i}
+      <span class="dot" class:filled={isLongBreak || i < cycleCompleted}></span>
+    {/each}
+  </div>
 </section>
 
 <style>
@@ -41,5 +49,24 @@
     background: var(--danger);
     border-radius: 4px;
     color: #fff;
+  }
+
+  .cycle-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    transition: background 0.3s;
+  }
+
+  .dot.filled {
+    background: var(--accent-light);
   }
 </style>

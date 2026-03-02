@@ -57,6 +57,10 @@ export async function closeBreakOverlay(): Promise<void> {
   return invoke("close_break_overlay");
 }
 
+export async function resetTimer(): Promise<void> {
+  return invoke("reset_timer");
+}
+
 export async function quitApp(): Promise<void> {
   return invoke("quit_app");
 }

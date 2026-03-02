@@ -9,6 +9,7 @@
     updateSettings,
     onTimerTick,
     onPhaseChanged,
+    resetTimer,
     quitApp,
     getTodaySessions,
   } from "../lib/timer";
@@ -16,6 +17,8 @@
     loadSettings,
     saveSettings,
     toTimerSettings,
+    loadPauseMediaOnBreak,
+    savePauseMediaOnBreak,
   } from "../lib/settings-store";
   import {
     enable as enableAutostart,
@@ -31,17 +34,33 @@
   let phaseLabel = $state("Focus");
   let paused = $state(false);
 
+  let cycleCompleted = $derived.by(() => {
+    if (!timerState) return 0;
+    return timerState.short_break_count;
+  });
+  let cycleTotal = $derived.by(() => {
+    if (!timerState) return 1;
+    return timerState.settings.short_breaks_before_long + 1;
+  });
+  let isLongBreak = $derived.by(() => {
+    if (!timerState) return false;
+    return timerState.phase === "LongBreak";
+  });
+
   // Settings form values (in minutes/seconds for display)
   let focusMinutes = $state(20);
-  let shortBreakSecs = $state(20);
+  let shortBreakMinutes = $state(1);
   let longBreakMinutes = $state(3);
   let shortBreaksBeforeLong = $state(3);
 
+  let settingsLoaded = $state(false);
   let autostartEnabled = $state(false);
+  let pauseMediaOnBreak = $state(false);
   let todaySessions = $state(0);
 
   let unlistenTick: (() => void) | null = null;
   let unlistenPhaseChanged: (() => void) | null = null;
+  let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   const phaseLabels: Record<string, string> = {
     Focus: "フォーカス中",
@@ -61,9 +80,14 @@
   }
 
   async function handleSaveSettings() {
-    const display = { focusMinutes, shortBreakSecs, longBreakMinutes, shortBreaksBeforeLong };
+    const display = { focusMinutes, shortBreakMinutes, longBreakMinutes, shortBreaksBeforeLong };
     await updateSettings(toTimerSettings(display));
     await saveSettings(display);
+  }
+
+  async function handlePauseMediaChange(enabled: boolean) {
+    pauseMediaOnBreak = enabled;
+    await savePauseMediaOnBreak(enabled);
   }
 
   async function handleAutostartChange(enabled: boolean) {
@@ -83,16 +107,27 @@
     const saved = await loadSettings();
     if (saved) {
       focusMinutes = saved.focusMinutes;
-      shortBreakSecs = saved.shortBreakSecs;
+      shortBreakMinutes = saved.shortBreakMinutes;
       longBreakMinutes = saved.longBreakMinutes;
       shortBreaksBeforeLong = saved.shortBreaksBeforeLong;
       await updateSettings(toTimerSettings(saved));
     }
+    settingsLoaded = true;
   }
+
+  $effect(() => {
+    // Subscribe to all 4 settings values
+    const _deps = [focusMinutes, shortBreakMinutes, longBreakMinutes, shortBreaksBeforeLong];
+    void _deps;
+    if (!settingsLoaded) return;
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => handleSaveSettings(), 500);
+  });
 
   onMount(async () => {
     await loadSavedSettings();
     autostartEnabled = await isAutostartEnabled().catch(() => false);
+    pauseMediaOnBreak = await loadPauseMediaOnBreak();
     todaySessions = await getTodaySessions();
     const state = await getTimerState();
     handleTick(state);
@@ -113,18 +148,20 @@
     <h2>52Hz</h2>
   </header>
 
-  <TimerStatus {phaseLabel} {remaining} {paused} />
+  <TimerStatus {phaseLabel} {remaining} {paused} {cycleCompleted} {cycleTotal} {isLongBreak} />
   <div class="session-count">今日のセッション: {todaySessions} 回</div>
-  <TimerControls {paused} onTogglePause={handleTogglePause} onQuit={quitApp} />
+  <TimerControls {paused} onTogglePause={handleTogglePause} onStop={resetTimer} />
   <SettingsForm
     bind:focusMinutes
-    bind:shortBreakSecs
+    bind:shortBreakMinutes
     bind:longBreakMinutes
     bind:shortBreaksBeforeLong
     {autostartEnabled}
-    onSave={handleSaveSettings}
     onAutostartChange={handleAutostartChange}
+    {pauseMediaOnBreak}
+    onPauseMediaChange={handlePauseMediaChange}
   />
+  <button class="quit-btn" onclick={quitApp}>アプリを終了</button>
 </div>
 
 <style>
@@ -149,5 +186,21 @@
     font-size: 0.8rem;
     text-align: center;
     color: var(--text-secondary);
+  }
+
+  .quit-btn {
+    margin-top: auto;
+    padding: 0.4rem;
+    font-size: 0.75rem;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .quit-btn:hover {
+    color: var(--danger);
   }
 </style>

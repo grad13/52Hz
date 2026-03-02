@@ -38,6 +38,7 @@ const {
   mockOnTimerTick,
   mockRemainingSecs,
   mockFormatTime,
+  mockResetTimer,
 } = vi.hoisted(() => ({
   mockGetTimerState: vi.fn(),
   mockTogglePause: vi.fn(),
@@ -46,6 +47,7 @@ const {
   mockOnTimerTick: vi.fn().mockResolvedValue(vi.fn()),
   mockRemainingSecs: vi.fn(),
   mockFormatTime: vi.fn(),
+  mockResetTimer: vi.fn(),
 }));
 
 vi.mock('@code/frontend/lib/timer', () => ({
@@ -67,6 +69,7 @@ vi.mock('@code/frontend/lib/timer', () => ({
   acceptBreak: vi.fn(),
   extendFocus: vi.fn(),
   skipBreakFromFocus: vi.fn(),
+  resetTimer: mockResetTimer,
 }));
 
 vi.mock('@tauri-apps/plugin-autostart', () => ({
@@ -249,28 +252,37 @@ describe('TrayPanel', () => {
   // 4. Settings save flow
   // =========================================================================
 
-  it('4-1: handleSaveSettings が updateSettings → saveSettings の順で呼ばれる', async () => {
+  it('4-1: 設定変更後に debounce で updateSettings → saveSettings が呼ばれる', async () => {
     mockUpdateSettings.mockResolvedValue(undefined);
     mockSaveSettings.mockResolvedValue(undefined);
 
     render(TrayPanel);
 
+    // settingsLoaded が true になるのを待つ
     await vi.waitFor(() => {
-      expect(mockGetTimerState).toHaveBeenCalled();
+      expect(mockLoadSettings).toHaveBeenCalled();
     });
 
-    // Find and click the save button (SettingsForm emits onSave callback)
-    const saveButton = screen.getByRole('button', { name: /保存/i });
-    await fireEvent.click(saveButton);
+    // $effect の初回発火による保存を待つ
+    await new Promise(r => setTimeout(r, 600));
 
+    // 変更前の呼び出し回数を記録
+    const updateCallsBefore = mockUpdateSettings.mock.calls.length;
+    const saveCallsBefore = mockSaveSettings.mock.calls.length;
+
+    // 設定値を変更（input イベントでトリガー）
+    const focusInput = document.getElementById('focus') as HTMLInputElement;
+    await fireEvent.input(focusInput, { target: { value: '30' } });
+
+    // debounce (500ms) 後に追加の保存が呼ばれるのを待つ
     await vi.waitFor(() => {
-      expect(mockUpdateSettings).toHaveBeenCalledTimes(1);
-      expect(mockSaveSettings).toHaveBeenCalledTimes(1);
+      expect(mockUpdateSettings.mock.calls.length).toBeGreaterThan(updateCallsBefore);
+      expect(mockSaveSettings.mock.calls.length).toBeGreaterThan(saveCallsBefore);
+    }, { timeout: 2000 });
 
-      // Verify order: updateSettings is called before saveSettings
-      const updateCallOrder = mockUpdateSettings.mock.invocationCallOrder[0];
-      const saveCallOrder = mockSaveSettings.mock.invocationCallOrder[0];
-      expect(updateCallOrder).toBeLessThan(saveCallOrder);
-    });
+    // 最後の呼び出しペアで順序確認: updateSettings が saveSettings より先
+    const lastUpdateOrder = mockUpdateSettings.mock.invocationCallOrder[mockUpdateSettings.mock.calls.length - 1];
+    const lastSaveOrder = mockSaveSettings.mock.invocationCallOrder[mockSaveSettings.mock.calls.length - 1];
+    expect(lastUpdateOrder).toBeLessThan(lastSaveOrder);
   });
 });

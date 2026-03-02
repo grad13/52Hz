@@ -1,5 +1,5 @@
 use crate::timer::{PhaseEvent, TimerSettings};
-use crate::{overlay, tray, SharedTimerState};
+use crate::{overlay, SharedTimerState};
 use tauri::{Emitter, Manager};
 use tauri_plugin_store::StoreExt;
 
@@ -18,7 +18,6 @@ pub(crate) async fn do_toggle_pause(app: &tauri::AppHandle, state: &SharedTimerS
     let state_clone = s.clone();
     drop(s);
 
-    tray::sync_tray_pause_label(app, paused);
     let _ = app.emit("timer-tick", state_clone);
     paused
 }
@@ -33,25 +32,23 @@ pub(crate) async fn get_timer_state(
 
 #[tauri::command]
 pub(crate) async fn pause_timer(
-    app: tauri::AppHandle,
+    _app: tauri::AppHandle,
     state: tauri::State<'_, SharedTimerState>,
 ) -> Result<(), String> {
     let mut s = state.lock().await;
     s.paused = true;
     drop(s);
-    tray::sync_tray_pause_label(&app, true);
     Ok(())
 }
 
 #[tauri::command]
 pub(crate) async fn resume_timer(
-    app: tauri::AppHandle,
+    _app: tauri::AppHandle,
     state: tauri::State<'_, SharedTimerState>,
 ) -> Result<(), String> {
     let mut s = state.lock().await;
     s.paused = false;
     drop(s);
-    tray::sync_tray_pause_label(&app, false);
     Ok(())
 }
 
@@ -165,6 +162,19 @@ pub(crate) async fn open_break_overlay(app: tauri::AppHandle) -> Result<(), Stri
         let _ = overlay::create_break_overlay(&handle);
     })
     .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub(crate) async fn reset_timer(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, SharedTimerState>,
+) -> Result<(), String> {
+    let mut s = state.lock().await;
+    s.reset();
+    let state_clone = s.clone();
+    drop(s);
+    let _ = app.emit("timer-tick", state_clone);
+    Ok(())
 }
 
 #[tauri::command]

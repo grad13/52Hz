@@ -65,6 +65,7 @@ vi.mock('@code/frontend/lib/timer', () => ({
   togglePause: mockTogglePause,
   skipBreak: vi.fn(),
   updateSettings: mockUpdateSettings,
+  resetTimer: vi.fn(),
   closeBreakOverlay: vi.fn(),
   quitApp: mockQuitApp,
   onTimerTick: mockOnTimerTick,
@@ -221,11 +222,11 @@ describe('TrayPanel - supplement', () => {
   //   async function loadSavedSettings() {
   //     const saved = await loadSettings();
   //     if (saved) {
-  //       focusMinutes = saved.focusMinutes;           // L61
-  //       shortBreakSecs = saved.shortBreakSecs;       // L62
-  //       longBreakMinutes = saved.longBreakMinutes;    // L63
-  //       shortBreaksBeforeLong = saved.shortBreaksBeforeLong; // L64
-  //       await updateSettings(toTimerSettings(saved)); // L65
+  //       focusMinutes = saved.focusMinutes;                    // L61
+  //       shortBreakMinutes = saved.shortBreakMinutes;          // L62
+  //       longBreakMinutes = saved.longBreakMinutes;            // L63
+  //       shortBreaksBeforeLong = saved.shortBreaksBeforeLong;  // L64
+  //       await updateSettings(toTimerSettings(saved));         // L65
   //     }
   //   }
   // When saved !== null: state variables are updated, then
@@ -235,14 +236,14 @@ describe('TrayPanel - supplement', () => {
     it('保存済み設定が存在する場合 toTimerSettings → updateSettings が呼ばれる', async () => {
       const savedSettings = {
         focusMinutes: 30,
-        shortBreakSecs: 30,
+        shortBreakMinutes: 2,
         longBreakMinutes: 5,
         shortBreaksBeforeLong: 4,
       };
       mockLoadSettings.mockResolvedValue(savedSettings);
       const convertedSettings = {
         focus_duration_secs: 1800,
-        short_break_duration_secs: 30,
+        short_break_duration_secs: 120,
         long_break_duration_secs: 300,
         short_breaks_before_long: 4,
       };
@@ -264,7 +265,7 @@ describe('TrayPanel - supplement', () => {
     it('保存済み設定の値が SettingsForm に反映される', async () => {
       const savedSettings = {
         focusMinutes: 30,
-        shortBreakSecs: 45,
+        shortBreakMinutes: 3,
         longBreakMinutes: 10,
         shortBreaksBeforeLong: 5,
       };
@@ -273,8 +274,8 @@ describe('TrayPanel - supplement', () => {
       render(TrayPanel);
 
       // Code trace:
-      //   loadSavedSettings() → saved = { focusMinutes:30, shortBreakSecs:45, ... }
-      //   L61-64: focusMinutes=30, shortBreakSecs=45, longBreakMinutes=10, shortBreaksBeforeLong=5
+      //   loadSavedSettings() → saved = { focusMinutes:30, shortBreakMinutes:3, ... }
+      //   L61-64: focusMinutes=30, shortBreakMinutes=3, longBreakMinutes=10, shortBreaksBeforeLong=5
       //   These are bound to SettingsForm inputs via bind:value
       await vi.waitFor(() => {
         const focusInput = document.getElementById('focus') as HTMLInputElement;
@@ -283,7 +284,7 @@ describe('TrayPanel - supplement', () => {
         expect(focusInput.value).toBe('30');
 
         const shortBreakInput = document.getElementById('short-break') as HTMLInputElement;
-        expect(shortBreakInput.value).toBe('45');
+        expect(shortBreakInput.value).toBe('3');
 
         const longBreakInput = document.getElementById('long-break') as HTMLInputElement;
         expect(longBreakInput.value).toBe('10');

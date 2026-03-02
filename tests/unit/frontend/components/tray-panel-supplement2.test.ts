@@ -84,6 +84,7 @@ vi.mock('@code/frontend/lib/timer', () => ({
   updateSettings: mockUpdateSettings,
   closeBreakOverlay: vi.fn(),
   quitApp: mockQuitApp,
+  resetTimer: vi.fn(),
   onTimerTick: mockOnTimerTick,
   onPhaseChanged: mockOnPhaseChanged,
   onBreakStart: vi.fn().mockResolvedValue(vi.fn()),
@@ -205,14 +206,14 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
   // 6. quitApp (spec 7.2)
   // =========================================================================
 
-  it('6-1: 「✕ 終了」ボタンクリックで quitApp が呼ばれる', async () => {
+  it('6-1: 「アプリを終了」ボタンクリックで quitApp が呼ばれる', async () => {
     render(TrayPanel);
 
     await vi.waitFor(() => {
       expect(mockGetTimerState).toHaveBeenCalled();
     });
 
-    const quitButton = screen.getByText('✕ 終了');
+    const quitButton = screen.getByText('アプリを終了');
     await fireEvent.click(quitButton);
 
     expect(mockQuitApp).toHaveBeenCalledTimes(1);
