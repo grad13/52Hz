@@ -14,10 +14,9 @@ afterEach(() => { cleanup(); });
 
 const defaultProps = {
   focusMinutes: 25,
-  shortBreakSecs: 20,
+  shortBreakMinutes: 1,
   longBreakMinutes: 15,
   shortBreaksBeforeLong: 4,
-  onSave: vi.fn(),
 };
 
 describe('SettingsForm', () => {
@@ -29,18 +28,6 @@ describe('SettingsForm', () => {
     expect(screen.getByLabelText('長い休憩までの回数')).toBeTruthy();
   });
 
-  it('3-2: 保存ボタン "設定を保存" が表示される', () => {
-    render(SettingsForm, { props: { ...defaultProps } });
-    expect(screen.getByText('設定を保存')).toBeTruthy();
-  });
-
-  it('3-3: 保存ボタンクリックで onSave が呼ばれる', async () => {
-    const onSave = vi.fn();
-    render(SettingsForm, { props: { ...defaultProps, onSave } });
-    await fireEvent.click(screen.getByText('設定を保存'));
-    expect(onSave).toHaveBeenCalledTimes(1);
-  });
-
   it('3-4: フォーカス時間フィールドの min=1, max=120', () => {
     render(SettingsForm, { props: { ...defaultProps } });
     const input = document.getElementById('focus') as HTMLInputElement;
@@ -50,13 +37,13 @@ describe('SettingsForm', () => {
     expect(input.max).toBe('120');
   });
 
-  it('3-5: 短い休憩フィールドの min=5, max=300', () => {
+  it('3-5: 短い休憩フィールドの min=1, max属性なし', () => {
     render(SettingsForm, { props: { ...defaultProps } });
     const input = document.getElementById('short-break') as HTMLInputElement;
     expect(input).toBeTruthy();
     expect(input.type).toBe('number');
-    expect(input.min).toBe('5');
-    expect(input.max).toBe('300');
+    expect(input.min).toBe('1');
+    expect(input.max).toBe('');
   });
 
   it('3-6: 長い休憩フィールドの min=1, max=30', () => {

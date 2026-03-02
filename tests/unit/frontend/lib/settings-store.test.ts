@@ -18,7 +18,7 @@ vi.mock('@tauri-apps/plugin-store', () => ({
   load: vi.fn().mockResolvedValue(mockStore),
 }));
 
-import { toTimerSettings, toDisplaySettings, loadSettings, saveSettings } from '@code/frontend/lib/settings-store';
+import { toTimerSettings, toDisplaySettings, loadSettings, saveSettings, loadPauseMediaOnBreak, savePauseMediaOnBreak } from '@code/frontend/lib/settings-store';
 import type { DisplaySettings } from '@code/frontend/lib/settings-store';
 
 // ---------------------------------------------------------------------------
@@ -29,14 +29,14 @@ describe('toTimerSettings', () => {
   // | DisplaySettings field    | conversion | TimerSettings field          |
   // |--------------------------|------------|------------------------------|
   // | focusMinutes             | * 60       | focus_duration_secs          |
-  // | shortBreakSecs           | as-is      | short_break_duration_secs    |
+  // | shortBreakMinutes        | * 60       | short_break_duration_secs    |
   // | longBreakMinutes         | * 60       | long_break_duration_secs     |
   // | shortBreaksBeforeLong    | as-is      | short_breaks_before_long     |
 
   it('converts focusMinutes to focus_duration_secs (* 60)', () => {
     const d: DisplaySettings = {
       focusMinutes: 25,
-      shortBreakSecs: 20,
+      shortBreakMinutes: 1,
       longBreakMinutes: 5,
       shortBreaksBeforeLong: 3,
     };
@@ -44,21 +44,21 @@ describe('toTimerSettings', () => {
     expect(result.focus_duration_secs).toBe(25 * 60);
   });
 
-  it('copies shortBreakSecs to short_break_duration_secs as-is', () => {
+  it('converts shortBreakMinutes to short_break_duration_secs (* 60)', () => {
     const d: DisplaySettings = {
       focusMinutes: 25,
-      shortBreakSecs: 30,
+      shortBreakMinutes: 2,
       longBreakMinutes: 5,
       shortBreaksBeforeLong: 3,
     };
     const result = toTimerSettings(d);
-    expect(result.short_break_duration_secs).toBe(30);
+    expect(result.short_break_duration_secs).toBe(120);
   });
 
   it('converts longBreakMinutes to long_break_duration_secs (* 60)', () => {
     const d: DisplaySettings = {
       focusMinutes: 25,
-      shortBreakSecs: 20,
+      shortBreakMinutes: 1,
       longBreakMinutes: 10,
       shortBreaksBeforeLong: 3,
     };
@@ -69,7 +69,7 @@ describe('toTimerSettings', () => {
   it('copies shortBreaksBeforeLong to short_breaks_before_long as-is', () => {
     const d: DisplaySettings = {
       focusMinutes: 25,
-      shortBreakSecs: 20,
+      shortBreakMinutes: 1,
       longBreakMinutes: 5,
       shortBreaksBeforeLong: 4,
     };
@@ -80,30 +80,30 @@ describe('toTimerSettings', () => {
   it('converts all fields correctly for typical values', () => {
     const d: DisplaySettings = {
       focusMinutes: 20,
-      shortBreakSecs: 20,
+      shortBreakMinutes: 1,
       longBreakMinutes: 3,
       shortBreaksBeforeLong: 3,
     };
     const result = toTimerSettings(d);
     expect(result).toEqual({
       focus_duration_secs: 1200,
-      short_break_duration_secs: 20,
+      short_break_duration_secs: 60,
       long_break_duration_secs: 180,
       short_breaks_before_long: 3,
     });
   });
 
-  it('handles minimum boundary values (1 minute, 1 sec, 1 minute, 1 break)', () => {
+  it('handles minimum boundary values (1 minute, 1 minute, 1 minute, 1 break)', () => {
     const d: DisplaySettings = {
       focusMinutes: 1,
-      shortBreakSecs: 1,
+      shortBreakMinutes: 1,
       longBreakMinutes: 1,
       shortBreaksBeforeLong: 1,
     };
     const result = toTimerSettings(d);
     expect(result).toEqual({
       focus_duration_secs: 60,
-      short_break_duration_secs: 1,
+      short_break_duration_secs: 60,
       long_break_duration_secs: 60,
       short_breaks_before_long: 1,
     });
@@ -112,7 +112,7 @@ describe('toTimerSettings', () => {
   it('handles large values', () => {
     const d: DisplaySettings = {
       focusMinutes: 120,
-      shortBreakSecs: 300,
+      shortBreakMinutes: 5,
       longBreakMinutes: 60,
       shortBreaksBeforeLong: 10,
     };
@@ -134,14 +134,14 @@ describe('toDisplaySettings', () => {
   // | TimerSettings field          | conversion | DisplaySettings field    |
   // |------------------------------|------------|--------------------------|
   // | focus_duration_secs          | / 60       | focusMinutes             |
-  // | short_break_duration_secs    | as-is      | shortBreakSecs           |
+  // | short_break_duration_secs    | / 60       | shortBreakMinutes        |
   // | long_break_duration_secs     | / 60       | longBreakMinutes         |
   // | short_breaks_before_long     | as-is      | shortBreaksBeforeLong    |
 
   it('converts focus_duration_secs to focusMinutes (/ 60)', () => {
     const s = {
       focus_duration_secs: 1500,
-      short_break_duration_secs: 20,
+      short_break_duration_secs: 60,
       long_break_duration_secs: 300,
       short_breaks_before_long: 3,
     };
@@ -149,21 +149,21 @@ describe('toDisplaySettings', () => {
     expect(result.focusMinutes).toBe(25);
   });
 
-  it('copies short_break_duration_secs to shortBreakSecs as-is', () => {
+  it('converts short_break_duration_secs to shortBreakMinutes (/ 60)', () => {
     const s = {
       focus_duration_secs: 1200,
-      short_break_duration_secs: 45,
+      short_break_duration_secs: 120,
       long_break_duration_secs: 300,
       short_breaks_before_long: 3,
     };
     const result = toDisplaySettings(s);
-    expect(result.shortBreakSecs).toBe(45);
+    expect(result.shortBreakMinutes).toBe(2);
   });
 
   it('converts long_break_duration_secs to longBreakMinutes (/ 60)', () => {
     const s = {
       focus_duration_secs: 1200,
-      short_break_duration_secs: 20,
+      short_break_duration_secs: 60,
       long_break_duration_secs: 600,
       short_breaks_before_long: 3,
     };
@@ -174,7 +174,7 @@ describe('toDisplaySettings', () => {
   it('copies short_breaks_before_long to shortBreaksBeforeLong as-is', () => {
     const s = {
       focus_duration_secs: 1200,
-      short_break_duration_secs: 20,
+      short_break_duration_secs: 60,
       long_break_duration_secs: 300,
       short_breaks_before_long: 5,
     };
@@ -185,14 +185,14 @@ describe('toDisplaySettings', () => {
   it('converts all fields correctly for typical values', () => {
     const s = {
       focus_duration_secs: 1200,
-      short_break_duration_secs: 20,
+      short_break_duration_secs: 60,
       long_break_duration_secs: 180,
       short_breaks_before_long: 3,
     };
     const result = toDisplaySettings(s);
     expect(result).toEqual({
       focusMinutes: 20,
-      shortBreakSecs: 20,
+      shortBreakMinutes: 1,
       longBreakMinutes: 3,
       shortBreaksBeforeLong: 3,
     });
@@ -201,14 +201,14 @@ describe('toDisplaySettings', () => {
   it('handles minimum boundary values', () => {
     const s = {
       focus_duration_secs: 60,
-      short_break_duration_secs: 1,
+      short_break_duration_secs: 60,
       long_break_duration_secs: 60,
       short_breaks_before_long: 1,
     };
     const result = toDisplaySettings(s);
     expect(result).toEqual({
       focusMinutes: 1,
-      shortBreakSecs: 1,
+      shortBreakMinutes: 1,
       longBreakMinutes: 1,
       shortBreaksBeforeLong: 1,
     });
@@ -222,7 +222,7 @@ describe('round-trip invariant: toDisplaySettings(toTimerSettings(d)) === d', ()
   it('preserves default values through round-trip', () => {
     const d: DisplaySettings = {
       focusMinutes: 20,
-      shortBreakSecs: 20,
+      shortBreakMinutes: 1,
       longBreakMinutes: 3,
       shortBreaksBeforeLong: 3,
     };
@@ -232,7 +232,7 @@ describe('round-trip invariant: toDisplaySettings(toTimerSettings(d)) === d', ()
   it('preserves typical Pomodoro values through round-trip', () => {
     const d: DisplaySettings = {
       focusMinutes: 25,
-      shortBreakSecs: 300,
+      shortBreakMinutes: 5,
       longBreakMinutes: 15,
       shortBreaksBeforeLong: 4,
     };
@@ -242,7 +242,7 @@ describe('round-trip invariant: toDisplaySettings(toTimerSettings(d)) === d', ()
   it('preserves minimum boundary values through round-trip', () => {
     const d: DisplaySettings = {
       focusMinutes: 1,
-      shortBreakSecs: 1,
+      shortBreakMinutes: 1,
       longBreakMinutes: 1,
       shortBreaksBeforeLong: 1,
     };
@@ -252,7 +252,7 @@ describe('round-trip invariant: toDisplaySettings(toTimerSettings(d)) === d', ()
   it('preserves large values through round-trip', () => {
     const d: DisplaySettings = {
       focusMinutes: 120,
-      shortBreakSecs: 600,
+      shortBreakMinutes: 10,
       longBreakMinutes: 60,
       shortBreaksBeforeLong: 10,
     };
@@ -272,7 +272,7 @@ describe('loadSettings', () => {
     mockStore.get.mockImplementation((key: string) => {
       const values: Record<string, number> = {
         focus_minutes: 25,
-        short_break_secs: 30,
+        short_break_minutes: 2,
         long_break_minutes: 5,
         short_breaks_before_long: 4,
       };
@@ -282,7 +282,7 @@ describe('loadSettings', () => {
     const result = await loadSettings();
     expect(result).toEqual({
       focusMinutes: 25,
-      shortBreakSecs: 30,
+      shortBreakMinutes: 2,
       longBreakMinutes: 5,
       shortBreaksBeforeLong: 4,
     });
@@ -305,17 +305,17 @@ describe('loadSettings', () => {
     const result = await loadSettings();
     expect(result).toEqual({
       focusMinutes: 30,
-      shortBreakSecs: 20,       // default
+      shortBreakMinutes: 1,     // default
       longBreakMinutes: 3,      // default
       shortBreaksBeforeLong: 3, // default
     });
   });
 
-  it('fills default for shortBreakSecs when only it is missing', async () => {
+  it('fills default for shortBreakMinutes when only it is missing', async () => {
     mockStore.get.mockImplementation((key: string) => {
       const values: Record<string, number | null> = {
         focus_minutes: 25,
-        short_break_secs: null,
+        short_break_minutes: null,
         long_break_minutes: 5,
         short_breaks_before_long: 4,
       };
@@ -325,7 +325,7 @@ describe('loadSettings', () => {
     const result = await loadSettings();
     expect(result).toEqual({
       focusMinutes: 25,
-      shortBreakSecs: 20,  // default
+      shortBreakMinutes: 1,  // default
       longBreakMinutes: 5,
       shortBreaksBeforeLong: 4,
     });
@@ -335,7 +335,7 @@ describe('loadSettings', () => {
     mockStore.get.mockImplementation((key: string) => {
       const values: Record<string, number | null> = {
         focus_minutes: 25,
-        short_break_secs: 30,
+        short_break_minutes: 2,
         long_break_minutes: null,
         short_breaks_before_long: 4,
       };
@@ -345,7 +345,7 @@ describe('loadSettings', () => {
     const result = await loadSettings();
     expect(result).toEqual({
       focusMinutes: 25,
-      shortBreakSecs: 30,
+      shortBreakMinutes: 2,
       longBreakMinutes: 3,  // default
       shortBreaksBeforeLong: 4,
     });
@@ -355,7 +355,7 @@ describe('loadSettings', () => {
     mockStore.get.mockImplementation((key: string) => {
       const values: Record<string, number | null> = {
         focus_minutes: 25,
-        short_break_secs: 30,
+        short_break_minutes: 2,
         long_break_minutes: 5,
         short_breaks_before_long: null,
       };
@@ -365,7 +365,7 @@ describe('loadSettings', () => {
     const result = await loadSettings();
     expect(result).toEqual({
       focusMinutes: 25,
-      shortBreakSecs: 30,
+      shortBreakMinutes: 2,
       longBreakMinutes: 5,
       shortBreaksBeforeLong: 3,  // default
     });
@@ -404,7 +404,7 @@ describe('loadSettings', () => {
     await loadSettings();
 
     expect(mockStore.get).toHaveBeenCalledWith('focus_minutes');
-    expect(mockStore.get).toHaveBeenCalledWith('short_break_secs');
+    expect(mockStore.get).toHaveBeenCalledWith('short_break_minutes');
     expect(mockStore.get).toHaveBeenCalledWith('long_break_minutes');
     expect(mockStore.get).toHaveBeenCalledWith('short_breaks_before_long');
   });
@@ -423,7 +423,7 @@ describe('saveSettings', () => {
 
     const d: DisplaySettings = {
       focusMinutes: 25,
-      shortBreakSecs: 30,
+      shortBreakMinutes: 2,
       longBreakMinutes: 5,
       shortBreaksBeforeLong: 4,
     };
@@ -431,7 +431,7 @@ describe('saveSettings', () => {
     await saveSettings(d);
 
     expect(mockStore.set).toHaveBeenCalledWith('focus_minutes', 25);
-    expect(mockStore.set).toHaveBeenCalledWith('short_break_secs', 30);
+    expect(mockStore.set).toHaveBeenCalledWith('short_break_minutes', 2);
     expect(mockStore.set).toHaveBeenCalledWith('long_break_minutes', 5);
     expect(mockStore.set).toHaveBeenCalledWith('short_breaks_before_long', 4);
   });
@@ -441,7 +441,7 @@ describe('saveSettings', () => {
 
     const d: DisplaySettings = {
       focusMinutes: 20,
-      shortBreakSecs: 20,
+      shortBreakMinutes: 1,
       longBreakMinutes: 3,
       shortBreaksBeforeLong: 3,
     };
@@ -457,7 +457,7 @@ describe('saveSettings', () => {
 
     const d: DisplaySettings = {
       focusMinutes: 20,
-      shortBreakSecs: 20,
+      shortBreakMinutes: 1,
       longBreakMinutes: 3,
       shortBreaksBeforeLong: 3,
     };
@@ -475,7 +475,7 @@ describe('saveSettings', () => {
 
     const d: DisplaySettings = {
       focusMinutes: 20,
-      shortBreakSecs: 20,
+      shortBreakMinutes: 1,
       longBreakMinutes: 3,
       shortBreaksBeforeLong: 3,
     };
@@ -489,11 +489,140 @@ describe('saveSettings', () => {
 
     const d: DisplaySettings = {
       focusMinutes: 20,
-      shortBreakSecs: 20,
+      shortBreakMinutes: 1,
       longBreakMinutes: 3,
       shortBreaksBeforeLong: 3,
     };
 
     await expect(saveSettings(d)).rejects.toThrow('Plugin error');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3.4 loadPauseMediaOnBreak
+// ---------------------------------------------------------------------------
+describe('loadPauseMediaOnBreak', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns true when pause_media_on_break is true in store', async () => {
+    mockStore.get.mockImplementation((key: string) => {
+      if (key === 'pause_media_on_break') return Promise.resolve(true);
+      return Promise.resolve(null);
+    });
+
+    const result = await loadPauseMediaOnBreak();
+    expect(result).toBe(true);
+  });
+
+  it('returns false when pause_media_on_break is false in store', async () => {
+    mockStore.get.mockImplementation((key: string) => {
+      if (key === 'pause_media_on_break') return Promise.resolve(false);
+      return Promise.resolve(null);
+    });
+
+    const result = await loadPauseMediaOnBreak();
+    expect(result).toBe(false);
+  });
+
+  it('returns false when pause_media_on_break is null (not set)', async () => {
+    mockStore.get.mockResolvedValue(null);
+
+    const result = await loadPauseMediaOnBreak();
+    expect(result).toBe(false);
+  });
+
+  it('returns false when store.get throws an error', async () => {
+    mockStore.get.mockRejectedValue(new Error('Store not available'));
+
+    const result = await loadPauseMediaOnBreak();
+    expect(result).toBe(false);
+  });
+
+  it('returns false when load() itself throws an error', async () => {
+    const { load } = await import('@tauri-apps/plugin-store');
+    (load as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Plugin not available'));
+
+    const result = await loadPauseMediaOnBreak();
+    expect(result).toBe(false);
+  });
+
+  it('calls store.get with "pause_media_on_break"', async () => {
+    mockStore.get.mockResolvedValue(null);
+
+    await loadPauseMediaOnBreak();
+
+    expect(mockStore.get).toHaveBeenCalledWith('pause_media_on_break');
+  });
+
+  it('calls load with "settings.json" and autoSave: true', async () => {
+    mockStore.get.mockResolvedValue(null);
+    const { load } = await import('@tauri-apps/plugin-store');
+
+    await loadPauseMediaOnBreak();
+
+    expect(load).toHaveBeenCalledWith(
+      'settings.json',
+      expect.objectContaining({ autoSave: true }),
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3.5 savePauseMediaOnBreak
+// ---------------------------------------------------------------------------
+describe('savePauseMediaOnBreak', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('writes true via store.set("pause_media_on_break", true)', async () => {
+    mockStore.set.mockResolvedValue(undefined);
+
+    await savePauseMediaOnBreak(true);
+
+    expect(mockStore.set).toHaveBeenCalledWith('pause_media_on_break', true);
+  });
+
+  it('writes false via store.set("pause_media_on_break", false)', async () => {
+    mockStore.set.mockResolvedValue(undefined);
+
+    await savePauseMediaOnBreak(false);
+
+    expect(mockStore.set).toHaveBeenCalledWith('pause_media_on_break', false);
+  });
+
+  it('calls store.set exactly 1 time', async () => {
+    mockStore.set.mockResolvedValue(undefined);
+
+    await savePauseMediaOnBreak(true);
+
+    expect(mockStore.set).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls load with "settings.json" and autoSave: true', async () => {
+    mockStore.set.mockResolvedValue(undefined);
+    const { load } = await import('@tauri-apps/plugin-store');
+
+    await savePauseMediaOnBreak(true);
+
+    expect(load).toHaveBeenCalledWith(
+      'settings.json',
+      expect.objectContaining({ autoSave: true }),
+    );
+  });
+
+  it('propagates errors from store.set to the caller', async () => {
+    mockStore.set.mockRejectedValue(new Error('Write failed'));
+
+    await expect(savePauseMediaOnBreak(true)).rejects.toThrow('Write failed');
+  });
+
+  it('propagates errors from load() to the caller', async () => {
+    const { load } = await import('@tauri-apps/plugin-store');
+    (load as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Plugin error'));
+
+    await expect(savePauseMediaOnBreak(true)).rejects.toThrow('Plugin error');
   });
 });
