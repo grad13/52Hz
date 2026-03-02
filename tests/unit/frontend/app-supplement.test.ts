@@ -53,6 +53,8 @@ const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => ({
     saveSettings: vi.fn(),
     toTimerSettings: vi.fn(),
     toDisplaySettings: vi.fn(),
+    loadPauseMediaOnBreak: vi.fn().mockResolvedValue(false),
+    savePauseMediaOnBreak: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
