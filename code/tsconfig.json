@@ -13,5 +13,7 @@
     "paths": {
       "@code/*": ["./*"]
     }
-  }
+  },
+  "include": ["frontend/**/*", "*.ts"],
+  "exclude": ["dist", "node_modules"]
 }
