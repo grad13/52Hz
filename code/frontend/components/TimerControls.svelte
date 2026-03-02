@@ -1,8 +1,8 @@
 <script lang="ts">
-  let { paused, onTogglePause, onQuit }: {
+  let { paused, onTogglePause, onStop }: {
     paused: boolean;
     onTogglePause: () => void;
-    onQuit: () => void;
+    onStop: () => void;
   } = $props();
 </script>
 
@@ -10,8 +10,8 @@
   <button class="control-btn" onclick={onTogglePause}>
     {paused ? "▶ 再開" : "⏸ 一時停止"}
   </button>
-  <button class="control-btn quit-btn" onclick={onQuit}>
-    ✕ 終了
+  <button class="control-btn stop-btn" onclick={onStop}>
+    ■ 停止
   </button>
 </section>
 
@@ -36,13 +36,13 @@
     background: var(--accent-light);
   }
 
-  .quit-btn {
+  .stop-btn {
     background: transparent;
     border-color: var(--danger);
     color: var(--danger);
   }
 
-  .quit-btn:hover {
+  .stop-btn:hover {
     background: var(--danger);
     color: #fff;
   }
