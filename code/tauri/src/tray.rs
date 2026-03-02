@@ -134,7 +134,7 @@ pub(crate) fn build_tray(
         let icon_bytes = include_bytes!("../icons/tray-icon.png");
         let ns_data = NSData::with_bytes(icon_bytes);
         if let Some(image) = NSImage::initWithData(NSImage::alloc(), &ns_data) {
-            image.setSize(NSSize::new(24.0, 24.0));
+            image.setSize(NSSize::new(28.6, 15.0));
             // Not template — we want color icon
             image.setTemplate(false);
             button.setImage(Some(&image));
