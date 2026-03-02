@@ -1,8 +1,10 @@
 mod commands;
+mod media;
 mod overlay;
 mod timer;
 mod tray;
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tauri::{Emitter, Listener, Manager, WebviewUrl, WebviewWindowBuilder};
@@ -123,6 +125,7 @@ pub fn run() {
             commands::get_today_sessions,
             commands::open_break_overlay,
             commands::close_break_overlay,
+            commands::reset_timer,
             commands::quit_app,
         ])
         .setup(move |app| {
@@ -158,22 +161,62 @@ pub fn run() {
                 .handle()
                 .set_activation_policy(tauri::ActivationPolicy::Accessory);
 
-            // Hide settings popup when it loses focus
+            // Hide settings popup when clicking outside the app (macOS)
+            // ActivationPolicy::Accessory prevents normal Focused(false) events,
+            // so we use NSEvent global monitor to detect clicks outside our app.
+            #[cfg(target_os = "macos")]
             if let Some(main_window) = app.get_webview_window("main") {
+                use objc2_app_kit::{NSEvent, NSEventMask};
+
                 let w = main_window.clone();
-                main_window.on_window_event(move |event| {
-                    if let tauri::WindowEvent::Focused(false) = event {
+                let block = block2::RcBlock::new(move |_event: std::ptr::NonNull<NSEvent>| {
+                    if w.is_visible().unwrap_or(false) {
+                        if cfg!(debug_assertions) {
+                            eprintln!("[52Hz] click outside detected → hiding main window");
+                        }
                         let _ = w.hide();
                     }
                 });
+
+                let monitor = NSEvent::addGlobalMonitorForEventsMatchingMask_handler(
+                    NSEventMask::LeftMouseDown,
+                    &block,
+                );
+                // Keep monitor and block alive for app lifetime
+                std::mem::forget(monitor);
+                std::mem::forget(block);
             }
+
+            // Media pause tracking flag
+            let media_paused_by_app = Arc::new(AtomicBool::new(false));
 
             // Listen for break-start to open overlay (must run on main thread for UI ops)
             let app_handle = app.handle().clone();
+            let media_flag_start = media_paused_by_app.clone();
             app.listen("break-start", move |_event| {
                 if cfg!(debug_assertions) {
                     eprintln!("[52Hz] break-start → opening overlay");
                 }
+
+                // Pause media if setting is enabled
+                #[cfg(target_os = "macos")]
+                {
+                    use tauri_plugin_store::StoreExt;
+                    let should_pause = app_handle
+                        .store("settings.json")
+                        .ok()
+                        .and_then(|s| s.get("pause_media_on_break"))
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false);
+                    if should_pause {
+                        if cfg!(debug_assertions) {
+                            eprintln!("[52Hz] break-start → pausing media");
+                        }
+                        media::send_play_pause();
+                        media_flag_start.store(true, Ordering::Relaxed);
+                    }
+                }
+
                 let handle = app_handle.clone();
                 let _ = app_handle.run_on_main_thread(move || {
                     let _ = overlay::create_break_overlay(&handle);
@@ -182,9 +225,21 @@ pub fn run() {
 
             // Listen for break-end to close overlay (must run on main thread for UI ops)
             let app_handle2 = app.handle().clone();
+            let media_flag_end = media_paused_by_app.clone();
             app.listen("break-end", move |_event| {
                 if cfg!(debug_assertions) {
                     eprintln!("[52Hz] break-end → closing overlay");
+                }
+
+                // Resume media if we paused it
+                #[cfg(target_os = "macos")]
+                {
+                    if media_flag_end.swap(false, Ordering::Relaxed) {
+                        if cfg!(debug_assertions) {
+                            eprintln!("[52Hz] break-end → resuming media");
+                        }
+                        media::send_play_pause();
+                    }
                 }
 
                 // Headless mode: no overlay was created — just emit the log.

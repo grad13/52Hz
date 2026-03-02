@@ -1,20 +1,22 @@
 <script lang="ts">
   let {
     focusMinutes = $bindable(),
-    shortBreakSecs = $bindable(),
+    shortBreakMinutes = $bindable(),
     longBreakMinutes = $bindable(),
     shortBreaksBeforeLong = $bindable(),
     autostartEnabled = false,
-    onSave,
     onAutostartChange,
+    pauseMediaOnBreak = false,
+    onPauseMediaChange,
   }: {
     focusMinutes: number;
-    shortBreakSecs: number;
+    shortBreakMinutes: number;
     longBreakMinutes: number;
     shortBreaksBeforeLong: number;
     autostartEnabled: boolean;
-    onSave: () => void;
     onAutostartChange: (enabled: boolean) => void;
+    pauseMediaOnBreak: boolean;
+    onPauseMediaChange: (enabled: boolean) => void;
   } = $props();
 </script>
 
@@ -39,11 +41,10 @@
       <input
         id="short-break"
         type="number"
-        min="5"
-        max="300"
-        bind:value={shortBreakSecs}
+        min="1"
+        bind:value={shortBreakMinutes}
       />
-      <span class="unit">秒</span>
+      <span class="unit">分</span>
     </div>
   </div>
 
@@ -76,6 +77,19 @@
   </div>
 
   <div class="field">
+    <label for="pause-media">休憩時にメディアを一時停止</label>
+    <label class="toggle">
+      <input
+        id="pause-media"
+        type="checkbox"
+        checked={pauseMediaOnBreak}
+        onchange={(e) => onPauseMediaChange(e.currentTarget.checked)}
+      />
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="field">
     <label for="autostart">ログイン時に自動起動</label>
     <label class="toggle">
       <input
@@ -88,7 +102,6 @@
     </label>
   </div>
 
-  <button class="save-btn" onclick={onSave}>設定を保存</button>
 </section>
 
 <style>
@@ -182,20 +195,4 @@
     transform: translateX(16px);
   }
 
-  .save-btn {
-    margin-top: auto;
-    padding: 0.5rem;
-    font-size: 0.9rem;
-    border: none;
-    border-radius: 6px;
-    background: var(--success);
-    color: #1a1a2e;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-
-  .save-btn:hover {
-    opacity: 0.9;
-  }
 </style>

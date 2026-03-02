@@ -78,6 +78,15 @@ impl TimerState {
         format!("{}{}", remaining, phase_label)
     }
 
+    /// Reset the timer to initial Focus state (elapsed=0, paused, short_break_count=0).
+    pub fn reset(&mut self) {
+        self.phase = TimerPhase::Focus;
+        self.paused = true;
+        self.elapsed_secs = 0;
+        self.phase_duration_secs = self.settings.focus_duration_secs;
+        self.short_break_count = 0;
+    }
+
     /// Apply new settings. Updates phase_duration_secs for the current phase
     /// so changes take effect immediately (not just on next transition).
     /// If the user has already elapsed longer than the new duration,
