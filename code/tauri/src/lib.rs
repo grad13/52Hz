@@ -142,7 +142,7 @@ pub fn run() {
                 WebviewUrl::App("index.html".into()),
             )
             .title("52Hz")
-            .inner_size(320.0, 500.0)
+            .inner_size(320.0, 560.0)
             .visible(false)
             .resizable(false)
             .decorations(false)
