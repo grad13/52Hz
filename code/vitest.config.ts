@@ -16,6 +16,7 @@ export default defineConfig({
       '@tauri-apps/plugin-autostart': path.resolve(codeRoot, 'node_modules/@tauri-apps/plugin-autostart'),
       '@testing-library/svelte': path.resolve(codeRoot, 'node_modules/@testing-library/svelte'),
       '@testing-library/jest-dom': path.resolve(codeRoot, 'node_modules/@testing-library/jest-dom'),
+      'vitest-mock-extended': path.resolve(codeRoot, 'node_modules/vitest-mock-extended'),
     },
   },
   server: {

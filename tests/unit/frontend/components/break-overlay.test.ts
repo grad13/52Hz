@@ -8,14 +8,17 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
+import { mock } from 'vitest-mock-extended';
+import type { Window as TauriWindow } from '@tauri-apps/api/window';
+import type { TimerState } from '@code/frontend/lib/timer';
 import BreakOverlay from '@code/frontend/components/BreakOverlay.svelte';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 afterEach(() => { cleanup(); });
 
 // --- Hoisted mocks (vi.mock factories are hoisted, so variables must be too) ---
 
 const {
-  mockClose,
   mockGetTimerState,
   mockSkipBreak,
   mockOnTimerTick,
@@ -23,7 +26,6 @@ const {
   mockRemainingSecs,
   mockFormatTime,
 } = vi.hoisted(() => ({
-  mockClose: vi.fn(),
   mockGetTimerState: vi.fn(),
   mockSkipBreak: vi.fn(),
   mockOnTimerTick: vi.fn().mockResolvedValue(vi.fn()),
@@ -39,9 +41,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 vi.mock('@tauri-apps/api/window', () => ({
-  getCurrentWindow: vi.fn().mockReturnValue({
-    close: mockClose,
-  }),
+  getCurrentWindow: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/event', () => ({
@@ -76,9 +76,13 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
   toDisplaySettings: vi.fn(),
 }));
 
+// --- Type-safe mocks ---
+
+const mockWindowInstance = mock<TauriWindow>();
+
 // --- Helpers ---
 
-function makeTimerState(overrides: Record<string, unknown> = {}) {
+function makeTimerState(overrides: Partial<TimerState> = {}): TimerState {
   return {
     phase: 'ShortBreak',
     paused: false,
@@ -100,10 +104,10 @@ function makeTimerState(overrides: Record<string, unknown> = {}) {
 describe('BreakOverlay', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getCurrentWindow).mockReturnValue(mockWindowInstance);
     mockRemainingSecs.mockReturnValue(20);
     mockFormatTime.mockReturnValue('00:20');
     mockGetTimerState.mockResolvedValue(makeTimerState());
-    mockClose.mockClear();
   });
 
   // =========================================================================
@@ -216,7 +220,7 @@ describe('BreakOverlay', () => {
     // Simulate receiving the break-end event
     handleBreakEnd();
 
-    expect(mockClose).toHaveBeenCalledTimes(1);
+    expect(mockWindowInstance.close).toHaveBeenCalledTimes(1);
   });
 
   // =========================================================================

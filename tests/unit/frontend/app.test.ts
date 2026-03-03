@@ -9,6 +9,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import { cleanup } from '@testing-library/svelte';
+import type { TimerState } from '@code/frontend/lib/timer';
 
 /**
  * App.svelte は window.location.search を参照して
@@ -22,28 +23,31 @@ import { cleanup } from '@testing-library/svelte';
 
 // --- 子コンポーネントが依存するモジュールのモック ---
 
-const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => ({
+const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => {
+  const defaultState: TimerState = {
+    phase: 'Focus',
+    paused: false,
+    elapsed_secs: 0,
+    phase_duration_secs: 1200,
+    short_break_count: 0,
+    settings: {
+      focus_duration_secs: 1200,
+      short_break_duration_secs: 20,
+      long_break_duration_secs: 180,
+      short_breaks_before_long: 3,
+    },
+  };
+  return {
   mockTimerModule: {
     remainingSecs: vi.fn().mockReturnValue(1200),
     formatTime: vi.fn().mockReturnValue('20:00'),
-    getTimerState: vi.fn().mockResolvedValue({
-      phase: 'Focus',
-      paused: false,
-      elapsed_secs: 0,
-      phase_duration_secs: 1200,
-      short_break_count: 0,
-      settings: {
-        focus_duration_secs: 1200,
-        short_break_duration_secs: 20,
-        long_break_duration_secs: 180,
-        short_breaks_before_long: 3,
-      },
-    }),
+    getTimerState: vi.fn().mockResolvedValue(defaultState),
     pauseTimer: vi.fn(),
     resumeTimer: vi.fn(),
     togglePause: vi.fn(),
     skipBreak: vi.fn(),
     updateSettings: vi.fn(),
+    resetTimer: vi.fn(),
     closeBreakOverlay: vi.fn(),
     quitApp: vi.fn(),
     onTimerTick: vi.fn().mockResolvedValue(vi.fn()),
@@ -63,7 +67,8 @@ const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => ({
     loadPauseMediaOnBreak: vi.fn().mockResolvedValue(false),
     savePauseMediaOnBreak: vi.fn().mockResolvedValue(undefined),
   },
-}));
+  };
+});
 
 vi.mock('@code/frontend/lib/timer', () => mockTimerModule);
 vi.mock('@code/frontend/lib/settings-store', () => mockSettingsStoreModule);
