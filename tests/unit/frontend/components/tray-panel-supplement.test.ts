@@ -16,6 +16,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
+import type { TimerState } from '@code/frontend/lib/timer';
 import TrayPanel from '@code/frontend/components/TrayPanel.svelte';
 
 afterEach(() => { cleanup(); });
@@ -109,7 +110,7 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
 
 // --- Helpers ---
 
-function makeTimerState(overrides: Record<string, unknown> = {}) {
+function makeTimerState(overrides: Partial<TimerState> = {}): TimerState {
   return {
     phase: 'Focus',
     paused: false,
