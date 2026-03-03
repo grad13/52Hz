@@ -71,3 +71,18 @@ export async function savePauseMediaOnBreak(enabled: boolean): Promise<void> {
   const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
   await store.set("pause_media_on_break", enabled);
 }
+
+export async function loadHideTrayIcon(): Promise<boolean> {
+  try {
+    const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
+    const val = await store.get<boolean>("hide_tray_icon");
+    return val ?? false;
+  } catch {
+    return false;
+  }
+}
+
+export async function saveHideTrayIcon(enabled: boolean): Promise<void> {
+  const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
+  await store.set("hide_tray_icon", enabled);
+}
