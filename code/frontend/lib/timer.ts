@@ -100,3 +100,7 @@ export async function skipBreakFromFocus(): Promise<void> {
 export async function getTodaySessions(): Promise<number> {
   return invoke("get_today_sessions");
 }
+
+export async function setTrayIconVisible(visible: boolean): Promise<void> {
+  return invoke("set_tray_icon_visible", { visible });
+}

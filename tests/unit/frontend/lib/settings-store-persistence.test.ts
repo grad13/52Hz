@@ -1,7 +1,7 @@
 /**
  * settings-store - Persistence Unit Tests
  *
- * Tests for: frontend/lib/settings-store.ts (loadSettings, saveSettings, loadPauseMediaOnBreak, savePauseMediaOnBreak)
+ * Tests for: frontend/lib/settings-store.ts (loadSettings, saveSettings, loadPauseMediaOnBreak, savePauseMediaOnBreak, loadHideTrayIcon, saveHideTrayIcon)
  * Spec: documents/spec/frontend/lib/settings-store.md
  * Runtime: JS-ESM
  */
@@ -18,7 +18,7 @@ vi.mock('@tauri-apps/plugin-store', () => ({
   load: vi.fn().mockResolvedValue(mockStore),
 }));
 
-import { loadSettings, saveSettings, loadPauseMediaOnBreak, savePauseMediaOnBreak } from '@code/frontend/lib/settings-store';
+import { loadSettings, saveSettings, loadPauseMediaOnBreak, savePauseMediaOnBreak, loadHideTrayIcon, saveHideTrayIcon } from '@code/frontend/lib/settings-store';
 import type { DisplaySettings } from '@code/frontend/lib/settings-store';
 
 // ---------------------------------------------------------------------------
@@ -385,5 +385,110 @@ describe('savePauseMediaOnBreak', () => {
     (load as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Plugin error'));
 
     await expect(savePauseMediaOnBreak(true)).rejects.toThrow('Plugin error');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3.6 loadHideTrayIcon
+// ---------------------------------------------------------------------------
+describe('loadHideTrayIcon', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns true when hide_tray_icon is true in store', async () => {
+    mockStore.get.mockImplementation((key: string) => {
+      if (key === 'hide_tray_icon') return Promise.resolve(true);
+      return Promise.resolve(null);
+    });
+
+    const result = await loadHideTrayIcon();
+    expect(result).toBe(true);
+  });
+
+  it('returns false when hide_tray_icon is false in store', async () => {
+    mockStore.get.mockImplementation((key: string) => {
+      if (key === 'hide_tray_icon') return Promise.resolve(false);
+      return Promise.resolve(null);
+    });
+
+    const result = await loadHideTrayIcon();
+    expect(result).toBe(false);
+  });
+
+  it('returns false when hide_tray_icon is null (not set)', async () => {
+    mockStore.get.mockResolvedValue(null);
+
+    const result = await loadHideTrayIcon();
+    expect(result).toBe(false);
+  });
+
+  it('returns false when store.get throws an error', async () => {
+    mockStore.get.mockRejectedValue(new Error('Store not available'));
+
+    const result = await loadHideTrayIcon();
+    expect(result).toBe(false);
+  });
+
+  it('returns false when load() itself throws an error', async () => {
+    const { load } = await import('@tauri-apps/plugin-store');
+    (load as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Plugin not available'));
+
+    const result = await loadHideTrayIcon();
+    expect(result).toBe(false);
+  });
+
+  it('calls store.get with "hide_tray_icon"', async () => {
+    mockStore.get.mockResolvedValue(null);
+
+    await loadHideTrayIcon();
+
+    expect(mockStore.get).toHaveBeenCalledWith('hide_tray_icon');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3.7 saveHideTrayIcon
+// ---------------------------------------------------------------------------
+describe('saveHideTrayIcon', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('writes true via store.set("hide_tray_icon", true)', async () => {
+    mockStore.set.mockResolvedValue(undefined);
+
+    await saveHideTrayIcon(true);
+
+    expect(mockStore.set).toHaveBeenCalledWith('hide_tray_icon', true);
+  });
+
+  it('writes false via store.set("hide_tray_icon", false)', async () => {
+    mockStore.set.mockResolvedValue(undefined);
+
+    await saveHideTrayIcon(false);
+
+    expect(mockStore.set).toHaveBeenCalledWith('hide_tray_icon', false);
+  });
+
+  it('calls store.set exactly 1 time', async () => {
+    mockStore.set.mockResolvedValue(undefined);
+
+    await saveHideTrayIcon(true);
+
+    expect(mockStore.set).toHaveBeenCalledTimes(1);
+  });
+
+  it('propagates errors from store.set to the caller', async () => {
+    mockStore.set.mockRejectedValue(new Error('Write failed'));
+
+    await expect(saveHideTrayIcon(true)).rejects.toThrow('Write failed');
+  });
+
+  it('propagates errors from load() to the caller', async () => {
+    const { load } = await import('@tauri-apps/plugin-store');
+    (load as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Plugin error'));
+
+    await expect(saveHideTrayIcon(true)).rejects.toThrow('Plugin error');
   });
 });

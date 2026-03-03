@@ -70,6 +70,7 @@ vi.mock('@code/frontend/lib/timer', () => ({
   extendFocus: vi.fn(),
   skipBreakFromFocus: vi.fn(),
   resetTimer: mockResetTimer,
+  setTrayIconVisible: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@tauri-apps/plugin-autostart', () => ({
@@ -99,6 +100,8 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
   toDisplaySettings: mockToDisplaySettings,
   loadPauseMediaOnBreak: vi.fn().mockResolvedValue(false),
   savePauseMediaOnBreak: vi.fn().mockResolvedValue(undefined),
+  loadHideTrayIcon: vi.fn().mockResolvedValue(false),
+  saveHideTrayIcon: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- Helpers ---

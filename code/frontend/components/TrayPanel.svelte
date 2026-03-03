@@ -12,6 +12,7 @@
     resetTimer,
     quitApp,
     getTodaySessions,
+    setTrayIconVisible,
   } from "../lib/timer";
   import {
     loadSettings,
@@ -19,6 +20,8 @@
     toTimerSettings,
     loadPauseMediaOnBreak,
     savePauseMediaOnBreak,
+    loadHideTrayIcon,
+    saveHideTrayIcon,
   } from "../lib/settings-store";
   import {
     enable as enableAutostart,
@@ -56,6 +59,7 @@
   let settingsLoaded = $state(false);
   let autostartEnabled = $state(false);
   let pauseMediaOnBreak = $state(false);
+  let hideTrayIcon = $state(false);
   let todaySessions = $state(0);
 
   let unlistenTick: (() => void) | null = null;
@@ -88,6 +92,12 @@
   async function handlePauseMediaChange(enabled: boolean) {
     pauseMediaOnBreak = enabled;
     await savePauseMediaOnBreak(enabled);
+  }
+
+  async function handleHideTrayIconChange(enabled: boolean) {
+    hideTrayIcon = enabled;
+    await saveHideTrayIcon(enabled);
+    await setTrayIconVisible(!enabled);
   }
 
   async function handleAutostartChange(enabled: boolean) {
@@ -128,6 +138,7 @@
     await loadSavedSettings();
     autostartEnabled = await isAutostartEnabled().catch(() => false);
     pauseMediaOnBreak = await loadPauseMediaOnBreak();
+    hideTrayIcon = await loadHideTrayIcon();
     todaySessions = await getTodaySessions();
     const state = await getTimerState();
     handleTick(state);
@@ -160,6 +171,8 @@
     onAutostartChange={handleAutostartChange}
     {pauseMediaOnBreak}
     onPauseMediaChange={handlePauseMediaChange}
+    {hideTrayIcon}
+    onHideTrayIconChange={handleHideTrayIconChange}
   />
   <button class="quit-btn" onclick={quitApp}>アプリを終了</button>
 </div>

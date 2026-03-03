@@ -122,6 +122,7 @@ pub fn run() {
             commands::get_today_sessions,
             commands::open_break_overlay,
             commands::close_break_overlay,
+            commands::set_tray_icon_visible,
             commands::reset_timer,
             commands::quit_app,
         ])
@@ -379,6 +380,23 @@ pub fn run() {
                     }
                 });
             });
+
+            // Apply hide_tray_icon setting
+            {
+                use tauri_plugin_store::StoreExt;
+                let hide_icon = app
+                    .store("settings.json")
+                    .ok()
+                    .and_then(|s| s.get("hide_tray_icon"))
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+                if hide_icon {
+                    tray::set_tray_icon_visible(false);
+                    if cfg!(debug_assertions) {
+                        eprintln!("[52Hz] tray icon hidden (user setting)");
+                    }
+                }
+            }
 
             // Load saved settings from store before starting the timer
             {

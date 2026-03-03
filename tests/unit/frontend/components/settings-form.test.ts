@@ -63,4 +63,25 @@ describe('SettingsForm', () => {
     expect(input.min).toBe('1');
     expect(input.max).toBe('10');
   });
+
+  it('3-8: トレイアイコン非表示トグルが表示される', () => {
+    render(SettingsForm, { props: { ...defaultProps } });
+    const input = document.getElementById('hide-tray-icon') as HTMLInputElement;
+    expect(input).toBeTruthy();
+    expect(input.type).toBe('checkbox');
+  });
+
+  it('3-8b: トレイアイコン非表示トグルの checked が hideTrayIcon prop で制御される', () => {
+    render(SettingsForm, { props: { ...defaultProps, hideTrayIcon: true } });
+    const input = document.getElementById('hide-tray-icon') as HTMLInputElement;
+    expect(input.checked).toBe(true);
+  });
+
+  it('3-8c: トレイアイコン非表示トグル変更時に onHideTrayIconChange が呼ばれる', async () => {
+    const onHideTrayIconChange = vi.fn();
+    render(SettingsForm, { props: { ...defaultProps, onHideTrayIconChange } });
+    const input = document.getElementById('hide-tray-icon') as HTMLInputElement;
+    await fireEvent.change(input, { target: { checked: true } });
+    expect(onHideTrayIconChange).toHaveBeenCalledWith(true);
+  });
 });

@@ -8,6 +8,8 @@
     onAutostartChange,
     pauseMediaOnBreak = false,
     onPauseMediaChange,
+    hideTrayIcon = false,
+    onHideTrayIconChange,
   }: {
     focusMinutes: number;
     shortBreakMinutes: number;
@@ -17,6 +19,8 @@
     onAutostartChange: (enabled: boolean) => void;
     pauseMediaOnBreak: boolean;
     onPauseMediaChange: (enabled: boolean) => void;
+    hideTrayIcon: boolean;
+    onHideTrayIconChange: (enabled: boolean) => void;
   } = $props();
 </script>
 
@@ -84,6 +88,19 @@
         type="checkbox"
         checked={pauseMediaOnBreak}
         onchange={(e) => onPauseMediaChange(e.currentTarget.checked)}
+      />
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="field">
+    <label for="hide-tray-icon">トレイアイコンを非表示</label>
+    <label class="toggle">
+      <input
+        id="hide-tray-icon"
+        type="checkbox"
+        checked={hideTrayIcon}
+        onchange={(e) => onHideTrayIconChange(e.currentTarget.checked)}
       />
       <span class="slider"></span>
     </label>

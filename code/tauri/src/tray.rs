@@ -164,6 +164,26 @@ pub(crate) fn build_tray(
     Ok(())
 }
 
+pub(crate) fn set_tray_icon_visible(visible: bool) {
+    let mtm = unsafe { MainThreadMarker::new_unchecked() };
+    let Some(item) = get_status_item() else {
+        return;
+    };
+    if let Some(button) = item.button(mtm) {
+        if visible {
+            let icon_bytes = include_bytes!("../icons/tray-icon.png");
+            let ns_data = NSData::with_bytes(icon_bytes);
+            if let Some(image) = NSImage::initWithData(NSImage::alloc(), &ns_data) {
+                image.setSize(NSSize::new(28.6, 18.0));
+                image.setTemplate(false);
+                button.setImage(Some(&image));
+            }
+        } else {
+            button.setImage(None);
+        }
+    }
+}
+
 pub(crate) fn update_tray_title(title: &str) {
     let mtm = unsafe { MainThreadMarker::new_unchecked() };
     let Some(item) = get_status_item() else {

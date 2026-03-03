@@ -186,6 +186,14 @@ pub(crate) fn quit_app() {
 }
 
 #[tauri::command]
+pub(crate) async fn set_tray_icon_visible(app: tauri::AppHandle, visible: bool) -> Result<(), String> {
+    app.run_on_main_thread(move || {
+        crate::tray::set_tray_icon_visible(visible);
+    })
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub(crate) async fn close_break_overlay(app: tauri::AppHandle) -> Result<(), String> {
     let handle = app.clone();
     app.run_on_main_thread(move || {
