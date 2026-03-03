@@ -22,6 +22,8 @@
     savePauseMediaOnBreak,
     loadHideTrayIcon,
     saveHideTrayIcon,
+    loadTickSound,
+    saveTickSound,
   } from "../lib/settings-store";
   import {
     enable as enableAutostart,
@@ -31,6 +33,7 @@
   import TimerStatus from "./TimerStatus.svelte";
   import TimerControls from "./TimerControls.svelte";
   import SettingsForm from "./SettingsForm.svelte";
+  import tickSrc from "../assets/tick.mp3";
 
   let timerState: TimerState | null = $state(null);
   let remaining = $state("--:--");
@@ -60,7 +63,9 @@
   let autostartEnabled = $state(false);
   let pauseMediaOnBreak = $state(false);
   let hideTrayIcon = $state(false);
+  let tickSound = $state(false);
   let todaySessions = $state(0);
+  let tickAudio: HTMLAudioElement | null = null;
 
   let unlistenTick: (() => void) | null = null;
   let unlistenPhaseChanged: (() => void) | null = null;
@@ -77,6 +82,9 @@
     remaining = formatTime(remainingSecs(state));
     phaseLabel = phaseLabels[state.phase] || state.phase;
     paused = state.paused;
+    if (tickSound && !state.paused) {
+      tickAudio?.play().catch(() => {});
+    }
   }
 
   async function handleTogglePause() {
@@ -92,6 +100,11 @@
   async function handlePauseMediaChange(enabled: boolean) {
     pauseMediaOnBreak = enabled;
     await savePauseMediaOnBreak(enabled);
+  }
+
+  async function handleTickSoundChange(enabled: boolean) {
+    tickSound = enabled;
+    await saveTickSound(enabled);
   }
 
   async function handleHideTrayIconChange(enabled: boolean) {
@@ -139,6 +152,8 @@
     autostartEnabled = await isAutostartEnabled().catch(() => false);
     pauseMediaOnBreak = await loadPauseMediaOnBreak();
     hideTrayIcon = await loadHideTrayIcon();
+    tickSound = await loadTickSound();
+    tickAudio = new Audio(tickSrc);
     todaySessions = await getTodaySessions();
     const state = await getTimerState();
     handleTick(state);
@@ -173,6 +188,8 @@
     onPauseMediaChange={handlePauseMediaChange}
     {hideTrayIcon}
     onHideTrayIconChange={handleHideTrayIconChange}
+    {tickSound}
+    onTickSoundChange={handleTickSoundChange}
   />
   <button class="quit-btn" onclick={quitApp}>アプリを終了</button>
 </div>

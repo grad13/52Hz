@@ -10,6 +10,8 @@
     onPauseMediaChange,
     hideTrayIcon = false,
     onHideTrayIconChange,
+    tickSound = false,
+    onTickSoundChange,
   }: {
     focusMinutes: number;
     shortBreakMinutes: number;
@@ -21,6 +23,8 @@
     onPauseMediaChange: (enabled: boolean) => void;
     hideTrayIcon: boolean;
     onHideTrayIconChange: (enabled: boolean) => void;
+    tickSound: boolean;
+    onTickSoundChange: (enabled: boolean) => void;
   } = $props();
 </script>
 
@@ -88,6 +92,19 @@
         type="checkbox"
         checked={pauseMediaOnBreak}
         onchange={(e) => onPauseMediaChange(e.currentTarget.checked)}
+      />
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="field">
+    <label for="tick-sound">Tick 音</label>
+    <label class="toggle">
+      <input
+        id="tick-sound"
+        type="checkbox"
+        checked={tickSound}
+        onchange={(e) => onTickSoundChange(e.currentTarget.checked)}
       />
       <span class="slider"></span>
     </label>
