@@ -93,6 +93,10 @@
     overflow: hidden;
     outline: none;
     border: none;
+    width: fit-content;
+    margin: 0 auto;
+    padding: 0 0.5rem;
+    border-radius: var(--radius-md);
   }
 
   .time {
