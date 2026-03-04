@@ -31,13 +31,11 @@
     isEnabled as isAutostartEnabled,
   } from "@tauri-apps/plugin-autostart";
   import TimerStatus from "./TimerStatus.svelte";
-  import TimerControls from "./TimerControls.svelte";
   import SettingsForm from "./SettingsForm.svelte";
   import tickSrc from "../assets/tick.mp3";
 
   let timerState: TimerState | null = $state(null);
   let remaining = $state("--:--");
-  let phaseLabel = $state("Focus");
   let paused = $state(false);
 
   let cycleCompleted = $derived.by(() => {
@@ -46,7 +44,7 @@
   });
   let cycleTotal = $derived.by(() => {
     if (!timerState) return 1;
-    return timerState.settings.short_breaks_before_long + 1;
+    return timerState.settings.short_breaks_before_long;
   });
   let isLongBreak = $derived.by(() => {
     if (!timerState) return false;
@@ -71,16 +69,9 @@
   let unlistenPhaseChanged: (() => void) | null = null;
   let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  const phaseLabels: Record<string, string> = {
-    Focus: "フォーカス中",
-    ShortBreak: "短い休憩中",
-    LongBreak: "長い休憩中",
-  };
-
   function handleTick(state: TimerState) {
     timerState = state;
     remaining = formatTime(remainingSecs(state));
-    phaseLabel = phaseLabels[state.phase] || state.phase;
     paused = state.paused;
     if (tickSound && !state.paused) {
       tickAudio?.play().catch(() => {});
@@ -170,13 +161,10 @@
 </script>
 
 <div class="tray-panel">
-  <header>
-    <h2>52Hz</h2>
-  </header>
+  <TimerStatus {remaining} {paused} {cycleCompleted} {cycleTotal} {isLongBreak} {todaySessions} onTogglePause={handleTogglePause} />
 
-  <TimerStatus {phaseLabel} {remaining} {paused} {cycleCompleted} {cycleTotal} {isLongBreak} />
-  <div class="session-count">今日のセッション: {todaySessions} 回</div>
-  <TimerControls {paused} onTogglePause={handleTogglePause} onStop={resetTimer} />
+  <div class="divider"></div>
+
   <SettingsForm
     bind:focusMinutes
     bind:shortBreakMinutes
@@ -191,7 +179,12 @@
     {tickSound}
     onTickSoundChange={handleTickSoundChange}
   />
-  <button class="quit-btn" onclick={quitApp}>アプリを終了</button>
+
+  <div class="bottom-row">
+    <button class="stop-link" onclick={resetTimer}>■ 停止</button>
+    <span class="sep">|</span>
+    <button class="quit-link" onclick={quitApp}>アプリを終了</button>
+  </div>
 </div>
 
 <style>
@@ -199,38 +192,52 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 1rem;
-    gap: 0.8rem;
+    padding: 0.75rem;
+    gap: 0.5rem;
   }
 
-  header h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    text-align: center;
-    color: var(--text-secondary);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.1rem 0;
   }
 
-  .session-count {
-    font-size: 0.8rem;
-    text-align: center;
-    color: var(--text-secondary);
-  }
-
-  .quit-btn {
+  .bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
     margin-top: auto;
-    padding: 0.4rem;
+  }
+
+  .bottom-row .stop-link {
     font-size: 0.75rem;
     border: none;
-    border-radius: 4px;
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     cursor: pointer;
-    transition: color 0.2s;
+    transition: color var(--duration-normal) var(--ease-out);
   }
 
-  .quit-btn:hover {
+  .bottom-row .stop-link:hover {
+    color: var(--danger);
+  }
+
+  .bottom-row .sep {
+    color: var(--border);
+    font-size: 0.65rem;
+  }
+
+  .bottom-row .quit-link {
+    font-size: 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: color var(--duration-normal) var(--ease-out);
+  }
+
+  .bottom-row .quit-link:hover {
     color: var(--danger);
   }
 </style>
