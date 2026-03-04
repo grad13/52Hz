@@ -79,11 +79,13 @@
 
   function dismissAll() {
     for (const item of items) {
-      const timer = timers.get(item.id);
-      if (timer) clearTimeout(timer);
+      if (item.type === "toast") {
+        const timer = timers.get(item.id);
+        if (timer) clearTimeout(timer);
+        timers.delete(item.id);
+      }
     }
-    timers.clear();
-    items = [];
+    items = items.filter((i) => i.type !== "toast");
     syncWindow();
   }
 
