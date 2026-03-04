@@ -42,6 +42,7 @@
     height: 100%;
     padding: 1.5rem;
     gap: 0.75rem;
+    background: var(--bg);
   }
 
   h3 {

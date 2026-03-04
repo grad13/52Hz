@@ -194,6 +194,8 @@
     height: 100%;
     padding: 0.75rem;
     gap: 0.5rem;
+    background: var(--bg);
+    border-radius: 10px;
   }
 
   .divider {
