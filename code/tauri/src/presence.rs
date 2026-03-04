@@ -191,61 +191,45 @@ pub fn spawn(app: tauri::AppHandle) {
         let mut date = String::new();
         let mut schedule: Vec<Event> = Vec::new();
         let mut cursor: usize = 0;
+        let mut rng = Rng::new(Local::now().timestamp() as u64);
 
-        // Emit test messages on startup (debug only)
-        if cfg!(debug_assertions) {
-            tokio::time::sleep(std::time::Duration::from_secs(10)).await;
-            for (name, msg) in [
-                ("受験生A", "おはようございます、今日もがんばります"),
-                ("朝活エンジニア", "コーヒー淹れてきた"),
-                ("宅浪生", "誰かがいると思うとがんばれる"),
-            ] {
-                let _ = app.emit(
-                    "presence-message",
-                    PresenceMessage {
-                        name: name.into(),
-                        message: msg.into(),
-                    },
-                );
-                tokio::time::sleep(std::time::Duration::from_millis(800)).await;
-            }
-            eprintln!("[52Hz] presence: test toasts emitted");
-        }
+        // Wait for webview to load before first message
+        tokio::time::sleep(std::time::Duration::from_secs(8)).await;
 
-        let mut tick = tokio::time::interval(std::time::Duration::from_secs(30));
         loop {
-            tick.tick().await;
-            let now = Local::now();
-            let today = now.format("%Y-%m-%d").to_string();
-            let now_secs = now.hour() * 3600 + now.minute() * 60 + now.second();
+            let today = Local::now().format("%Y-%m-%d").to_string();
 
-            // Regenerate schedule on new day
+            // Regenerate schedule on new day (or first run)
             if today != date {
                 schedule = build_schedule(&personas, &today);
                 date = today;
-                cursor = schedule
-                    .iter()
-                    .position(|e| e.at > now_secs)
-                    .unwrap_or(schedule.len());
+                cursor = 0;
                 if cfg!(debug_assertions) {
                     eprintln!("[52Hz] presence: {} events scheduled", schedule.len());
                 }
             }
 
-            // Emit events whose time has passed
-            while cursor < schedule.len() && schedule[cursor].at <= now_secs {
-                let ev = &schedule[cursor];
-                if cfg!(debug_assertions) {
-                    let h = ev.at / 3600;
-                    let m = (ev.at % 3600) / 60;
-                    eprintln!(
-                        "[52Hz] presence {:02}:{:02} {} — {}",
-                        h, m, ev.msg.name, ev.msg.message
-                    );
-                }
-                let _ = app.emit("presence-message", ev.msg.clone());
-                cursor += 1;
+            if schedule.is_empty() {
+                tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+                continue;
             }
+
+            // Emit the next event in sequence
+            let ev = &schedule[cursor % schedule.len()];
+            if cfg!(debug_assertions) {
+                eprintln!("[52Hz] presence: {} — {}", ev.msg.name, ev.msg.message);
+            }
+            let _ = app.emit("presence-message", ev.msg.clone());
+            cursor += 1;
+
+            // Loop back when exhausted
+            if cursor >= schedule.len() {
+                cursor = 0;
+            }
+
+            // ~1 message per minute (45–75 sec, randomised)
+            let delay = 45 + rng.range(31); // 45..75
+            tokio::time::sleep(std::time::Duration::from_secs(delay as u64)).await;
         }
     });
 }
