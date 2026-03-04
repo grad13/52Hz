@@ -3,6 +3,7 @@
   import { listen } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { LogicalSize } from "@tauri-apps/api/dpi";
+  import { loadPresenceToast } from "../lib/settings-store";
 
   interface ToastMessage {
     name: string;
@@ -23,8 +24,11 @@
   const WIN_W = 276;
 
   let items: ToastItem[] = $state([]);
+  let enabled = $state(true);
   let nextId = 0;
-  let unlisten: (() => void) | null = null;
+  let unlistenMsg: (() => void) | null = null;
+  let unlistenToggle: (() => void) | null = null;
+  let unlistenClick: (() => void) | null = null;
   const win = getCurrentWindow();
   const timers = new Map<number, ReturnType<typeof setTimeout>>();
 
@@ -56,7 +60,19 @@
     }, 350);
   }
 
+  function dismissAll() {
+    for (const item of items) {
+      const timer = timers.get(item.id);
+      if (timer) clearTimeout(timer);
+    }
+    timers.clear();
+    items = [];
+    syncWindow();
+  }
+
   function addToast(msg: ToastMessage) {
+    if (!enabled) return;
+
     // Evict oldest if at capacity
     const active = items.filter((i) => !i.leaving);
     if (active.length >= MAX_TOASTS) {
@@ -74,23 +90,41 @@
   }
 
   onMount(async () => {
-    unlisten = (await listen<ToastMessage>("presence-message", (event) => {
+    enabled = await loadPresenceToast();
+
+    unlistenMsg = (await listen<ToastMessage>("presence-message", (event) => {
       addToast(event.payload);
+    })) as unknown as () => void;
+
+    unlistenToggle = (await listen<boolean>("presence-toast-toggle", (event) => {
+      enabled = event.payload;
+      if (!enabled) dismissAll();
+    })) as unknown as () => void;
+
+    // Handle first-click from native global event monitor
+    // (JS onclick doesn't fire on the activation click for Accessory apps)
+    unlistenClick = (await listen("presence-toast-click", () => {
+      const active = items.filter((i) => !i.leaving);
+      if (active.length > 0) {
+        dismiss(active[0].id);
+      }
     })) as unknown as () => void;
   });
 
   onDestroy(() => {
-    unlisten?.();
+    unlistenMsg?.();
+    unlistenToggle?.();
+    unlistenClick?.();
     for (const t of timers.values()) clearTimeout(t);
   });
 </script>
 
 <div class="toast-stack">
   {#each items as item (item.id)}
-    <div class="toast-card" class:leaving={item.leaving}>
+    <button class="toast-card" class:leaving={item.leaving} onclick={() => dismiss(item.id)}>
       <span class="name">{item.msg.name}</span>
       <span class="msg">{item.msg.message}</span>
-    </div>
+    </button>
   {/each}
 </div>
 
@@ -110,7 +144,14 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border);
     border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
     animation: slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transition: opacity 0.15s;
+  }
+
+  .toast-card:hover {
+    opacity: 0.7;
   }
 
   .toast-card.leaving {

@@ -12,6 +12,8 @@
     onHideTrayIconChange,
     tickSound = false,
     onTickSoundChange,
+    presenceToast = true,
+    onPresenceToastChange,
   }: {
     focusMinutes: number;
     shortBreakMinutes: number;
@@ -25,6 +27,8 @@
     onHideTrayIconChange: (enabled: boolean) => void;
     tickSound: boolean;
     onTickSoundChange: (enabled: boolean) => void;
+    presenceToast: boolean;
+    onPresenceToastChange: (enabled: boolean) => void;
   } = $props();
 </script>
 
@@ -101,6 +105,17 @@
           type="checkbox"
           checked={autostartEnabled}
           onchange={(e) => onAutostartChange(e.currentTarget.checked)}
+        />
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">みんなの存在</span>
+      <label class="toggle-sm">
+        <input
+          type="checkbox"
+          checked={presenceToast}
+          onchange={(e) => onPresenceToastChange(e.currentTarget.checked)}
         />
         <span class="slider"></span>
       </label>

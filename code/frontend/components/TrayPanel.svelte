@@ -24,7 +24,10 @@
     saveHideTrayIcon,
     loadTickSound,
     saveTickSound,
+    loadPresenceToast,
+    savePresenceToast,
   } from "../lib/settings-store";
+  import { emit } from "@tauri-apps/api/event";
   import {
     enable as enableAutostart,
     disable as disableAutostart,
@@ -62,6 +65,7 @@
   let pauseMediaOnBreak = $state(false);
   let hideTrayIcon = $state(false);
   let tickSound = $state(false);
+  let presenceToast = $state(true);
   let todaySessions = $state(0);
   let tickAudio: HTMLAudioElement | null = null;
 
@@ -96,6 +100,12 @@
   async function handleTickSoundChange(enabled: boolean) {
     tickSound = enabled;
     await saveTickSound(enabled);
+  }
+
+  async function handlePresenceToastChange(enabled: boolean) {
+    presenceToast = enabled;
+    await savePresenceToast(enabled);
+    await emit("presence-toast-toggle", enabled);
   }
 
   async function handleHideTrayIconChange(enabled: boolean) {
@@ -144,6 +154,7 @@
     pauseMediaOnBreak = await loadPauseMediaOnBreak();
     hideTrayIcon = await loadHideTrayIcon();
     tickSound = await loadTickSound();
+    presenceToast = await loadPresenceToast();
     tickAudio = new Audio(tickSrc);
     todaySessions = await getTodaySessions();
     const state = await getTimerState();
@@ -178,6 +189,8 @@
     onHideTrayIconChange={handleHideTrayIconChange}
     {tickSound}
     onTickSoundChange={handleTickSoundChange}
+    {presenceToast}
+    onPresenceToastChange={handlePresenceToastChange}
   />
 
   <div class="bottom-row">

@@ -540,7 +540,6 @@ pub fn run() {
                         unsafe {
                             let ns_win: Retained<NSWindow> =
                                 Retained::retain(ns_window as *mut NSWindow).unwrap();
-                            ns_win.setIgnoresMouseEvents(true);
                             ns_win.setLevel(25); // NSStatusWindowLevel
 
                             // Rounded corners via Titled mask
@@ -591,6 +590,52 @@ pub fn run() {
                     }
                 }
                 let _ = toast_window;
+            }
+
+            // Toast first-click: global monitor detects clicks on the toast window
+            // even when the app is inactive (Accessory policy consumes the first click
+            // for activation, so JS onclick never fires). This monitor handles that case.
+            #[cfg(target_os = "macos")]
+            {
+                use objc2::rc::Retained;
+                use objc2_app_kit::{NSEvent, NSEventMask, NSWindow};
+
+                let app_for_toast_click = app.handle().clone();
+                let toast_click_block =
+                    block2::RcBlock::new(move |_event: std::ptr::NonNull<NSEvent>| {
+                        if let Some(tw) =
+                            app_for_toast_click.get_webview_window("presence-toast")
+                        {
+                            if !tw.is_visible().unwrap_or(false) {
+                                return;
+                            }
+                            unsafe {
+                                let mouse_loc = NSEvent::mouseLocation();
+                                if let Ok(ns_ptr) = tw.ns_window() {
+                                    let ns_w: Retained<NSWindow> =
+                                        Retained::retain(ns_ptr as *mut NSWindow).unwrap();
+                                    let frame = ns_w.frame();
+                                    if mouse_loc.x >= frame.origin.x
+                                        && mouse_loc.x
+                                            <= frame.origin.x + frame.size.width
+                                        && mouse_loc.y >= frame.origin.y
+                                        && mouse_loc.y
+                                            <= frame.origin.y + frame.size.height
+                                    {
+                                        let _ = app_for_toast_click
+                                            .emit("presence-toast-click", ());
+                                    }
+                                }
+                            }
+                        }
+                    });
+                let toast_monitor =
+                    NSEvent::addGlobalMonitorForEventsMatchingMask_handler(
+                        NSEventMask::LeftMouseDown,
+                        &toast_click_block,
+                    );
+                std::mem::forget(toast_monitor);
+                std::mem::forget(toast_click_block);
             }
 
             // Start the timer
