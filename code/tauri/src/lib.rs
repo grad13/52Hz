@@ -546,58 +546,65 @@ pub fn run() {
                             ns_win.setBackgroundColor(Some(&NSColor::clearColor()));
                             ns_win.setHasShadow(false);
 
-                            // Disable WKWebView background drawing
-                            // Walk subviews to find WKWebView and call
-                            // setValue:NO forKey:@"drawsBackground"
-                            if let Some(content_view) = ns_win.contentView() {
-                                fn disable_webview_bg(
-                                    view: *mut objc2::runtime::AnyObject,
-                                ) {
-                                    unsafe {
-                                        let cls: *mut objc2::runtime::AnyObject =
-                                            objc2::msg_send![view, class];
-                                        let desc: *mut objc2::runtime::AnyObject =
-                                            objc2::msg_send![cls, description];
-                                        let cstr: *const std::ffi::c_char =
-                                            objc2::msg_send![desc, UTF8String];
-                                        let name =
-                                            std::ffi::CStr::from_ptr(cstr)
-                                                .to_string_lossy();
-                                        if name.contains("WKWebView") {
-                                            let key = objc2_foundation::NSString::from_str(
-                                                "drawsBackground",
-                                            );
-                                            let no: bool = false;
-                                            let val: *mut objc2::runtime::AnyObject =
-                                                objc2::msg_send![
-                                                    objc2::class!(NSNumber),
-                                                    numberWithBool: no
-                                                ];
-                                            let _: () = objc2::msg_send![
+                            // Disable WKWebView background drawing.
+                            // Delay so WKWebView is in the view hierarchy.
+                            let app_h = app.handle().clone();
+                            tauri::async_runtime::spawn(async move {
+                                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                                let app_h2 = app_h.clone();
+                                let _ = app_h.run_on_main_thread(move || {
+                                    fn set_transparent(
+                                        view: *mut objc2::runtime::AnyObject,
+                                    ) {
+                                        unsafe {
+                                            let sel =
+                                                objc2::sel!(_setDrawsBackground:);
+                                            let responds: bool = objc2::msg_send![
                                                 view,
-                                                setValue: val
-                                                forKey: &*key
+                                                respondsToSelector: sel
                                             ];
-                                        }
-                                        // Recurse into subviews
-                                        let subs: *mut objc2::runtime::AnyObject =
-                                            objc2::msg_send![view, subviews];
-                                        let n: usize =
-                                            objc2::msg_send![subs, count];
-                                        for i in 0..n {
-                                            let sv: *mut objc2::runtime::AnyObject =
-                                                objc2::msg_send![
-                                                    subs,
-                                                    objectAtIndex: i
+                                            if responds {
+                                                let _: () = objc2::msg_send![
+                                                    view,
+                                                    _setDrawsBackground: false
                                                 ];
-                                            disable_webview_bg(sv);
+                                            }
+                                            let subs: *mut objc2::runtime::AnyObject =
+                                                objc2::msg_send![view, subviews];
+                                            let n: usize =
+                                                objc2::msg_send![subs, count];
+                                            for i in 0..n {
+                                                let sv: *mut objc2::runtime::AnyObject
+                                                    = objc2::msg_send![
+                                                        subs,
+                                                        objectAtIndex: i
+                                                    ];
+                                                set_transparent(sv);
+                                            }
                                         }
                                     }
-                                }
-                                let ptr: *mut objc2::runtime::AnyObject =
-                                    objc2::msg_send![&*content_view, self];
-                                disable_webview_bg(ptr);
-                            }
+                                    if let Some(tw) =
+                                        app_h2.get_webview_window("presence-toast")
+                                    {
+                                        if let Ok(ns_ptr) = tw.ns_window() {
+                                            unsafe {
+                                                let ns_w: objc2::rc::Retained<
+                                                    objc2_app_kit::NSWindow,
+                                                > = objc2::rc::Retained::retain(
+                                                    ns_ptr
+                                                        as *mut objc2_app_kit::NSWindow,
+                                                )
+                                                .unwrap();
+                                                if let Some(cv) = ns_w.contentView() {
+                                                    let ptr: *mut objc2::runtime::AnyObject =
+                                                        objc2::msg_send![&*cv, self];
+                                                    set_transparent(ptr);
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            });
 
                             // Visible on all Spaces
                             let _: () = objc2::msg_send![
