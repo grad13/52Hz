@@ -101,3 +101,18 @@ export async function saveTickSound(enabled: boolean): Promise<void> {
   const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
   await store.set("tick_sound", enabled);
 }
+
+export async function loadPresenceToast(): Promise<boolean> {
+  try {
+    const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
+    const val = await store.get<boolean>("presence_toast");
+    return val ?? true; // default ON
+  } catch {
+    return true;
+  }
+}
+
+export async function savePresenceToast(enabled: boolean): Promise<void> {
+  const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
+  await store.set("presence_toast", enabled);
+}
