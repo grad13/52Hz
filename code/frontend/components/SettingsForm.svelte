@@ -29,173 +29,189 @@
 </script>
 
 <section class="form">
-  <div class="field">
-    <label for="focus">フォーカス時間</label>
-    <div class="input-group">
-      <input
-        id="focus"
-        type="number"
-        min="1"
-        max="120"
-        bind:value={focusMinutes}
-      />
-      <span class="unit">分</span>
+  <div class="settings-grid">
+    <div class="grid-cell">
+      <label for="focus">フォーカス</label>
+      <div class="grid-input">
+        <input id="focus" type="number" min="1" max="120" bind:value={focusMinutes} />
+        <span class="grid-unit">分</span>
+      </div>
+    </div>
+    <div class="grid-cell">
+      <label for="short-break">短い休憩</label>
+      <div class="grid-input">
+        <input id="short-break" type="number" min="1" bind:value={shortBreakMinutes} />
+        <span class="grid-unit">分</span>
+      </div>
+    </div>
+    <div class="grid-cell">
+      <label for="long-break">長い休憩</label>
+      <div class="grid-input">
+        <input id="long-break" type="number" min="1" max="30" bind:value={longBreakMinutes} />
+        <span class="grid-unit">分</span>
+      </div>
+    </div>
+    <div class="grid-cell">
+      <label for="cycles">サイクル</label>
+      <div class="grid-input">
+        <input id="cycles" type="number" min="1" max="10" bind:value={shortBreaksBeforeLong} />
+        <span class="grid-unit">回</span>
+      </div>
     </div>
   </div>
 
-  <div class="field">
-    <label for="short-break">短い休憩</label>
-    <div class="input-group">
-      <input
-        id="short-break"
-        type="number"
-        min="1"
-        bind:value={shortBreakMinutes}
-      />
-      <span class="unit">分</span>
+  <div class="toggle-grid">
+    <div class="toggle-row">
+      <span class="toggle-label">メディア自動中断</span>
+      <label class="toggle-sm">
+        <input
+          type="checkbox"
+          checked={pauseMediaOnBreak}
+          onchange={(e) => onPauseMediaChange(e.currentTarget.checked)}
+        />
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Tick音</span>
+      <label class="toggle-sm">
+        <input
+          type="checkbox"
+          checked={tickSound}
+          onchange={(e) => onTickSoundChange(e.currentTarget.checked)}
+        />
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">アイコン非表示</span>
+      <label class="toggle-sm">
+        <input
+          type="checkbox"
+          checked={hideTrayIcon}
+          onchange={(e) => onHideTrayIconChange(e.currentTarget.checked)}
+        />
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">自動起動</span>
+      <label class="toggle-sm">
+        <input
+          type="checkbox"
+          checked={autostartEnabled}
+          onchange={(e) => onAutostartChange(e.currentTarget.checked)}
+        />
+        <span class="slider"></span>
+      </label>
     </div>
   </div>
-
-  <div class="field">
-    <label for="long-break">長い休憩</label>
-    <div class="input-group">
-      <input
-        id="long-break"
-        type="number"
-        min="1"
-        max="30"
-        bind:value={longBreakMinutes}
-      />
-      <span class="unit">分</span>
-    </div>
-  </div>
-
-  <div class="field">
-    <label for="cycles">長い休憩までの回数</label>
-    <div class="input-group">
-      <input
-        id="cycles"
-        type="number"
-        min="1"
-        max="10"
-        bind:value={shortBreaksBeforeLong}
-      />
-      <span class="unit">回</span>
-    </div>
-  </div>
-
-  <div class="field">
-    <label for="pause-media">休憩時にメディアを一時停止</label>
-    <label class="toggle">
-      <input
-        id="pause-media"
-        type="checkbox"
-        checked={pauseMediaOnBreak}
-        onchange={(e) => onPauseMediaChange(e.currentTarget.checked)}
-      />
-      <span class="slider"></span>
-    </label>
-  </div>
-
-  <div class="field">
-    <label for="tick-sound">Tick 音</label>
-    <label class="toggle">
-      <input
-        id="tick-sound"
-        type="checkbox"
-        checked={tickSound}
-        onchange={(e) => onTickSoundChange(e.currentTarget.checked)}
-      />
-      <span class="slider"></span>
-    </label>
-  </div>
-
-  <div class="field">
-    <label for="hide-tray-icon">トレイアイコンを非表示</label>
-    <label class="toggle">
-      <input
-        id="hide-tray-icon"
-        type="checkbox"
-        checked={hideTrayIcon}
-        onchange={(e) => onHideTrayIconChange(e.currentTarget.checked)}
-      />
-      <span class="slider"></span>
-    </label>
-  </div>
-
-  <div class="field">
-    <label for="autostart">ログイン時に自動起動</label>
-    <label class="toggle">
-      <input
-        id="autostart"
-        type="checkbox"
-        checked={autostartEnabled}
-        onchange={(e) => onAutostartChange(e.currentTarget.checked)}
-      />
-      <span class="slider"></span>
-    </label>
-  </div>
-
 </section>
 
 <style>
   .form {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
-    flex: 1;
-  }
-
-  .field {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     gap: 0.5rem;
   }
 
-  .field label {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
+  /* 2x2 number input grid */
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .grid-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.4rem 0.5rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+  }
+
+  .grid-cell label {
+    font-size: 0.65rem;
+    color: var(--text-tertiary);
+    letter-spacing: 0.02em;
+  }
+
+  .grid-input {
+    display: flex;
+    align-items: baseline;
+    gap: 0.2rem;
+  }
+
+  .grid-cell input {
+    width: 100%;
+    padding: 0.15rem 0;
+    font-size: 1rem;
+    font-weight: 400;
+    text-align: left;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .grid-cell input:focus {
+    outline: none;
+  }
+
+  /* Hide number spinners */
+  .grid-cell input::-webkit-inner-spin-button,
+  .grid-cell input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .grid-unit {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
     flex-shrink: 0;
   }
 
-  .input-group {
+  /* 2x2 toggle grid */
+  .toggle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem;
+  }
+
+  .toggle-row {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
-  }
-
-  .input-group input {
-    width: 60px;
+    justify-content: space-between;
+    gap: 0.4rem;
     padding: 0.3rem 0.5rem;
-    font-size: 0.9rem;
-    text-align: right;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
-    background: var(--bg-secondary);
-    color: var(--text);
+    border-radius: var(--radius-sm);
+    transition: background var(--duration-fast);
   }
 
-  .input-group input:focus {
-    outline: none;
-    border-color: var(--accent-light);
+  .toggle-row:hover {
+    background: rgba(255, 255, 255, 0.03);
   }
 
-  .unit {
-    font-size: 0.8rem;
+  .toggle-label {
+    font-size: 0.7rem;
     color: var(--text-secondary);
-    width: 1.5em;
+    flex: 1;
+    line-height: 1.2;
   }
 
-  .toggle {
+  /* Small toggle switch (30x17px) */
+  .toggle-sm {
     position: relative;
     display: inline-block;
-    width: 36px;
-    height: 20px;
+    width: 30px;
+    height: 17px;
     cursor: pointer;
+    flex-shrink: 0;
   }
 
-  .toggle input {
+  .toggle-sm input {
     opacity: 0;
     width: 0;
     height: 0;
@@ -204,29 +220,28 @@
   .slider {
     position: absolute;
     inset: 0;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 10px;
-    transition: background 0.2s;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 9px;
+    transition: background var(--duration-normal) var(--ease-out);
   }
 
   .slider::before {
     content: "";
     position: absolute;
-    width: 14px;
-    height: 14px;
+    width: 11px;
+    height: 11px;
     left: 3px;
     bottom: 3px;
     background: var(--text);
     border-radius: 50%;
-    transition: transform 0.2s;
+    transition: transform var(--duration-normal) var(--ease-out);
   }
 
-  .toggle input:checked + .slider {
+  .toggle-sm input:checked + .slider {
     background: var(--success);
   }
 
-  .toggle input:checked + .slider::before {
-    transform: translateX(16px);
+  .toggle-sm input:checked + .slider::before {
+    transform: translateX(13px);
   }
-
 </style>

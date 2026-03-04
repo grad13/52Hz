@@ -4,7 +4,6 @@ mod overlay;
 mod timer;
 mod tray;
 
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tauri::{Emitter, Listener, Manager, WebviewUrl, WebviewWindowBuilder};
@@ -142,7 +141,7 @@ pub fn run() {
                 WebviewUrl::App("index.html".into()),
             )
             .title("52Hz")
-            .inner_size(320.0, 560.0)
+            .inner_size(320.0, 420.0)
             .visible(false)
             .resizable(false)
             .decorations(false)
@@ -185,12 +184,13 @@ pub fn run() {
                 std::mem::forget(block);
             }
 
-            // Media pause tracking flag
-            let media_paused_by_app = Arc::new(AtomicBool::new(false));
+            // Media pause tracking: stores which apps were paused by us
+            let media_paused_apps: Arc<std::sync::Mutex<Vec<String>>> =
+                Arc::new(std::sync::Mutex::new(Vec::new()));
 
             // Listen for break-start to open overlay (must run on main thread for UI ops)
             let app_handle = app.handle().clone();
-            let media_flag_start = media_paused_by_app.clone();
+            let media_apps_start = media_paused_apps.clone();
             app.listen("break-start", move |_event| {
                 if cfg!(debug_assertions) {
                     eprintln!("[52Hz] break-start → opening overlay");
@@ -210,8 +210,8 @@ pub fn run() {
                         if cfg!(debug_assertions) {
                             eprintln!("[52Hz] break-start → pausing media");
                         }
-                        media::send_play_pause();
-                        media_flag_start.store(true, Ordering::Relaxed);
+                        let paused = media::pause_media_apps();
+                        *media_apps_start.lock().unwrap() = paused;
                     }
                 }
 
@@ -223,7 +223,7 @@ pub fn run() {
 
             // Listen for break-end to close overlay (must run on main thread for UI ops)
             let app_handle2 = app.handle().clone();
-            let media_flag_end = media_paused_by_app.clone();
+            let media_apps_end = media_paused_apps.clone();
             app.listen("break-end", move |_event| {
                 if cfg!(debug_assertions) {
                     eprintln!("[52Hz] break-end → closing overlay");
@@ -232,11 +232,13 @@ pub fn run() {
                 // Resume media if we paused it
                 #[cfg(target_os = "macos")]
                 {
-                    if media_flag_end.swap(false, Ordering::Relaxed) {
+                    let apps: Vec<String> =
+                        std::mem::take(&mut *media_apps_end.lock().unwrap());
+                    if !apps.is_empty() {
                         if cfg!(debug_assertions) {
-                            eprintln!("[52Hz] break-end → resuming media");
+                            eprintln!("[52Hz] break-end → resuming media: {:?}", apps);
                         }
-                        media::send_play_pause();
+                        media::resume_media_apps(&apps);
                     }
                 }
 

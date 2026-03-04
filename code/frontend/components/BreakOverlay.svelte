@@ -80,7 +80,7 @@
   .overlay {
     position: fixed;
     inset: 0;
-    background: #0a0a0e;
+    background: radial-gradient(ellipse at center, #12121a 0%, #0a0a0e 70%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -104,63 +104,81 @@
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: scale(0.96);
+      transform: scale(0.94) translateY(8px);
     }
     to {
       opacity: 1;
-      transform: scale(1);
+      transform: scale(1) translateY(0);
     }
   }
 
   h1 {
-    font-size: 2rem;
+    font-size: 1.6rem;
     font-weight: 300;
     margin-bottom: 0.5rem;
-    letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.85);
   }
 
   .subtitle {
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.45);
-    margin-bottom: 3rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.35);
+    margin-bottom: 2.5rem;
     font-weight: 300;
+    letter-spacing: 0.04em;
   }
 
   .timer-ring {
-    width: 200px;
-    height: 200px;
+    width: 160px;
+    height: 160px;
     border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 3rem;
+    margin-bottom: 2.5rem;
+    animation: breathe 4s ease-in-out infinite;
+    box-shadow: 0 0 40px rgba(108, 92, 231, 0.08),
+                inset 0 0 40px rgba(108, 92, 231, 0.03);
+  }
+
+  @keyframes breathe {
+    0%, 100% {
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 40px rgba(108, 92, 231, 0.05),
+                  inset 0 0 40px rgba(108, 92, 231, 0.02);
+    }
+    50% {
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 60px rgba(108, 92, 231, 0.12),
+                  inset 0 0 40px rgba(108, 92, 231, 0.05);
+    }
   }
 
   .timer {
-    font-size: 3.5rem;
+    font-size: 2.8rem;
     font-weight: 200;
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.8);
   }
 
   .skip-btn {
     padding: 0.6rem 2.5rem;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 400;
-    letter-spacing: 0.05em;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 20px;
+    letter-spacing: 0.08em;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-pill);
     background: transparent;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.4s var(--ease-out);
   }
 
   .skip-btn:hover {
-    border-color: rgba(255, 255, 255, 0.4);
-    color: rgba(255, 255, 255, 0.8);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.04);
   }
 </style>
