@@ -1,0 +1,702 @@
+[
+  {
+    "id": "p01",
+    "name": "朝活エンジニア",
+    "type": "worker",
+    "activeHours": [5, 8],
+    "sessionMinutes": 50,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["おはようございます、朝活開始します", "出勤前にひと集中", "早起きできた、やるぞ"],
+      "exit": ["出勤してきます、お疲れさまです", "行ってきます！", "朝の部おわり"],
+      "during": ["コーヒー淹れてきた", "朝は頭がクリアで捗る", "あと少し…"],
+      "encourage": ["早起きえらい！", "朝から集中すごい"]
+    }
+  },
+  {
+    "id": "p02",
+    "name": "受験生A",
+    "type": "student",
+    "activeHours": [6, 23],
+    "sessionMinutes": 90,
+    "messageFrequency": "high",
+    "messages": {
+      "enter": ["おはようございます、今日もがんばります", "数学やります", "参加します！"],
+      "exit": ["ご飯食べてきます", "今日はここまで、おつかれさまでした", "また明日！"],
+      "during": ["眠い…でもがんばる", "あと3章…", "過去問むずい"],
+      "encourage": ["がんばりましょう！", "一緒にがんばろう"]
+    }
+  },
+  {
+    "id": "p03",
+    "name": "社労士受験生",
+    "type": "worker",
+    "activeHours": [4, 8],
+    "sessionMinutes": 120,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["早朝おはようございます、今日もよろしく", "4時半から入ります", "朝活スタート"],
+      "exit": ["出勤します、皆さんがんばって！", "今日の朝活おわり", "行ってきます"],
+      "during": ["労基法復習中", "テキスト3周目", "今日も雨ですね"],
+      "encourage": ["朝早くからお疲れさまです", "コツコツ積み上げましょう"]
+    }
+  },
+  {
+    "id": "p04",
+    "name": "デザイナー",
+    "type": "freelance",
+    "activeHours": [10, 18],
+    "sessionMinutes": 45,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["作業開始します", "デザイン作業入ります"],
+      "exit": ["区切りついたので離脱します", "お昼にします"],
+      "during": ["集中できてきた", "いい感じ"],
+      "encourage": ["お疲れさまです！"]
+    }
+  },
+  {
+    "id": "p05",
+    "name": "TOEIC勉強中",
+    "type": "student",
+    "activeHours": [7, 22],
+    "sessionMinutes": 60,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["リスニング練習します", "おはようございます、英語やります", "TOEIC対策開始"],
+      "exit": ["今日のノルマ達成！おつかれさまです", "耳が疲れた…終わります", "いい感じに集中できた"],
+      "during": ["Part5むずかしい", "シャドーイング中", "単語帳あと50個"],
+      "encourage": ["英語がんばって！", "応援してます"]
+    }
+  },
+  {
+    "id": "p06",
+    "name": "夜型プログラマ",
+    "type": "worker",
+    "activeHours": [21, 3],
+    "sessionMinutes": 60,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["こんばんは、夜の部始めます", "コード書きます", "夜が本番"],
+      "exit": ["そろそろ寝ます、おやすみなさい", "キリがいいので終わります", "おやすみ！"],
+      "during": ["バグ取れた！", "あと少しで完成", "コーヒーおかわり"],
+      "encourage": ["夜遅くまでお疲れさまです", "がんばれ！"]
+    }
+  },
+  {
+    "id": "p07",
+    "name": "高校生",
+    "type": "student",
+    "activeHours": [16, 23],
+    "sessionMinutes": 45,
+    "messageFrequency": "high",
+    "messages": {
+      "enter": ["ただいま！勉強します", "テスト前なので参加", "部活終わった、やるぞ"],
+      "exit": ["ご飯呼ばれた", "今日はここまで！おやすみ", "終わります"],
+      "during": ["古文わからん…", "数学解けた！", "集中集中"],
+      "encourage": ["テストがんばって！", "一緒にがんばろ！"]
+    }
+  },
+  {
+    "id": "p08",
+    "name": "在宅ワーカー",
+    "type": "worker",
+    "activeHours": [9, 18],
+    "sessionMinutes": 50,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["仕事始めます", "午後の部スタート", "在宅なので集中環境作ります"],
+      "exit": ["定時なので上がります", "お疲れさまでした！", "今日もおわり"],
+      "during": ["資料作成中", "会議まであと30分、集中"],
+      "encourage": ["お仕事お疲れさまです"]
+    }
+  },
+  {
+    "id": "p09",
+    "name": "医学生",
+    "type": "student",
+    "activeHours": [6, 24],
+    "sessionMinutes": 120,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["おはようございます、国試対策します", "勉強開始", "今日は解剖学"],
+      "exit": ["病院実習行ってきます", "お疲れさまでした", "今日のノルマ終了"],
+      "during": ["覚えること多すぎる…", "QBあと200問", "暗記つらい"],
+      "encourage": ["医学部すごい、がんばって！", "応援してます"]
+    }
+  },
+  {
+    "id": "p10",
+    "name": "ライター",
+    "type": "freelance",
+    "activeHours": [10, 22],
+    "sessionMinutes": 45,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["執筆開始します", "原稿に取りかかります", "締め切り近いのでがんばる"],
+      "exit": ["キリがいいので休憩", "今日の分書けた！", "納品完了！離脱します"],
+      "during": ["3000字書いた", "あと少し…", "いい文章が浮かんだ"],
+      "encourage": ["執筆がんばって！", "締め切りファイト！"]
+    }
+  },
+  {
+    "id": "p11",
+    "name": "簿記受験生",
+    "type": "student",
+    "activeHours": [8, 21],
+    "sessionMinutes": 60,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["簿記2級の勉強します", "おはようございます！参加します", "仕訳練習開始"],
+      "exit": ["今日の分終わりました", "お疲れさまです！また明日", "目が疲れたので終わります"],
+      "during": ["工業簿記むずい…", "仕訳100問目", "電卓の音が心地いい"],
+      "encourage": ["簿記がんばって！", "合格祈ってます"]
+    }
+  },
+  {
+    "id": "p12",
+    "name": "朝ランナー",
+    "type": "hobby",
+    "activeHours": [5, 7],
+    "sessionMinutes": 30,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["ラン後のストレッチしながら参加", "走ってきた！読書します"],
+      "exit": ["シャワー浴びてきます", "準備しなきゃ、おつかれ"],
+      "during": ["今日は5km走った", "朝の空気が気持ちいい"],
+      "encourage": ["朝活仲間！がんばろう"]
+    }
+  },
+  {
+    "id": "p13",
+    "name": "大学院生",
+    "type": "student",
+    "activeHours": [9, 25],
+    "sessionMinutes": 90,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["論文読みます", "研究室から参加", "今日は実験データの整理"],
+      "exit": ["ゼミ行ってきます", "今日はここまで", "進捗出たので終わり"],
+      "during": ["先行研究多すぎ…", "LaTeX格闘中", "データ分析中"],
+      "encourage": ["研究がんばって！", "論文応援してます"]
+    }
+  },
+  {
+    "id": "p14",
+    "name": "子育てパパ",
+    "type": "worker",
+    "activeHours": [5, 7],
+    "sessionMinutes": 40,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["子供が寝てる間に集中", "おはようございます、朝活です"],
+      "exit": ["子供起きたので離脱", "送り迎え行ってきます"],
+      "during": ["静かな朝は貴重", "あと20分…"],
+      "encourage": ["朝からえらい！"]
+    }
+  },
+  {
+    "id": "p15",
+    "name": "イラストレーター",
+    "type": "freelance",
+    "activeHours": [11, 23],
+    "sessionMinutes": 60,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["作画開始します", "ペン入れやります", "今日は背景描く"],
+      "exit": ["いい感じに描けたので休憩", "目が限界…おつかれさまです", "今日のノルマ達成"],
+      "during": ["線画完成！", "色塗り楽しい", "手が痛い…"],
+      "encourage": ["素敵な絵が描けますように！"]
+    }
+  },
+  {
+    "id": "p16",
+    "name": "公務員試験",
+    "type": "student",
+    "activeHours": [7, 22],
+    "sessionMinutes": 90,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["判断推理やります", "今日も公務員試験対策", "おはようございます、参加します"],
+      "exit": ["疲れたので終わります", "今日の目標達成！", "お疲れさまでした"],
+      "during": ["数的処理つらい", "面接対策もしなきゃ", "過去問3年分"],
+      "encourage": ["公務員試験がんばれ！", "一緒にがんばりましょう"]
+    }
+  },
+  {
+    "id": "p17",
+    "name": "Webエンジニア",
+    "type": "freelance",
+    "activeHours": [10, 20],
+    "sessionMinutes": 50,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["コーディング始めます", "実装入ります"],
+      "exit": ["PRレビュー出したので休憩", "今日の開発おわり"],
+      "during": ["TypeScript最高", "テスト通った！"],
+      "encourage": ["開発がんばって！"]
+    }
+  },
+  {
+    "id": "p18",
+    "name": "看護学生",
+    "type": "student",
+    "activeHours": [6, 22],
+    "sessionMinutes": 60,
+    "messageFrequency": "high",
+    "messages": {
+      "enter": ["国試対策します！", "おはようございます、勉強開始", "実習レポート書きます"],
+      "exit": ["バイト行ってきます", "おつかれさまです！", "今日もがんばった"],
+      "during": ["解剖生理むずい", "暗記カード作成中", "必修問題あと50問"],
+      "encourage": ["看護師目指してがんばって！", "応援してます！"]
+    }
+  },
+  {
+    "id": "p19",
+    "name": "読書家",
+    "type": "hobby",
+    "activeHours": [20, 24],
+    "sessionMinutes": 45,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["読書タイム開始", "今日は哲学書読みます"],
+      "exit": ["眠くなってきた、おやすみなさい", "いいところで終わり"],
+      "during": ["没頭してた", "メモが止まらない"],
+      "encourage": ["読書いいですね"]
+    }
+  },
+  {
+    "id": "p20",
+    "name": "中学生",
+    "type": "student",
+    "activeHours": [16, 21],
+    "sessionMinutes": 30,
+    "messageFrequency": "high",
+    "messages": {
+      "enter": ["テスト勉強します！", "塾の宿題やる", "がんばるぞ"],
+      "exit": ["ごはん！", "終わりー！おつかれ！", "明日もがんばる"],
+      "during": ["理科わからん", "英単語あと30個", "やっと半分"],
+      "encourage": ["がんばれー！", "テストファイト！"]
+    }
+  },
+  {
+    "id": "p21",
+    "name": "経理担当",
+    "type": "worker",
+    "activeHours": [8, 17],
+    "sessionMinutes": 50,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["経理処理集中します", "月末なので気合い入れます"],
+      "exit": ["定時で上がります、おつかれさまです", "午前の部おわり"],
+      "during": ["仕訳の山…", "Excel職人になりつつある"],
+      "encourage": ["お仕事おつかれさまです"]
+    }
+  },
+  {
+    "id": "p22",
+    "name": "司法書士受験生",
+    "type": "student",
+    "activeHours": [5, 22],
+    "sessionMinutes": 120,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["不動産登記法やります", "おはようございます、今日も長丁場", "勉強開始します"],
+      "exit": ["12時間やった…おつかれさまでした", "今日はここまで", "脳が限界"],
+      "during": ["条文読み込み中", "過去問30年分…", "記述式つらい"],
+      "encourage": ["長時間すごい！", "合格応援してます"]
+    }
+  },
+  {
+    "id": "p23",
+    "name": "音楽制作",
+    "type": "hobby",
+    "activeHours": [14, 24],
+    "sessionMinutes": 60,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["DTM作業します", "ミックス作業入ります"],
+      "exit": ["耳休めます、おつかれ", "いい曲できた気がする"],
+      "during": ["ベースライン悩む", "マスタリング中"],
+      "encourage": ["音楽制作かっこいい"]
+    }
+  },
+  {
+    "id": "p24",
+    "name": "主婦勉強家",
+    "type": "worker",
+    "activeHours": [10, 14],
+    "sessionMinutes": 45,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["子供送り出したので勉強します", "午前中集中タイム", "参加します、よろしく"],
+      "exit": ["お迎えの時間なので", "お昼作ります、おつかれさまです", "午前の部おわり"],
+      "during": ["家事の合間に集中", "FP2級の勉強中", "静かで集中できる"],
+      "encourage": ["お互いがんばりましょう！"]
+    }
+  },
+  {
+    "id": "p25",
+    "name": "プログラミング初心者",
+    "type": "student",
+    "activeHours": [19, 23],
+    "sessionMinutes": 45,
+    "messageFrequency": "high",
+    "messages": {
+      "enter": ["Python勉強します！", "プログラミング学習開始", "今日こそエラー直す"],
+      "exit": ["動いた！今日はここまで", "おつかれさまです", "明日もコード書くぞ"],
+      "during": ["エラーが…", "やっと理解できた！", "写経中"],
+      "encourage": ["プログラミングがんばれ！", "エラーは成長の証"]
+    }
+  },
+  {
+    "id": "p26",
+    "name": "翻訳者",
+    "type": "freelance",
+    "activeHours": [8, 20],
+    "sessionMinutes": 50,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["翻訳作業入ります", "今日は技術文書の翻訳"],
+      "exit": ["ひと段落ついたので休憩", "納品完了！"],
+      "during": ["いい訳語が見つからない…", "専門用語調べ中"],
+      "encourage": ["翻訳おつかれさまです"]
+    }
+  },
+  {
+    "id": "p27",
+    "name": "浪人生",
+    "type": "student",
+    "activeHours": [7, 23],
+    "sessionMinutes": 90,
+    "messageFrequency": "high",
+    "messages": {
+      "enter": ["今日も1日がんばります", "予備校の自習室から参加", "おはようございます"],
+      "exit": ["帰宅します、おつかれさまでした", "今日12時間できた", "明日もがんばるぞ"],
+      "during": ["英語長文3つ目", "去年の悔しさをバネに", "模試の復習中"],
+      "encourage": ["浪人つらいけどがんばれ！", "来年絶対受かる！"]
+    }
+  },
+  {
+    "id": "p28",
+    "name": "データサイエンティスト",
+    "type": "worker",
+    "activeHours": [10, 19],
+    "sessionMinutes": 50,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["分析作業始めます", "モデル学習回します"],
+      "exit": ["ミーティングなので離脱", "今日の分析おわり"],
+      "during": ["精度上がってきた", "前処理が本番"],
+      "encourage": ["データ分析がんばって"]
+    }
+  },
+  {
+    "id": "p29",
+    "name": "行政書士受験生",
+    "type": "student",
+    "activeHours": [6, 21],
+    "sessionMinutes": 60,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["行政法の勉強します", "おはようございます、今日もよろしく", "テキスト読み込みます"],
+      "exit": ["今日はここまで、おつかれさま", "夕飯の準備します", "目標達成できました"],
+      "during": ["判例集読んでる", "民法むずい…", "条文暗記中"],
+      "encourage": ["資格試験がんばって！"]
+    }
+  },
+  {
+    "id": "p30",
+    "name": "カフェ勉強",
+    "type": "student",
+    "activeHours": [10, 17],
+    "sessionMinutes": 60,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["カフェから参加です", "ラテ飲みながら勉強します", "お気に入りの席取れた"],
+      "exit": ["閉店時間なので撤収", "レポート書けた！おつかれ", "そろそろ帰ります"],
+      "during": ["BGMがちょうどいい", "カフェラテおかわり", "周りも勉強してる人多い"],
+      "encourage": ["カフェ勉いいですね！"]
+    }
+  },
+  {
+    "id": "p31",
+    "name": "ワーママ",
+    "type": "worker",
+    "activeHours": [22, 1],
+    "sessionMinutes": 40,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["子供寝たので自分時間", "夜の勉強タイム開始"],
+      "exit": ["明日も早いので寝ます、おやすみ", "今日もおつかれさま"],
+      "during": ["貴重な夜の時間", "資格の勉強中"],
+      "encourage": ["夜遅くまでおつかれさまです"]
+    }
+  },
+  {
+    "id": "p32",
+    "name": "大学1年生",
+    "type": "student",
+    "activeHours": [9, 23],
+    "sessionMinutes": 45,
+    "messageFrequency": "high",
+    "messages": {
+      "enter": ["レポート書きます！", "授業の予習します", "図書館から参加"],
+      "exit": ["サークル行ってきます！", "今日のレポート終わった！", "おつかれー！"],
+      "during": ["参考文献探し中", "Word嫌いになりそう", "あと2000字…"],
+      "encourage": ["レポートファイト！", "がんばれー"]
+    }
+  },
+  {
+    "id": "p33",
+    "name": "英会話練習中",
+    "type": "hobby",
+    "activeHours": [6, 8],
+    "sessionMinutes": 30,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["朝の英語練習します", "シャドーイング開始"],
+      "exit": ["今日の練習おわり、行ってきます"],
+      "during": ["発音難しい…", "リスニング力上がってきた気がする"],
+      "encourage": ["英語がんばって！"]
+    }
+  },
+  {
+    "id": "p34",
+    "name": "起業準備中",
+    "type": "freelance",
+    "activeHours": [8, 22],
+    "sessionMinutes": 50,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["事業計画書作成します", "今日もビジネスモデル練ります", "作業開始"],
+      "exit": ["打ち合わせ入るので離脱", "今日の作業おわり", "いい進捗でした"],
+      "during": ["マーケットリサーチ中", "数字が合わない…", "ピッチ資料作成中"],
+      "encourage": ["起業応援してます！"]
+    }
+  },
+  {
+    "id": "p35",
+    "name": "定年後の勉強家",
+    "type": "hobby",
+    "activeHours": [6, 16],
+    "sessionMinutes": 45,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["おはようございます、歴史の勉強します", "朝の読書開始", "今日も学びます"],
+      "exit": ["散歩に行ってきます", "午前の部おわり、おつかれさまです", "お昼にします"],
+      "during": ["若い方と一緒に勉強できて嬉しい", "新しいこと学ぶのは楽しい"],
+      "encourage": ["みなさんがんばってますね", "応援してますよ"]
+    }
+  },
+  {
+    "id": "p36",
+    "name": "薬学生",
+    "type": "student",
+    "activeHours": [7, 23],
+    "sessionMinutes": 90,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["薬理学の勉強します", "CBT対策開始", "おはようございます"],
+      "exit": ["実習準備があるので", "おつかれさまでした！", "今日も充実してた"],
+      "during": ["薬の名前覚えきれない", "ゴロ合わせ作成中", "化学構造式つらい"],
+      "encourage": ["薬学部がんばって！", "暗記ファイト"]
+    }
+  },
+  {
+    "id": "p37",
+    "name": "副業ブロガー",
+    "type": "worker",
+    "activeHours": [20, 24],
+    "sessionMinutes": 45,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["ブログ記事書きます", "本業おわったので副業タイム", "執筆開始"],
+      "exit": ["1記事書けた！おやすみなさい", "明日投稿します", "今日はここまで"],
+      "during": ["SEO意識して書くの難しい", "3000字到達", "サムネ作成中"],
+      "encourage": ["ブログ更新がんばって！"]
+    }
+  },
+  {
+    "id": "p38",
+    "name": "小学生ママ",
+    "type": "worker",
+    "activeHours": [9, 14],
+    "sessionMinutes": 40,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["子供送り出したので作業します", "パート前に少し集中"],
+      "exit": ["お迎えの時間です", "パート行ってきます"],
+      "during": ["静かな家は最高", "家事と両立がんばる"],
+      "encourage": ["ママさんがんばって！"]
+    }
+  },
+  {
+    "id": "p39",
+    "name": "建築学生",
+    "type": "student",
+    "activeHours": [9, 26],
+    "sessionMinutes": 120,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["製図やります", "模型制作開始", "設計課題に取りかかります"],
+      "exit": ["提出間に合った…", "今日はここまで", "徹夜回避できそう"],
+      "during": ["CADと格闘中", "スケール感覚養い中", "締め切りやばい"],
+      "encourage": ["建築がんばれ！", "作品楽しみ"]
+    }
+  },
+  {
+    "id": "p40",
+    "name": "ヨガインストラクター",
+    "type": "freelance",
+    "activeHours": [6, 12],
+    "sessionMinutes": 30,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["レッスン準備の事務作業します", "おはようございます"],
+      "exit": ["レッスン行ってきます！", "午前の事務おわり"],
+      "during": ["集中して呼吸を整えながら", "経理処理中…"],
+      "encourage": ["深呼吸して集中しましょう"]
+    }
+  },
+  {
+    "id": "p41",
+    "name": "情報系大学生",
+    "type": "student",
+    "activeHours": [10, 25],
+    "sessionMinutes": 60,
+    "messageFrequency": "high",
+    "messages": {
+      "enter": ["課題やります", "AtCoder精進します", "おはよう、コード書く"],
+      "exit": ["AC取れたので満足", "おつかれ！おやすみ", "講義行ってきます"],
+      "during": ["TLE…最適化しなきゃ", "アルゴリズムおもしろい", "デバッグ中"],
+      "encourage": ["競プロがんばれ！", "ACおめ！"]
+    }
+  },
+  {
+    "id": "p42",
+    "name": "新社会人",
+    "type": "worker",
+    "activeHours": [6, 8],
+    "sessionMinutes": 40,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["出勤前の勉強タイム", "おはようございます、資格勉強します", "業務知識の予習"],
+      "exit": ["出勤します！今日もがんばるぞ", "行ってきます"],
+      "during": ["社会人の勉強って大変", "先輩みたいになりたい"],
+      "encourage": ["新社会人がんばれ！", "応援してます"]
+    }
+  },
+  {
+    "id": "p43",
+    "name": "趣味の数学",
+    "type": "hobby",
+    "activeHours": [21, 24],
+    "sessionMinutes": 60,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["趣味の数学タイム", "整数論やります"],
+      "exit": ["いい問題に出会えた、おやすみ", "今日の数学おわり"],
+      "during": ["証明が美しい", "この定理すごい…"],
+      "encourage": ["数学楽しいですよね"]
+    }
+  },
+  {
+    "id": "p44",
+    "name": "韓国語勉強中",
+    "type": "hobby",
+    "activeHours": [19, 22],
+    "sessionMinutes": 30,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["韓国語の勉強します！", "ドラマ見た後に復習", "単語帳開きます"],
+      "exit": ["今日の分おわり！", "おつかれさまです", "明日もがんばろう"],
+      "during": ["ハングル読めるようになってきた", "文法難しい…", "推しの言葉わかりたい"],
+      "encourage": ["語学がんばって！", "韓国語いいね"]
+    }
+  },
+  {
+    "id": "p45",
+    "name": "教員",
+    "type": "worker",
+    "activeHours": [5, 7],
+    "sessionMinutes": 40,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["授業準備します", "朝のうちにプリント作成"],
+      "exit": ["学校行ってきます", "朝活おわり、行ってきます"],
+      "during": ["テスト作成中", "来週の授業計画"],
+      "encourage": ["先生もがんばってるんですね"]
+    }
+  },
+  {
+    "id": "p46",
+    "name": "FP受験生",
+    "type": "student",
+    "activeHours": [8, 20],
+    "sessionMinutes": 60,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["FP2級の勉強始めます", "今日はタックスプランニング", "参加します！"],
+      "exit": ["今日の範囲終わりました", "おつかれさまです！", "理解できてきた気がする"],
+      "during": ["6つの係数が覚えられない", "ライフプランニング楽しい", "過去問80点取れた！"],
+      "encourage": ["FPがんばって！", "一緒に合格しよう"]
+    }
+  },
+  {
+    "id": "p47",
+    "name": "深夜の作業者",
+    "type": "freelance",
+    "activeHours": [23, 5],
+    "sessionMinutes": 60,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["深夜の集中タイム", "静かな夜に作業します"],
+      "exit": ["そろそろ限界、おやすみなさい", "朝日が見えてきた…寝ます"],
+      "during": ["深夜のテンションで捗る", "夜が一番集中できる"],
+      "encourage": ["夜型仲間！がんばろう"]
+    }
+  },
+  {
+    "id": "p48",
+    "name": "リハビリ中",
+    "type": "hobby",
+    "activeHours": [10, 16],
+    "sessionMinutes": 30,
+    "messageFrequency": "low",
+    "messages": {
+      "enter": ["少しずつ勉強再開します", "体調見ながら参加"],
+      "exit": ["無理せず休みます", "今日はこのくらいで"],
+      "during": ["少しでも前進", "焦らずいこう"],
+      "encourage": ["無理しないでね", "マイペースでOK"]
+    }
+  },
+  {
+    "id": "p49",
+    "name": "海外在住",
+    "type": "worker",
+    "activeHours": [1, 10],
+    "sessionMinutes": 50,
+    "messageFrequency": "medium",
+    "messages": {
+      "enter": ["時差がありますがこんにちは", "海外から参加です", "仕事始めます"],
+      "exit": ["こちらは夕方なので終わります", "おつかれさまです！", "日本は夜ですよね、おやすみなさい"],
+      "during": ["時差勤務つらい時もある", "日本語使えて嬉しい"],
+      "encourage": ["海外からもがんばりましょう！"]
+    }
+  },
+  {
+    "id": "p50",
+    "name": "宅浪生",
+    "type": "student",
+    "activeHours": [7, 22],
+    "sessionMinutes": 90,
+    "messageFrequency": "high",
+    "messages": {
+      "enter": ["おはようございます、今日も自宅で勉強", "誰かがいると思うとがんばれる", "参加します"],
+      "exit": ["今日も1日おつかれさまでした", "明日もよろしく", "晩ごはん食べてきます"],
+      "during": ["一人だと不安になるけどがんばる", "共通テストまであと何日…", "孤独だけどここに来ると安心する"],
+      "encourage": ["宅浪つらいよね、がんばろう", "一人じゃないよ！", "絶対受かる！"]
+    }
+  }
+]
