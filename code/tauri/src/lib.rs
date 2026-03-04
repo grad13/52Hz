@@ -125,7 +125,6 @@ pub fn run() {
             commands::set_tray_icon_visible,
             commands::reset_timer,
             commands::quit_app,
-            commands::test_presence_toast,
         ])
         .setup(move |app| {
             if cfg!(debug_assertions) {
@@ -535,50 +534,69 @@ pub fn run() {
                 #[cfg(target_os = "macos")]
                 {
                     use objc2::rc::Retained;
-                    use objc2_app_kit::{NSWindow, NSWindowStyleMask};
+                    use objc2_app_kit::{NSColor, NSWindow};
                     if let Ok(ns_window) = toast_window.ns_window() {
                         unsafe {
                             let ns_win: Retained<NSWindow> =
                                 Retained::retain(ns_window as *mut NSWindow).unwrap();
                             ns_win.setLevel(25); // NSStatusWindowLevel
 
-                            // Rounded corners via Titled mask
-                            let mut mask = ns_win.styleMask();
-                            mask |= NSWindowStyleMask::Titled;
-                            mask |= NSWindowStyleMask::FullSizeContentView;
-                            ns_win.setStyleMask(mask);
-                            let _: () = objc2::msg_send![
-                                &*ns_win, setTitlebarAppearsTransparent: true
-                            ];
-                            let _: () = objc2::msg_send![
-                                &*ns_win, setTitleVisibility: 1_i64
-                            ];
+                            // Transparent window background
+                            ns_win.setOpaque(false);
+                            ns_win.setBackgroundColor(Some(&NSColor::clearColor()));
+                            ns_win.setHasShadow(false);
 
-                            // Hide NSTitlebarContainerView (close/minimize/zoom buttons)
+                            // Disable WKWebView background drawing
+                            // Walk subviews to find WKWebView and call
+                            // setValue:NO forKey:@"drawsBackground"
                             if let Some(content_view) = ns_win.contentView() {
-                                let superview: *mut objc2::runtime::AnyObject =
-                                    objc2::msg_send![&*content_view, superview];
-                                if !superview.is_null() {
-                                    let subs: *mut objc2::runtime::AnyObject =
-                                        objc2::msg_send![superview, subviews];
-                                    let n: usize = objc2::msg_send![subs, count];
-                                    for i in 0..n {
-                                        let sv: *mut objc2::runtime::AnyObject =
-                                            objc2::msg_send![subs, objectAtIndex: i];
+                                fn disable_webview_bg(
+                                    view: *mut objc2::runtime::AnyObject,
+                                ) {
+                                    unsafe {
                                         let cls: *mut objc2::runtime::AnyObject =
-                                            objc2::msg_send![sv, class];
+                                            objc2::msg_send![view, class];
                                         let desc: *mut objc2::runtime::AnyObject =
                                             objc2::msg_send![cls, description];
                                         let cstr: *const std::ffi::c_char =
                                             objc2::msg_send![desc, UTF8String];
-                                        let name = std::ffi::CStr::from_ptr(cstr)
-                                            .to_string_lossy();
-                                        if name.contains("Titlebar") {
-                                            let _: () =
-                                                objc2::msg_send![sv, setHidden: true];
+                                        let name =
+                                            std::ffi::CStr::from_ptr(cstr)
+                                                .to_string_lossy();
+                                        if name.contains("WKWebView") {
+                                            let key = objc2_foundation::NSString::from_str(
+                                                "drawsBackground",
+                                            );
+                                            let no: bool = false;
+                                            let val: *mut objc2::runtime::AnyObject =
+                                                objc2::msg_send![
+                                                    objc2::class!(NSNumber),
+                                                    numberWithBool: no
+                                                ];
+                                            let _: () = objc2::msg_send![
+                                                view,
+                                                setValue: val
+                                                forKey: &*key
+                                            ];
+                                        }
+                                        // Recurse into subviews
+                                        let subs: *mut objc2::runtime::AnyObject =
+                                            objc2::msg_send![view, subviews];
+                                        let n: usize =
+                                            objc2::msg_send![subs, count];
+                                        for i in 0..n {
+                                            let sv: *mut objc2::runtime::AnyObject =
+                                                objc2::msg_send![
+                                                    subs,
+                                                    objectAtIndex: i
+                                                ];
+                                            disable_webview_bg(sv);
                                         }
                                     }
                                 }
+                                let ptr: *mut objc2::runtime::AnyObject =
+                                    objc2::msg_send![&*content_view, self];
+                                disable_webview_bg(ptr);
                             }
 
                             // Visible on all Spaces

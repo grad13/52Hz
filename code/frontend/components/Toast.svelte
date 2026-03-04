@@ -146,6 +146,7 @@
     border-radius: 8px;
     cursor: pointer;
     text-align: left;
+    outline: none;
     animation: slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     transition: opacity 0.15s;
   }
