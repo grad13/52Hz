@@ -1,56 +1,77 @@
-use std::ffi::c_void;
+use std::process::Command;
 
-const NX_KEYTYPE_PLAY: i64 = 16;
-const MEDIA_KEY_SUBTYPE: i16 = 8;
+/// Supported media apps for AppleScript control.
+const MEDIA_APPS: &[&str] = &["Spotify", "Music"];
 
-/// Build the data1 field for a media key NSSystemDefined event.
-///
-/// Layout: `(key_code << 16) | (flags << 8)`
-/// - flags = 0xA for key down, 0xB for key up
-pub fn build_media_key_data1(key_code: i64, key_down: bool) -> i64 {
-    let flags: i64 = if key_down { 0xA } else { 0xB };
-    (key_code << 16) | (flags << 8)
+fn run_applescript(script: &str) -> Option<String> {
+    Command::new("osascript")
+        .arg("-e")
+        .arg(script)
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
 }
 
-extern "C" {
-    fn CGEventPost(tap: u32, event: *mut c_void);
+fn build_pause_script(app_name: &str) -> String {
+    format!(
+        r#"if application "{app}" is running then
+  try
+    with timeout 3 seconds
+      tell application "{app}"
+        if player state is playing then
+          pause
+          return "paused"
+        end if
+      end tell
+    end timeout
+  end try
+end if"#,
+        app = app_name
+    )
 }
 
-/// Send a Play/Pause media key press (key down + key up).
-///
-/// Uses NSEvent.otherEvent(systemDefined) to create the event,
-/// then posts it via CGEventPost to kCGHIDEventTap.
-///
-/// Requires Accessibility permission on macOS.
+fn build_resume_script(app_name: &str) -> String {
+    format!(
+        r#"if application "{app}" is running then
+  try
+    with timeout 3 seconds
+      tell application "{app}"
+        play
+      end tell
+    end timeout
+  end try
+end if"#,
+        app = app_name
+    )
+}
+
+/// Pause all running media apps and return the list of apps that were paused.
 #[cfg(target_os = "macos")]
-pub fn send_play_pause() {
-    use objc2::msg_send;
-    use objc2_app_kit::{NSEvent, NSEventModifierFlags, NSEventType};
-    use objc2_foundation::NSPoint;
-
-    for key_down in [true, false] {
-        let data1 = build_media_key_data1(NX_KEYTYPE_PLAY, key_down);
-        let modifier_flags = NSEventModifierFlags(if key_down { 0xA00 } else { 0xB00 });
-
-        unsafe {
-            let event = NSEvent::otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2(
-                NSEventType::SystemDefined,
-                NSPoint::ZERO,
-                modifier_flags,
-                0.0,
-                0,
-                None,
-                MEDIA_KEY_SUBTYPE,
-                data1 as isize,
-                -1isize,
-            );
-
-            if let Some(event) = event {
-                let cg_event: *mut c_void = msg_send![&*event, CGEvent];
-                if !cg_event.is_null() {
-                    CGEventPost(0, cg_event); // kCGHIDEventTap = 0
+pub fn pause_media_apps() -> Vec<String> {
+    let mut paused = Vec::new();
+    for &app in MEDIA_APPS {
+        let script = build_pause_script(app);
+        if let Some(result) = run_applescript(&script) {
+            if result == "paused" {
+                paused.push(app.to_string());
+                if cfg!(debug_assertions) {
+                    eprintln!("[52Hz] media: paused {}", app);
                 }
             }
+        }
+    }
+    paused
+}
+
+/// Resume playback for the specified apps.
+#[cfg(target_os = "macos")]
+pub fn resume_media_apps(apps: &[String]) {
+    for app in apps {
+        let script = build_resume_script(app);
+        run_applescript(&script);
+        if cfg!(debug_assertions) {
+            eprintln!("[52Hz] media: resumed {}", app);
         }
     }
 }
@@ -60,36 +81,46 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_build_media_key_data1_key_down() {
-        let data1 = build_media_key_data1(NX_KEYTYPE_PLAY, true);
-        // (16 << 16) | (0xA << 8) = 0x100A00
-        assert_eq!(data1, 0x10_0A00);
+    fn test_build_pause_script_spotify() {
+        let script = build_pause_script("Spotify");
+        assert!(script.contains(r#"if application "Spotify" is running"#));
+        assert!(script.contains("with timeout 3 seconds"));
+        assert!(script.contains("pause"));
+        assert!(script.contains(r#"return "paused""#));
     }
 
     #[test]
-    fn test_build_media_key_data1_key_up() {
-        let data1 = build_media_key_data1(NX_KEYTYPE_PLAY, false);
-        // (16 << 16) | (0xB << 8) = 0x100B00
-        assert_eq!(data1, 0x10_0B00);
+    fn test_build_pause_script_music() {
+        let script = build_pause_script("Music");
+        assert!(script.contains(r#"if application "Music" is running"#));
+        assert!(script.contains("pause"));
     }
 
     #[test]
-    fn test_build_media_key_data1_key_code_in_upper_bits() {
-        let data1 = build_media_key_data1(NX_KEYTYPE_PLAY, true);
-        assert_eq!((data1 >> 16) & 0xFF, NX_KEYTYPE_PLAY);
+    fn test_build_resume_script_spotify() {
+        let script = build_resume_script("Spotify");
+        assert!(script.contains(r#"if application "Spotify" is running"#));
+        assert!(script.contains("play"));
     }
 
     #[test]
-    fn test_build_media_key_data1_flags_in_middle_bits() {
-        let down = build_media_key_data1(NX_KEYTYPE_PLAY, true);
-        let up = build_media_key_data1(NX_KEYTYPE_PLAY, false);
-        assert_eq!((down >> 8) & 0xF, 0xA);
-        assert_eq!((up >> 8) & 0xF, 0xB);
+    fn test_build_resume_script_music() {
+        let script = build_resume_script("Music");
+        assert!(script.contains(r#"if application "Music" is running"#));
+        assert!(script.contains("play"));
     }
 
     #[test]
-    fn test_constants() {
-        assert_eq!(NX_KEYTYPE_PLAY, 16);
-        assert_eq!(MEDIA_KEY_SUBTYPE, 8);
+    fn test_media_apps_contains_expected() {
+        assert!(MEDIA_APPS.contains(&"Spotify"));
+        assert!(MEDIA_APPS.contains(&"Music"));
+    }
+
+    #[test]
+    fn test_build_pause_script_contains_timeout() {
+        let script = build_pause_script("Spotify");
+        assert!(script.contains("with timeout"));
+        assert!(script.contains("try"));
+        assert!(script.contains("end try"));
     }
 }

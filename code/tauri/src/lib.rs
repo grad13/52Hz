@@ -149,6 +149,69 @@ pub fn run() {
             .always_on_top(true)
             .build()?;
 
+            // Native rounded corners via Titled style mask
+            #[cfg(target_os = "macos")]
+            {
+                use objc2::rc::Retained;
+                use objc2::runtime::AnyObject;
+                use objc2_app_kit::{NSWindow, NSWindowStyleMask};
+
+                if let Ok(ns_window) = _main_window.ns_window() {
+                    unsafe {
+                        let ns_win: Retained<NSWindow> =
+                            Retained::retain(ns_window as *mut NSWindow).unwrap();
+
+                        let mut mask = ns_win.styleMask();
+                        mask |= NSWindowStyleMask::Titled;
+                        mask |= NSWindowStyleMask::FullSizeContentView;
+                        ns_win.setStyleMask(mask);
+
+                        let _: () = objc2::msg_send![
+                            &*ns_win, setTitlebarAppearsTransparent: true
+                        ];
+                        let _: () = objc2::msg_send![
+                            &*ns_win, setTitleVisibility: 1_i64
+                        ];
+
+                        // Hide NSTitlebarContainerView
+                        if let Some(content_view) = ns_win.contentView() {
+                            let superview: *mut AnyObject =
+                                objc2::msg_send![&*content_view, superview];
+                            if !superview.is_null() {
+                                let subs: *mut AnyObject =
+                                    objc2::msg_send![superview, subviews];
+                                let n: usize =
+                                    objc2::msg_send![subs, count];
+                                for i in 0..n {
+                                    let sv: *mut AnyObject =
+                                        objc2::msg_send![
+                                            subs, objectAtIndex: i
+                                        ];
+                                    let cls: *mut AnyObject =
+                                        objc2::msg_send![sv, class];
+                                    let desc: *mut AnyObject =
+                                        objc2::msg_send![cls, description];
+                                    let cstr: *const std::ffi::c_char =
+                                        objc2::msg_send![
+                                            desc, UTF8String
+                                        ];
+                                    let name =
+                                        std::ffi::CStr::from_ptr(cstr)
+                                            .to_string_lossy();
+                                    if name.contains("Titlebar") {
+                                        let _: () = objc2::msg_send![
+                                            sv, setHidden: true
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+
+                        ns_win.setHasShadow(true);
+                    }
+                }
+            }
+
             // Build tray icon with menu
             tray::build_tray(app, &initial_tray_title)?;
 
