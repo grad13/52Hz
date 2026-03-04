@@ -9,6 +9,8 @@
     onTogglePause: () => void;
   } = $props();
 
+  let hovering = $state(false);
+
   const pulsePointsRunning =
     "0,40 20,40 30,40 35,38 40,36 44,38 48,40 " +
     "52,40 54,42 56,40 58,6 61,62 64,40 " +
@@ -51,7 +53,7 @@
 </script>
 
 <section class="status" class:paused>
-  <div class="timer-hover" role="button" tabindex="0" onclick={onTogglePause} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') onTogglePause(); }}>
+  <div class="timer-hover" class:hovering role="button" tabindex="0" onclick={onTogglePause} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') onTogglePause(); }} onmouseenter={() => hovering = true} onmouseleave={() => hovering = false}>
     <div class="time">{remaining}</div>
     <div class="pulse-container">
       <svg class="pulse-line" width="600" height="80" viewBox="0 0 600 80">
@@ -89,6 +91,8 @@
     position: relative;
     cursor: pointer;
     overflow: hidden;
+    outline: none;
+    border: none;
   }
 
   .time {
@@ -163,12 +167,12 @@
     color: var(--accent-light);
   }
 
-  .timer-hover:hover .time {
+  .timer-hover.hovering .time {
     opacity: 0;
     transition: opacity 200ms ease-in-out;
   }
 
-  .timer-hover:hover .hover-btn {
+  .timer-hover.hovering .hover-btn {
     opacity: 1;
     pointer-events: auto;
     transition: opacity 200ms ease-in-out 201ms;

@@ -1,11 +1,11 @@
 :root {
   --bg: #161616;
-  --bg-secondary: #16213e;
-  --bg-elevated: #1e2545;
+  --bg-secondary: #1e1e1e;
+  --bg-elevated: #262626;
   --text: #e8e8ee;
   --text-secondary: #8a8aaa;
   --text-tertiary: #5a5a78;
-  --accent: #0f3460;
+  --accent: #2a2a2a;
   --accent-light: #6c5ce7;
   --accent-glow: rgba(108, 92, 231, 0.25);
   --success: #4ecca3;

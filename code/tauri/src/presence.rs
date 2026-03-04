@@ -192,6 +192,26 @@ pub fn spawn(app: tauri::AppHandle) {
         let mut schedule: Vec<Event> = Vec::new();
         let mut cursor: usize = 0;
 
+        // Emit test messages on startup (debug only)
+        if cfg!(debug_assertions) {
+            tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+            for (name, msg) in [
+                ("受験生A", "おはようございます、今日もがんばります"),
+                ("朝活エンジニア", "コーヒー淹れてきた"),
+                ("宅浪生", "誰かがいると思うとがんばれる"),
+            ] {
+                let _ = app.emit(
+                    "presence-message",
+                    PresenceMessage {
+                        name: name.into(),
+                        message: msg.into(),
+                    },
+                );
+                tokio::time::sleep(std::time::Duration::from_millis(800)).await;
+            }
+            eprintln!("[52Hz] presence: test toasts emitted");
+        }
+
         let mut tick = tokio::time::interval(std::time::Duration::from_secs(30));
         loop {
             tick.tick().await;
