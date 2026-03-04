@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Default capabilities for 52Hz",
-  "windows": ["main", "break-overlay", "focus-done-popup"],
+  "windows": ["main", "break-overlay", "focus-done-popup", "presence-toast"],
   "permissions": [
     "core:default",
     "notification:default",
@@ -13,6 +13,7 @@
     "core:window:allow-hide",
     "core:window:allow-set-focus",
     "core:window:allow-center",
+    "core:window:allow-set-size",
     "autostart:allow-enable",
     "autostart:allow-disable",
     "autostart:allow-is-enabled"

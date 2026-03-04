@@ -125,6 +125,7 @@ pub fn run() {
             commands::set_tray_icon_visible,
             commands::reset_timer,
             commands::quit_app,
+            commands::test_presence_toast,
         ])
         .setup(move |app| {
             if cfg!(debug_assertions) {
@@ -496,6 +497,73 @@ pub fn run() {
                         eprintln!("[52Hz] No settings store found, using defaults");
                     }
                 }
+            }
+
+            // Create toast window (transparent, mouse-through, always on top)
+            {
+                let toast_w = 290.0_f64;
+                let toast_h = 80.0_f64;
+                let margin = 16.0_f64;
+                let (tx, ty) = if let Some(monitor) = app
+                    .get_webview_window("main")
+                    .and_then(|w| w.primary_monitor().ok().flatten())
+                {
+                    let scale = monitor.scale_factor();
+                    let phys = monitor.size();
+                    let lw = phys.width as f64 / scale;
+                    ((lw - toast_w - margin).max(0.0), margin)
+                } else {
+                    (margin, margin)
+                };
+
+                let toast_window = WebviewWindowBuilder::new(
+                    app,
+                    "presence-toast",
+                    WebviewUrl::App("index.html?view=toast".into()),
+                )
+                .title("")
+                .inner_size(toast_w, toast_h)
+                .position(tx, ty)
+                .visible(false) // hidden until a message arrives
+                .resizable(false)
+                .decorations(false)
+                .skip_taskbar(true)
+                .always_on_top(true)
+                .build()?;
+
+                // macOS: mouse-through, float above everything, rounded corners
+                #[cfg(target_os = "macos")]
+                {
+                    use objc2::rc::Retained;
+                    use objc2_app_kit::{NSWindow, NSWindowStyleMask};
+                    if let Ok(ns_window) = toast_window.ns_window() {
+                        unsafe {
+                            let ns_win: Retained<NSWindow> =
+                                Retained::retain(ns_window as *mut NSWindow).unwrap();
+                            ns_win.setIgnoresMouseEvents(true);
+                            ns_win.setLevel(25); // NSStatusWindowLevel
+
+                            // Rounded corners via Titled mask
+                            let mut mask = ns_win.styleMask();
+                            mask |= NSWindowStyleMask::Titled;
+                            mask |= NSWindowStyleMask::FullSizeContentView;
+                            ns_win.setStyleMask(mask);
+                            let _: () = objc2::msg_send![
+                                &*ns_win, setTitlebarAppearsTransparent: true
+                            ];
+                            let _: () = objc2::msg_send![
+                                &*ns_win, setTitleVisibility: 1_i64
+                            ];
+
+                            // Visible on all Spaces
+                            let _: () = objc2::msg_send![
+                                &*ns_win,
+                                setCollectionBehavior: 1_u64 | 16_u64
+                            ];
+                        }
+                    }
+                }
+                let _ = toast_window;
             }
 
             // Start the timer

@@ -203,3 +203,15 @@ pub(crate) async fn close_break_overlay(app: tauri::AppHandle) -> Result<(), Str
     })
     .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub(crate) async fn test_presence_toast(app: tauri::AppHandle) -> Result<(), String> {
+    let _ = app.emit(
+        "presence-message",
+        crate::presence::PresenceMessage {
+            name: "受験生A".into(),
+            message: "おはようございます、今日もがんばります".into(),
+        },
+    );
+    Ok(())
+}
