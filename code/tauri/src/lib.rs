@@ -385,8 +385,8 @@ pub fn run() {
                         ns_app.activateIgnoringOtherApps(true);
                     }
 
-                    let popup_w = 300.0_f64;
-                    let popup_h = 200.0_f64;
+                    let popup_w = 276.0_f64;
+                    let popup_h = 150.0_f64;
                     let margin = 20.0_f64;
 
                     let (x, y) = if let Some(monitor) = handle
@@ -425,17 +425,96 @@ pub fn run() {
                             #[cfg(target_os = "macos")]
                             {
                                 use objc2::rc::Retained;
-                                use objc2_app_kit::NSWindow;
+                                use objc2_app_kit::{NSColor, NSWindow};
                                 if let Ok(ns_window) = window.ns_window() {
                                     unsafe {
                                         let ns_win: Retained<NSWindow> =
                                             Retained::retain(ns_window as *mut NSWindow)
                                                 .unwrap();
                                         ns_win.setLevel(25); // NSStatusWindowLevel
+
+                                        // Transparent window background
+                                        ns_win.setOpaque(false);
+                                        ns_win.setBackgroundColor(Some(
+                                            &NSColor::clearColor(),
+                                        ));
+                                        ns_win.setHasShadow(false);
+
                                         ns_win.makeKeyAndOrderFront(None);
                                     }
                                 }
                             }
+
+                            // Disable WKWebView background drawing (delay for hierarchy)
+                            let app_for_popup = handle.clone();
+                            tauri::async_runtime::spawn(async move {
+                                tokio::time::sleep(
+                                    std::time::Duration::from_millis(300),
+                                )
+                                .await;
+                                let app_for_popup2 = app_for_popup.clone();
+                                let _ =
+                                    app_for_popup.run_on_main_thread(move || {
+                                        fn set_transparent(
+                                            view: *mut objc2::runtime::AnyObject,
+                                        ) {
+                                            unsafe {
+                                                let sel = objc2::sel!(
+                                                    _setDrawsBackground:
+                                                );
+                                                let responds: bool =
+                                                    objc2::msg_send![
+                                                        view,
+                                                        respondsToSelector: sel
+                                                    ];
+                                                if responds {
+                                                    let _: () = objc2::msg_send![
+                                                        view,
+                                                        _setDrawsBackground: false
+                                                    ];
+                                                }
+                                                let subs: *mut objc2::runtime::AnyObject =
+                                                    objc2::msg_send![
+                                                        view, subviews
+                                                    ];
+                                                let n: usize =
+                                                    objc2::msg_send![subs, count];
+                                                for i in 0..n {
+                                                    let sv: *mut objc2::runtime::AnyObject =
+                                                        objc2::msg_send![
+                                                            subs,
+                                                            objectAtIndex: i
+                                                        ];
+                                                    set_transparent(sv);
+                                                }
+                                            }
+                                        }
+                                        if let Some(pw) = app_for_popup2
+                                            .get_webview_window("focus-done-popup")
+                                        {
+                                            if let Ok(ns_ptr) = pw.ns_window() {
+                                                unsafe {
+                                                    let ns_w: objc2::rc::Retained<
+                                                        objc2_app_kit::NSWindow,
+                                                    > = objc2::rc::Retained::retain(
+                                                        ns_ptr as *mut objc2_app_kit::NSWindow,
+                                                    )
+                                                    .unwrap();
+                                                    if let Some(cv) =
+                                                        ns_w.contentView()
+                                                    {
+                                                        let ptr: *mut objc2::runtime::AnyObject =
+                                                            objc2::msg_send![
+                                                                &*cv, self
+                                                            ];
+                                                        set_transparent(ptr);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    });
+                            });
+
                             let _ = window.show();
                             let _ = window.set_focus();
                             eprintln!("[52Hz] focus-done-popup → created");
@@ -587,19 +666,17 @@ pub fn run() {
                                         app_h2.get_webview_window("presence-toast")
                                     {
                                         if let Ok(ns_ptr) = tw.ns_window() {
-                                            unsafe {
-                                                let ns_w: objc2::rc::Retained<
-                                                    objc2_app_kit::NSWindow,
-                                                > = objc2::rc::Retained::retain(
-                                                    ns_ptr
-                                                        as *mut objc2_app_kit::NSWindow,
-                                                )
-                                                .unwrap();
-                                                if let Some(cv) = ns_w.contentView() {
-                                                    let ptr: *mut objc2::runtime::AnyObject =
-                                                        objc2::msg_send![&*cv, self];
-                                                    set_transparent(ptr);
-                                                }
+                                            let ns_w: objc2::rc::Retained<
+                                                objc2_app_kit::NSWindow,
+                                            > = objc2::rc::Retained::retain(
+                                                ns_ptr
+                                                    as *mut objc2_app_kit::NSWindow,
+                                            )
+                                            .unwrap();
+                                            if let Some(cv) = ns_w.contentView() {
+                                                let ptr: *mut objc2::runtime::AnyObject =
+                                                    objc2::msg_send![&*cv, self];
+                                                set_transparent(ptr);
                                             }
                                         }
                                     }

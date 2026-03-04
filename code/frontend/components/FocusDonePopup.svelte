@@ -19,68 +19,72 @@
 </script>
 
 <div class="popup">
-  <p class="message">お疲れ様です！次はどうしますか？</p>
+  <div class="card">
+    <span class="label">セッション完了</span>
+    <span class="message">お疲れ様です！次はどうしますか？</span>
 
-  <div class="actions">
-    <button class="btn primary" onclick={handleAcceptBreak}>休憩する</button>
-    <button class="btn" onclick={handleSkip}>スキップ</button>
-  </div>
+    <div class="actions">
+      <button class="btn primary" onclick={handleAcceptBreak}>休憩する</button>
+      <button class="btn" onclick={handleSkip}>スキップ</button>
+    </div>
 
-  <div class="extend-actions">
-    <button class="btn-extend" onclick={() => handleExtend(60)}>+1分</button>
-    <button class="btn-extend" onclick={() => handleExtend(180)}>+3分</button>
-    <button class="btn-extend" onclick={() => handleExtend(300)}>+5分</button>
+    <div class="extend-actions">
+      <button class="btn-extend" onclick={() => handleExtend(60)}>+1分</button>
+      <button class="btn-extend" onclick={() => handleExtend(180)}>+3分</button>
+      <button class="btn-extend" onclick={() => handleExtend(300)}>+5分</button>
+    </div>
   </div>
 </div>
 
 <style>
   .popup {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    padding: 1.5rem;
-    gap: 0.75rem;
-    background: var(--bg);
+    padding: 8px;
   }
 
-  h3 {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--text);
-    margin: 0;
-    letter-spacing: 0.03em;
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
   }
 
   .message {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text);
+    line-height: 1.35;
   }
 
   .actions {
     display: flex;
-    gap: 0.5rem;
-    width: 100%;
-    margin-top: 0.25rem;
+    gap: 6px;
+    margin-top: 4px;
   }
 
   .btn {
     flex: 1;
-    padding: 0.55rem;
-    font-size: 0.85rem;
+    padding: 5px 0;
+    font-size: 0.75rem;
     font-weight: 500;
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--bg-secondary);
+    border-radius: 6px;
+    background: transparent;
     color: var(--text);
     cursor: pointer;
-    transition: all var(--duration-normal) var(--ease-out);
+    transition: background 0.15s;
   }
 
   .btn:hover {
-    background: var(--bg-elevated);
+    background: rgba(255, 255, 255, 0.06);
     border-color: var(--border-hover);
   }
 
@@ -93,28 +97,24 @@
 
   .btn.primary:hover {
     background: #5de8b5;
-    transform: translateY(-1px);
-  }
-
-  .btn.primary:active {
-    transform: translateY(0);
   }
 
   .extend-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 4px;
+    justify-content: center;
   }
 
   .btn-extend {
-    padding: 0.3rem 0.8rem;
-    font-size: 0.75rem;
+    padding: 3px 8px;
+    font-size: 0.68rem;
     font-weight: 500;
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    border-radius: 6px;
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--duration-normal) var(--ease-out);
+    transition: all 0.15s;
   }
 
   .btn-extend:hover {
