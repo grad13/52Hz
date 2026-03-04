@@ -88,24 +88,39 @@ fn start_hover_poll(app_handle: tauri::AppHandle) {
             let x = mouse_screen[0] - origin_x;
             let y = height - (mouse_screen[1] - origin_y);
 
-            let is_over = x >= 0.0 && x <= width && y >= 0.0 && y <= height;
-
-            if is_over && !was_over {
-                let _ = window.eval(&format!(
-                    "(() => {{ \
-                        const el = document.querySelector('.timer-hover'); \
-                        if (el) el.dispatchEvent(new MouseEvent('mouseenter', {{bubbles:false}})); \
-                    }})()"
-                ));
-            } else if !is_over && was_over {
-                let _ = window.eval(
-                    "(() => { \
-                        const el = document.querySelector('.timer-hover'); \
-                        if (el) el.dispatchEvent(new MouseEvent('mouseleave', {bubbles:false})); \
-                    })()"
-                );
+            let in_window = x >= 0.0 && x <= width && y >= 0.0 && y <= height;
+            if !in_window {
+                if was_over {
+                    let _ = window.eval(
+                        "(() => { \
+                            const el = document.querySelector('.timer-hover'); \
+                            if (el) el.dispatchEvent(new MouseEvent('mouseleave', {bubbles:false})); \
+                        })()"
+                    );
+                }
+                was_over = false;
+                continue;
             }
-            was_over = is_over;
+
+            // Hit-test against the actual .timer-hover element bounds
+            let _ = window.eval(&format!(
+                "(() => {{ \
+                    const el = document.querySelector('.timer-hover'); \
+                    if (!el) return; \
+                    const r = el.getBoundingClientRect(); \
+                    const over = {x} >= r.left && {x} <= r.right && {y} >= r.top && {y} <= r.bottom; \
+                    if (over && !el.dataset.hp) {{ \
+                        el.dataset.hp = '1'; \
+                        el.dispatchEvent(new MouseEvent('mouseenter', {{bubbles:false}})); \
+                    }} else if (!over && el.dataset.hp) {{ \
+                        delete el.dataset.hp; \
+                        el.dispatchEvent(new MouseEvent('mouseleave', {{bubbles:false}})); \
+                    }} \
+                }})()",
+                x = x,
+                y = y
+            ));
+            was_over = true;
         }
         HOVER_POLLING.store(false, Ordering::SeqCst);
     });
