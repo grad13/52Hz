@@ -73,6 +73,18 @@ fn seed_for(date: &str, id: &str) -> u64 {
     h.finish()
 }
 
+// ── Time helpers ─────────────────────────────────────────────
+
+fn is_active_at(p: &Persona, hour: u32) -> bool {
+    let (start, end) = (p.active_hours[0] % 24, p.active_hours[1] % 24);
+    if start < end {
+        hour >= start && hour < end
+    } else {
+        // Wraps midnight (e.g. 22→3)
+        hour >= start || hour < end
+    }
+}
+
 // ── Schedule generation ─────────────────────────────────────
 
 fn build_schedule(personas: &[Persona], date: &str) -> Vec<Event> {
@@ -188,43 +200,34 @@ pub fn spawn(app: tauri::AppHandle) {
         serde_json::from_str(PERSONAS_JSON).expect("failed to parse personas.json");
 
     tauri::async_runtime::spawn(async move {
-        let mut date = String::new();
-        let mut schedule: Vec<Event> = Vec::new();
-        let mut cursor: usize = 0;
         let mut rng = Rng::new(Local::now().timestamp() as u64);
 
         // Wait for webview to load before first message
         tokio::time::sleep(std::time::Duration::from_secs(8)).await;
 
         loop {
-            let today = Local::now().format("%Y-%m-%d").to_string();
+            let now = Local::now();
+            let hour = now.hour();
 
-            // Regenerate schedule on new day (or first run)
-            if today != date {
-                schedule = build_schedule(&personas, &today);
-                date = today;
-                cursor = 0;
+            // Find personas active at this hour
+            let active: Vec<&Persona> = personas
+                .iter()
+                .filter(|p| is_active_at(p, hour))
+                .collect();
+
+            if !active.is_empty() {
+                let persona = active[rng.range(active.len() as u32) as usize];
+                let msg = rng.pick(&persona.messages.during);
                 if cfg!(debug_assertions) {
-                    eprintln!("[52Hz] presence: {} events scheduled", schedule.len());
+                    eprintln!("[52Hz] presence: {} — {}", persona.name, msg);
                 }
-            }
-
-            if schedule.is_empty() {
-                tokio::time::sleep(std::time::Duration::from_secs(60)).await;
-                continue;
-            }
-
-            // Emit the next event in sequence
-            let ev = &schedule[cursor % schedule.len()];
-            if cfg!(debug_assertions) {
-                eprintln!("[52Hz] presence: {} — {}", ev.msg.name, ev.msg.message);
-            }
-            let _ = app.emit("presence-message", ev.msg.clone());
-            cursor += 1;
-
-            // Loop back when exhausted
-            if cursor >= schedule.len() {
-                cursor = 0;
+                let _ = app.emit(
+                    "presence-message",
+                    PresenceMessage {
+                        name: persona.name.clone(),
+                        message: msg.into(),
+                    },
+                );
             }
 
             // ~1 message per minute (45–75 sec, randomised)
@@ -284,6 +287,43 @@ mod tests {
             .filter(|(a, b)| a.at == b.at && a.msg.name == b.msg.name)
             .count();
         assert!(same < s1.len());
+    }
+
+    #[test]
+    fn is_active_normal_range() {
+        let p = make_persona([9, 17]);
+        assert!(!is_active_at(&p, 8));
+        assert!(is_active_at(&p, 9));
+        assert!(is_active_at(&p, 12));
+        assert!(is_active_at(&p, 16));
+        assert!(!is_active_at(&p, 17));
+    }
+
+    #[test]
+    fn is_active_wraps_midnight() {
+        let p = make_persona([22, 3]);
+        assert!(!is_active_at(&p, 21));
+        assert!(is_active_at(&p, 22));
+        assert!(is_active_at(&p, 23));
+        assert!(is_active_at(&p, 0));
+        assert!(is_active_at(&p, 2));
+        assert!(!is_active_at(&p, 3));
+    }
+
+    fn make_persona(hours: [u32; 2]) -> Persona {
+        Persona {
+            id: "test".into(),
+            name: "test".into(),
+            active_hours: hours,
+            session_minutes: 60,
+            message_frequency: "medium".into(),
+            messages: Messages {
+                enter: vec!["hi".into()],
+                exit: vec!["bye".into()],
+                during: vec!["working".into()],
+                encourage: vec!["go".into()],
+            },
+        }
     }
 
     #[test]
