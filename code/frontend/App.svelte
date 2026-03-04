@@ -8,7 +8,7 @@
   const params = new URLSearchParams(window.location.search);
   const view = params.get("view");
 
-  if (view === "toast") {
+  if (view === "toast" || view === "focus-done") {
     document.body.style.background = "transparent";
   }
 </script>
