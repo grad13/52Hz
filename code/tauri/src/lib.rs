@@ -1,6 +1,7 @@
 mod commands;
 mod media;
 mod overlay;
+mod presence;
 mod timer;
 mod tray;
 
@@ -499,6 +500,9 @@ pub fn run() {
 
             // Start the timer
             spawn_timer(app.handle().clone(), timer_state.clone());
+
+            // Start presence scheduler
+            presence::spawn(app.handle().clone());
 
             Ok(())
         })
