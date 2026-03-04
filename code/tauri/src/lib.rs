@@ -555,6 +555,33 @@ pub fn run() {
                                 &*ns_win, setTitleVisibility: 1_i64
                             ];
 
+                            // Hide NSTitlebarContainerView (close/minimize/zoom buttons)
+                            if let Some(content_view) = ns_win.contentView() {
+                                let superview: *mut objc2::runtime::AnyObject =
+                                    objc2::msg_send![&*content_view, superview];
+                                if !superview.is_null() {
+                                    let subs: *mut objc2::runtime::AnyObject =
+                                        objc2::msg_send![superview, subviews];
+                                    let n: usize = objc2::msg_send![subs, count];
+                                    for i in 0..n {
+                                        let sv: *mut objc2::runtime::AnyObject =
+                                            objc2::msg_send![subs, objectAtIndex: i];
+                                        let cls: *mut objc2::runtime::AnyObject =
+                                            objc2::msg_send![sv, class];
+                                        let desc: *mut objc2::runtime::AnyObject =
+                                            objc2::msg_send![cls, description];
+                                        let cstr: *const std::ffi::c_char =
+                                            objc2::msg_send![desc, UTF8String];
+                                        let name = std::ffi::CStr::from_ptr(cstr)
+                                            .to_string_lossy();
+                                        if name.contains("Titlebar") {
+                                            let _: () =
+                                                objc2::msg_send![sv, setHidden: true];
+                                        }
+                                    }
+                                }
+                            }
+
                             // Visible on all Spaces
                             let _: () = objc2::msg_send![
                                 &*ns_win,
