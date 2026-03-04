@@ -3,6 +3,9 @@ use std::process::Command;
 /// Supported media apps for AppleScript control.
 const MEDIA_APPS: &[&str] = &["Spotify", "Music"];
 
+/// Browsers where we toggle YouTube playback via 'k' keystroke.
+const BROWSER_APPS: &[&str] = &["Firefox", "Google Chrome", "Safari", "Arc"];
+
 fn run_applescript(script: &str) -> Option<String> {
     Command::new("osascript")
         .arg("-e")
@@ -76,6 +79,37 @@ pub fn resume_media_apps(apps: &[String]) {
     }
 }
 
+/// Toggle YouTube playback in running browsers via 'k' keystroke.
+/// Returns the list of browsers that were toggled.
+#[cfg(target_os = "macos")]
+pub fn toggle_browser_media() -> Vec<String> {
+    let mut toggled = Vec::new();
+    for &browser in BROWSER_APPS {
+        // key code 40 = 'k' (YouTube play/pause shortcut)
+        let script = format!(
+            r#"if application "{app}" is running then
+  tell application "{app}" to activate
+  delay 0.5
+  tell application "System Events"
+    key code 40
+  end tell
+  delay 0.3
+  return "toggled"
+end if"#,
+            app = browser
+        );
+        if let Some(result) = run_applescript(&script) {
+            if result == "toggled" {
+                toggled.push(browser.to_string());
+                if cfg!(debug_assertions) {
+                    eprintln!("[52Hz] media: toggled browser {}", browser);
+                }
+            }
+        }
+    }
+    toggled
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -114,6 +148,14 @@ mod tests {
     fn test_media_apps_contains_expected() {
         assert!(MEDIA_APPS.contains(&"Spotify"));
         assert!(MEDIA_APPS.contains(&"Music"));
+    }
+
+    #[test]
+    fn test_browser_apps_contains_expected() {
+        assert!(BROWSER_APPS.contains(&"Firefox"));
+        assert!(BROWSER_APPS.contains(&"Google Chrome"));
+        assert!(BROWSER_APPS.contains(&"Safari"));
+        assert!(BROWSER_APPS.contains(&"Arc"));
     }
 
     #[test]

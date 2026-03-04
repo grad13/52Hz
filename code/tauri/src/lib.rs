@@ -251,10 +251,13 @@ pub fn run() {
             // Media pause tracking: stores which apps were paused by us
             let media_paused_apps: Arc<std::sync::Mutex<Vec<String>>> =
                 Arc::new(std::sync::Mutex::new(Vec::new()));
+            let browser_toggled_apps: Arc<std::sync::Mutex<Vec<String>>> =
+                Arc::new(std::sync::Mutex::new(Vec::new()));
 
             // Listen for break-start to open overlay (must run on main thread for UI ops)
             let app_handle = app.handle().clone();
             let media_apps_start = media_paused_apps.clone();
+            let browser_apps_start = browser_toggled_apps.clone();
             app.listen("break-start", move |_event| {
                 if cfg!(debug_assertions) {
                     eprintln!("[52Hz] break-start → opening overlay");
@@ -276,6 +279,10 @@ pub fn run() {
                         }
                         let paused = media::pause_media_apps();
                         *media_apps_start.lock().unwrap() = paused;
+
+                        // Also toggle browser media (YouTube etc.)
+                        let toggled = media::toggle_browser_media();
+                        *browser_apps_start.lock().unwrap() = toggled;
                     }
                 }
 
@@ -288,6 +295,7 @@ pub fn run() {
             // Listen for break-end to close overlay (must run on main thread for UI ops)
             let app_handle2 = app.handle().clone();
             let media_apps_end = media_paused_apps.clone();
+            let browser_apps_end = browser_toggled_apps.clone();
             app.listen("break-end", move |_event| {
                 if cfg!(debug_assertions) {
                     eprintln!("[52Hz] break-end → closing overlay");
@@ -303,6 +311,16 @@ pub fn run() {
                             eprintln!("[52Hz] break-end → resuming media: {:?}", apps);
                         }
                         media::resume_media_apps(&apps);
+                    }
+
+                    // Resume browser media if we toggled it
+                    let browsers: Vec<String> =
+                        std::mem::take(&mut *browser_apps_end.lock().unwrap());
+                    if !browsers.is_empty() {
+                        if cfg!(debug_assertions) {
+                            eprintln!("[52Hz] break-end → resuming browser media: {:?}", browsers);
+                        }
+                        media::toggle_browser_media();
                     }
                 }
 
@@ -439,6 +457,7 @@ pub fn run() {
                 let toast_w = 290.0_f64;
                 let toast_h = 80.0_f64;
                 let margin = 16.0_f64;
+                let margin_top = 40.0_f64; // clear macOS menu bar
                 let (tx, ty) = if let Some(monitor) = app
                     .get_webview_window("main")
                     .and_then(|w| w.primary_monitor().ok().flatten())
@@ -446,7 +465,7 @@ pub fn run() {
                     let scale = monitor.scale_factor();
                     let phys = monitor.size();
                     let lw = phys.width as f64 / scale;
-                    ((lw - toast_w - margin).max(0.0), margin)
+                    ((lw - toast_w - margin).max(0.0), margin_top)
                 } else {
                     (margin, margin)
                 };
