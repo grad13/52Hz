@@ -49,6 +49,7 @@
   let level: "front" | "back" = $state("front");
   let raised = false; // temporarily raised from back to front
   let shown = false; // track whether window is currently shown (to avoid re-show changing Z-order)
+  let needsRaise = true; // first click brings to front, second click dismisses
   let unlistenMsg: (() => void) | null = null;
   let unlistenToggle: (() => void) | null = null;
   let unlistenClick: (() => void) | null = null;
@@ -77,6 +78,7 @@
     if (active.length === 0) {
       await win.hide();
       shown = false;
+      needsRaise = true;
     } else {
       const h = winHeight(active);
       await win.setSize(new LogicalSize(WIN_W, h));
@@ -185,10 +187,14 @@
     })) as unknown as () => void;
 
     // Handle first-click from native global event monitor
+    // First click: bring to front. Second click: dismiss oldest toast.
     unlistenClick = (await listen("presence-toast-click", () => {
-      // If in back mode and not yet raised, bring to front first
-      if (level === "back" && !raised) {
-        raise();
+      if (needsRaise) {
+        if (level === "back" && !raised) {
+          raise();
+        }
+        win.show();
+        needsRaise = false;
         return;
       }
       const active = items.filter((i) => !i.leaving);
