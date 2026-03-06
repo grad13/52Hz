@@ -3,7 +3,7 @@
   import { listen } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { LogicalSize } from "@tauri-apps/api/dpi";
-  import { loadPresenceToast, loadPresencePosition, type PresencePosition } from "../lib/settings-store";
+  import { loadPresenceToast, loadPresencePosition, loadPresenceLevel, type PresencePosition } from "../lib/settings-store";
   import { emit } from "@tauri-apps/api/event";
   import { acceptBreak, skipBreakFromFocus } from "../lib/timer";
 
@@ -16,12 +16,14 @@
     id: number;
     type: "toast";
     msg: ToastMessage;
+    time: string;
     leaving: boolean;
   }
 
   interface FocusDoneItem {
     id: number;
     type: "focus-done";
+    time: string;
     leaving: boolean;
   }
 
@@ -35,15 +37,23 @@
   const PAD = 8;
   const WIN_W = 276;
 
+  function nowTime(): string {
+    const d = new Date();
+    return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }
+
   let items: StackItem[] = $state([]);
   let enabled = $state(true);
   let nextId = 0;
   let position: PresencePosition = $state("top-right");
+  let level: "front" | "back" = $state("front");
+  let raised = false; // temporarily raised from back to front
   let unlistenMsg: (() => void) | null = null;
   let unlistenToggle: (() => void) | null = null;
   let unlistenClick: (() => void) | null = null;
   let unlistenFocusDone: (() => void) | null = null;
   let unlistenPosition: (() => void) | null = null;
+  let unlistenLevel: (() => void) | null = null;
   const win = getCurrentWindow();
   const timers = new Map<number, ReturnType<typeof setTimeout>>();
 
@@ -60,6 +70,7 @@
   async function syncWindow() {
     const active = items.filter((i) => !i.leaving);
     if (active.length === 0) {
+      restoreIfNeeded();
       await win.hide();
     } else {
       const h = winHeight(active);
@@ -105,11 +116,12 @@
     }
 
     const id = nextId++;
+    const time = nowTime();
     const isBottom = position === "bottom-left" || position === "bottom-right";
     if (isBottom) {
-      items = [{ id, type: "toast", msg, leaving: false }, ...items];
+      items = [{ id, type: "toast", msg, time, leaving: false }, ...items];
     } else {
-      items = [...items, { id, type: "toast", msg, leaving: false }];
+      items = [...items, { id, type: "toast", msg, time, leaving: false }];
     }
     syncWindow();
 
@@ -119,20 +131,35 @@
     );
   }
 
+  function raise() {
+    if (level === "back" && !raised) {
+      raised = true;
+      emit("presence-level-change", "front");
+    }
+  }
+
+  function restoreIfNeeded() {
+    if (raised) {
+      raised = false;
+      emit("presence-level-change", "back");
+    }
+  }
+
   function addFocusDone() {
     // Remove existing focus-done if any
     const existing = items.find((i) => i.type === "focus-done" && !i.leaving);
     if (existing) dismiss(existing.id);
 
     const id = nextId++;
+    const time = nowTime();
     const isBottom = position === "bottom-left" || position === "bottom-right";
     if (isBottom) {
-      items = [{ id, type: "focus-done", leaving: false }, ...items];
+      items = [{ id, type: "focus-done", time, leaving: false }, ...items];
     } else {
-      items = [...items, { id, type: "focus-done", leaving: false }];
+      items = [...items, { id, type: "focus-done", time, leaving: false }];
     }
     syncWindow();
-    // No auto-dismiss — user must choose an action
+    raise();
   }
 
   async function handleAcceptBreak(id: number) {
@@ -148,6 +175,7 @@
   onMount(async () => {
     enabled = await loadPresenceToast();
     position = await loadPresencePosition();
+    level = (await loadPresenceLevel()) as "front" | "back";
 
     unlistenMsg = (await listen<ToastMessage>("presence-message", (event) => {
       addToast(event.payload);
@@ -160,8 +188,13 @@
 
     // Handle first-click from native global event monitor
     unlistenClick = (await listen("presence-toast-click", () => {
+      // If in back mode and not yet raised, bring to front first
+      if (level === "back" && !raised) {
+        raise();
+        return;
+      }
       const active = items.filter((i) => !i.leaving);
-      // Only dismiss regular toasts on first-click, not focus-done
+      // Only dismiss regular toasts on click, not focus-done
       const toasts = active.filter((i) => i.type === "toast");
       if (toasts.length > 0) {
         dismiss(toasts[0].id);
@@ -175,6 +208,11 @@
     unlistenPosition = (await listen<string>("presence-position-change", (event) => {
       position = event.payload as PresencePosition;
     })) as unknown as () => void;
+
+    unlistenLevel = (await listen<string>("presence-level-setting", (event) => {
+      level = event.payload as "front" | "back";
+      raised = false;
+    })) as unknown as () => void;
   });
 
   onDestroy(() => {
@@ -183,6 +221,7 @@
     unlistenClick?.();
     unlistenFocusDone?.();
     unlistenPosition?.();
+    unlistenLevel?.();
     for (const t of timers.values()) clearTimeout(t);
   });
 </script>
@@ -194,7 +233,10 @@
   {#each items as item (item.id)}
     {#if item.type === "focus-done"}
       <div class="toast-card focus-done-card" class:leaving={item.leaving}>
-        <span class="label">セッション完了</span>
+        <div class="card-header">
+          <span class="label">セッション完了</span>
+          <span class="time">{item.time}</span>
+        </div>
         <span class="msg">お疲れ様です！次はどうしますか？</span>
         <div class="actions">
           <button class="btn primary" onclick={() => handleAcceptBreak(item.id)}>休憩する</button>
@@ -203,7 +245,10 @@
       </div>
     {:else}
       <button class="toast-card" class:leaving={item.leaving} onclick={() => dismiss(item.id)}>
-        <span class="name">{item.msg.name}</span>
+        <div class="card-header">
+          <span class="name">{item.msg.name}</span>
+          <span class="time">{item.time}</span>
+        </div>
         <span class="msg">{item.msg.message}</span>
       </button>
     {/if}
@@ -278,6 +323,19 @@
   @keyframes slide-out-left {
     from { transform: translateX(0); opacity: 1; }
     to { transform: translateX(-100%); opacity: 0; }
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .time {
+    font-size: 0.6rem;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
   }
 
   .name, .label {

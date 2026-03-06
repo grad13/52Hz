@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/svelte';
 
-const { mockListen, mockEmit, mockWin, mockLoadPresenceToast, mockLoadPresencePosition } = vi.hoisted(() => ({
+const { mockListen, mockEmit, mockWin, mockLoadPresenceToast, mockLoadPresencePosition, mockLoadPresenceLevel } = vi.hoisted(() => ({
   mockListen: vi.fn().mockResolvedValue(vi.fn()),
   mockEmit: vi.fn().mockResolvedValue(undefined),
   mockWin: {
@@ -18,6 +18,7 @@ const { mockListen, mockEmit, mockWin, mockLoadPresenceToast, mockLoadPresencePo
   },
   mockLoadPresenceToast: vi.fn().mockResolvedValue(true),
   mockLoadPresencePosition: vi.fn().mockResolvedValue('top-right'),
+  mockLoadPresenceLevel: vi.fn().mockResolvedValue('front'),
 }));
 
 const { mockAcceptBreak, mockSkipBreakFromFocus } = vi.hoisted(() => ({
@@ -39,6 +40,7 @@ vi.mock('@tauri-apps/api/dpi', () => ({
 vi.mock('@code/frontend/lib/settings-store', () => ({
   loadPresenceToast: mockLoadPresenceToast,
   loadPresencePosition: mockLoadPresencePosition,
+  loadPresenceLevel: mockLoadPresenceLevel,
 }));
 vi.mock('@code/frontend/lib/timer', () => ({
   acceptBreak: mockAcceptBreak,
@@ -64,6 +66,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockLoadPresenceToast.mockResolvedValue(true);
   mockLoadPresencePosition.mockResolvedValue('top-right');
+  mockLoadPresenceLevel.mockResolvedValue('front');
 });
 
 afterEach(() => {
@@ -78,16 +81,17 @@ describe('Toast', () => {
       expect(container.querySelector('.toast-stack')).toBeTruthy();
     });
 
-    it('registers 5 event listeners on mount', async () => {
+    it('registers 6 event listeners on mount', async () => {
       render(Toast);
       await flushAsync();
-      expect(mockListen).toHaveBeenCalledTimes(5);
+      expect(mockListen).toHaveBeenCalledTimes(6);
       const eventNames = mockListen.mock.calls.map((c: unknown[]) => c[0]);
       expect(eventNames).toContain('presence-message');
       expect(eventNames).toContain('presence-toast-toggle');
       expect(eventNames).toContain('presence-toast-click');
       expect(eventNames).toContain('focus-done-toast');
       expect(eventNames).toContain('presence-position-change');
+      expect(eventNames).toContain('presence-level-setting');
     });
 
     it('loads initial settings on mount', async () => {
