@@ -1,0 +1,12 @@
+node_modules/
+code/node_modules/
+code/dist/
+code/tauri/target/
+code/tauri/gen/schemas
+code/tauri/Cargo.lock
+_*
+.*
+**/_*
+**/.*
+!.gitignore
+!.claude
