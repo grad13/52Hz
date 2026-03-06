@@ -386,19 +386,7 @@ pub fn run() {
                     eprintln!("[52Hz] focus-done → emitting toast");
                 }
                 let handle = app_handle3.clone();
-                let _ = app_handle3.run_on_main_thread(move || {
-                    // Activate app so button clicks work immediately
-                    #[cfg(target_os = "macos")]
-                    {
-                        use objc2::MainThreadMarker;
-                        use objc2_app_kit::NSApplication;
-                        let mtm = unsafe { MainThreadMarker::new_unchecked() };
-                        let ns_app = NSApplication::sharedApplication(mtm);
-                        #[allow(deprecated)]
-                        ns_app.activateIgnoringOtherApps(true);
-                    }
-                    let _ = handle.emit("focus-done-toast", ());
-                });
+                let _ = handle.emit("focus-done-toast", ());
             });
 
             // Apply hide_tray_icon setting
