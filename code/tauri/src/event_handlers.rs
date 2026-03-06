@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use tauri::{Emitter, Listener, Manager};
 
-use crate::macos_window;
 use crate::media;
 use crate::overlay;
 use crate::timer::PhaseEvent;
@@ -20,7 +19,6 @@ pub(super) fn register_listeners(app: &tauri::App, timer_state: SharedTimerState
     register_break_start(app, media_paused_apps.clone(), browser_toggled_apps.clone());
     register_break_end(app, media_paused_apps, browser_toggled_apps);
     register_focus_done(app, timer_state);
-    register_presence_level_change(app);
     register_presence_reposition(app);
 }
 
@@ -163,20 +161,6 @@ fn register_focus_done(app: &tauri::App, timer_state: SharedTimerState) {
         let handle = app_handle.clone();
         let _ = handle.emit("focus-done-toast", ());
     });
-}
-
-fn register_presence_level_change(app: &tauri::App) {
-    #[cfg(target_os = "macos")]
-    {
-        let app_handle = app.handle().clone();
-        app.listen("presence-level-change", move |event| {
-            let is_back = event.payload().contains("back");
-            let app_h = app_handle.clone();
-            let _ = app_handle.run_on_main_thread(move || {
-                macos_window::set_toast_level(&app_h, is_back);
-            });
-        });
-    }
 }
 
 fn register_presence_reposition(app: &tauri::App) {

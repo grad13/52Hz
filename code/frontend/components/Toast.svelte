@@ -3,7 +3,7 @@
   import { listen } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { LogicalSize } from "@tauri-apps/api/dpi";
-  import { loadPresenceToast, loadPresencePosition, loadPresenceLevel, type PresencePosition } from "../lib/settings-store";
+  import { loadPresenceToast, loadPresencePosition, type PresencePosition } from "../lib/settings-store";
   import { emit } from "@tauri-apps/api/event";
   import { acceptBreak, skipBreakFromFocus } from "../lib/timer";
 
@@ -46,14 +46,12 @@
   let enabled = $state(true);
   let nextId = 0;
   let position: PresencePosition = $state("top-right");
-  let level: "front" | "back" = $state("front");
-  let raised = false; // temporarily raised from back to front
+  let shown = false; // track whether window is currently shown (to avoid re-show changing Z-order)
   let unlistenMsg: (() => void) | null = null;
   let unlistenToggle: (() => void) | null = null;
   let unlistenClick: (() => void) | null = null;
   let unlistenFocusDone: (() => void) | null = null;
   let unlistenPosition: (() => void) | null = null;
-  let unlistenLevel: (() => void) | null = null;
   const win = getCurrentWindow();
   const timers = new Map<number, ReturnType<typeof setTimeout>>();
 
@@ -69,17 +67,17 @@
 
   async function syncWindow() {
     const active = items.filter((i) => !i.leaving);
-    // Restore level when no focus-done remains (raise was only for focus-done)
-    if (!active.some((i) => i.type === "focus-done")) {
-      restoreIfNeeded();
-    }
     if (active.length === 0) {
       await win.hide();
+      shown = false;
     } else {
       const h = winHeight(active);
       await win.setSize(new LogicalSize(WIN_W, h));
       await emit("presence-reposition", position);
-      await win.show();
+      if (!shown) {
+        await win.show();
+        shown = true;
+      }
     }
   }
 
@@ -120,32 +118,13 @@
 
     const id = nextId++;
     const time = nowTime();
-    const isBottom = position === "bottom-left" || position === "bottom-right";
-    if (isBottom) {
-      items = [{ id, type: "toast", msg, time, leaving: false }, ...items];
-    } else {
-      items = [...items, { id, type: "toast", msg, time, leaving: false }];
-    }
+    items = [...items, { id, type: "toast", msg, time, leaving: false }];
     syncWindow();
 
     timers.set(
       id,
       setTimeout(() => dismiss(id), DISPLAY_MS),
     );
-  }
-
-  function raise() {
-    if (level === "back" && !raised) {
-      raised = true;
-      emit("presence-level-change", "front");
-    }
-  }
-
-  function restoreIfNeeded() {
-    if (raised) {
-      raised = false;
-      emit("presence-level-change", "back");
-    }
   }
 
   function addFocusDone() {
@@ -155,14 +134,8 @@
 
     const id = nextId++;
     const time = nowTime();
-    const isBottom = position === "bottom-left" || position === "bottom-right";
-    if (isBottom) {
-      items = [{ id, type: "focus-done", time, leaving: false }, ...items];
-    } else {
-      items = [...items, { id, type: "focus-done", time, leaving: false }];
-    }
+    items = [...items, { id, type: "focus-done", time, leaving: false }];
     syncWindow();
-    raise();
   }
 
   async function handleAcceptBreak(id: number) {
@@ -178,7 +151,6 @@
   onMount(async () => {
     enabled = await loadPresenceToast();
     position = await loadPresencePosition();
-    level = (await loadPresenceLevel()) as "front" | "back";
 
     unlistenMsg = (await listen<ToastMessage>("presence-message", (event) => {
       addToast(event.payload);
@@ -191,11 +163,6 @@
 
     // Handle first-click from native global event monitor
     unlistenClick = (await listen("presence-toast-click", () => {
-      // If in back mode and not yet raised, bring to front first
-      if (level === "back" && !raised) {
-        raise();
-        return;
-      }
       const active = items.filter((i) => !i.leaving);
       // Only dismiss regular toasts on click, not focus-done
       const toasts = active.filter((i) => i.type === "toast");
@@ -211,11 +178,6 @@
     unlistenPosition = (await listen<string>("presence-position-change", (event) => {
       position = event.payload as PresencePosition;
     })) as unknown as () => void;
-
-    unlistenLevel = (await listen<string>("presence-level-setting", (event) => {
-      level = event.payload as "front" | "back";
-      raised = false;
-    })) as unknown as () => void;
   });
 
   onDestroy(() => {
@@ -224,7 +186,6 @@
     unlistenClick?.();
     unlistenFocusDone?.();
     unlistenPosition?.();
-    unlistenLevel?.();
     for (const t of timers.values()) clearTimeout(t);
   });
 </script>
@@ -232,6 +193,7 @@
 <div
   class="toast-stack"
   class:from-left={position === "top-left" || position === "bottom-left"}
+  class:from-bottom={position === "bottom-left" || position === "bottom-right"}
 >
   {#each items as item (item.id)}
     {#if item.type === "focus-done"}
@@ -264,6 +226,10 @@
     flex-direction: column;
     gap: 6px;
     padding: 8px;
+  }
+
+  .toast-stack.from-bottom {
+    flex-direction: column-reverse;
   }
 
   .toast-card {
