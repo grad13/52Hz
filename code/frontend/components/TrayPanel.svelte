@@ -127,7 +127,7 @@
   async function handlePresenceLevelChange(level: PresenceLevel) {
     presenceLevel = level;
     await savePresenceLevel(level);
-    await emitTo("presence-toast", "presence-level-change", level);
+    await emitTo("presence-toast", "presence-level-setting", level);
     await emit("presence-level-change", level);
   }
 
