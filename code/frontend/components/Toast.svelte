@@ -69,8 +69,11 @@
 
   async function syncWindow() {
     const active = items.filter((i) => !i.leaving);
-    if (active.length === 0) {
+    // Restore level when no focus-done remains (raise was only for focus-done)
+    if (!active.some((i) => i.type === "focus-done")) {
       restoreIfNeeded();
+    }
+    if (active.length === 0) {
       await win.hide();
     } else {
       const h = winHeight(active);

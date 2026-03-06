@@ -716,7 +716,12 @@ pub fn run() {
             spawn_timer(app.handle().clone(), timer_state.clone());
 
             // Start presence scheduler
-            presence::spawn(app.handle().clone());
+            let chat_db = app
+                .path()
+                .resource_dir()
+                .expect("resource_dir")
+                .join("chat.db");
+            presence::spawn(app.handle().clone(), chat_db);
 
             Ok(())
         })

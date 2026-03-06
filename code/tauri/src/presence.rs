@@ -1,30 +1,9 @@
 use chrono::{Local, Timelike};
-use serde::Deserialize;
-use std::hash::{Hash, Hasher};
+use rusqlite::Connection;
+use std::path::PathBuf;
 use tauri::Emitter;
 
-const PERSONAS_JSON: &str = include_str!("../../frontend/assets/personas.json");
-
 // ── Data types ──────────────────────────────────────────────
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Persona {
-    id: String,
-    name: String,
-    active_hours: [u32; 2],
-    session_minutes: u32,
-    message_frequency: String,
-    messages: Messages,
-}
-
-#[derive(Deserialize)]
-struct Messages {
-    enter: Vec<String>,
-    exit: Vec<String>,
-    during: Vec<String>,
-    encourage: Vec<String>,
-}
 
 #[derive(serde::Serialize, Clone, Debug)]
 pub struct PresenceMessage {
@@ -32,9 +11,9 @@ pub struct PresenceMessage {
     pub message: String,
 }
 
-struct Event {
-    at: u32, // seconds since midnight (0..86400)
-    msg: PresenceMessage,
+struct ChatMessage {
+    name: String,
+    message: String,
 }
 
 // ── Simple xorshift64 PRNG ──────────────────────────────────
@@ -56,182 +35,87 @@ impl Rng {
     fn range(&mut self, n: u32) -> u32 {
         (self.next() % n as u64) as u32
     }
-
-    fn chance(&mut self, p: f64) -> bool {
-        (self.next() % 10000) < (p * 10000.0) as u64
-    }
-
-    fn pick<'a>(&mut self, items: &'a [String]) -> &'a str {
-        &items[self.range(items.len() as u32) as usize]
-    }
 }
 
-fn seed_for(date: &str, id: &str) -> u64 {
-    let mut h = std::collections::hash_map::DefaultHasher::new();
-    date.hash(&mut h);
-    id.hash(&mut h);
-    h.finish()
+// ── DB queries ──────────────────────────────────────────────
+
+fn load_messages(conn: &Connection, hour: u32) -> Vec<ChatMessage> {
+    // Handle wrap-around hours (e.g. 22→3)
+    let mut stmt = conn
+        .prepare_cached(
+            "SELECT name, message FROM chat
+             WHERE category = 'during'
+               AND (
+                 (hour_start < hour_end AND ? >= hour_start AND ? < hour_end)
+                 OR (hour_start >= hour_end AND (? >= hour_start OR ? < hour_end))
+               )",
+        )
+        .expect("prepare chat query");
+
+    stmt.query_map([hour, hour, hour, hour], |row| {
+        Ok(ChatMessage {
+            name: row.get(0)?,
+            message: row.get(1)?,
+        })
+    })
+    .expect("query chat")
+    .filter_map(|r| r.ok())
+    .collect()
 }
 
-// ── Time helpers ─────────────────────────────────────────────
-
-fn is_active_at(p: &Persona, hour: u32) -> bool {
-    let (start, end) = (p.active_hours[0] % 24, p.active_hours[1] % 24);
-    if start < end {
-        hour >= start && hour < end
-    } else {
-        // Wraps midnight (e.g. 22→3)
-        hour >= start || hour < end
-    }
+fn load_density(conn: &Connection, hour: u32) -> f64 {
+    conn.query_row(
+        "SELECT ratio FROM hourly_density WHERE hour = ?",
+        [hour],
+        |row| row.get(0),
+    )
+    .unwrap_or(1.0)
 }
 
-// ── Schedule generation ─────────────────────────────────────
+// ── Time helpers ────────────────────────────────────────────
 
-fn build_schedule(personas: &[Persona], date: &str) -> Vec<Event> {
-    let mut events = Vec::new();
+const BASE_INTERVAL: f64 = 60.0; // seconds
 
-    for p in personas {
-        let mut rng = Rng::new(seed_for(date, &p.id));
-
-        // Skip some personas each day based on frequency
-        let prob = match p.message_frequency.as_str() {
-            "high" => 0.85,
-            "medium" => 0.65,
-            _ => 0.45,
-        };
-        if !rng.chance(prob) {
-            continue;
-        }
-
-        let (sh, eh) = (p.active_hours[0] % 24, p.active_hours[1] % 24);
-
-        // For wrap-around hours (e.g. 22→3), pick evening or morning portion
-        let (eff_start, eff_end) = if sh < eh {
-            (sh, eh)
-        } else if rng.chance(0.6) {
-            (sh, 24) // evening portion (slightly more likely)
-        } else {
-            (0, eh) // morning portion
-        };
-
-        let window_min = (eff_end - eff_start) * 60;
-        if window_min == 0 {
-            continue;
-        }
-        let max_offset = window_min.saturating_sub(p.session_minutes).max(1);
-        let offset = rng.range(max_offset);
-
-        let start_min = eff_start * 60 + offset;
-        let variance = rng.range(11); // 0..10
-        let duration = p.session_minutes.saturating_sub(5) + variance; // ±5 min
-        let end_min = (start_min + duration).min(eff_end * 60);
-
-        // Enter message
-        if !p.messages.enter.is_empty() {
-            events.push(Event {
-                at: start_min * 60,
-                msg: PresenceMessage {
-                    name: p.name.clone(),
-                    message: rng.pick(&p.messages.enter).into(),
-                },
-            });
-        }
-
-        // During messages
-        let n_during = match p.message_frequency.as_str() {
-            "high" => 1 + rng.range(2), // 1-2
-            "medium" => rng.range(2),    // 0-1
-            _ => {
-                if rng.chance(0.3) {
-                    1
-                } else {
-                    0
-                }
-            }
-        };
-        if !p.messages.during.is_empty() {
-            for i in 0..n_during {
-                let frac = (i + 1) as f64 / (n_during + 1) as f64;
-                let t_min = start_min + (duration as f64 * frac) as u32;
-                let jitter_sec = rng.range(120); // 0..2 min jitter
-                let at = (t_min * 60 + jitter_sec).min(end_min * 60);
-                events.push(Event {
-                    at,
-                    msg: PresenceMessage {
-                        name: p.name.clone(),
-                        message: rng.pick(&p.messages.during).into(),
-                    },
-                });
-            }
-        }
-
-        // Exit message
-        if !p.messages.exit.is_empty() {
-            events.push(Event {
-                at: end_min * 60,
-                msg: PresenceMessage {
-                    name: p.name.clone(),
-                    message: rng.pick(&p.messages.exit).into(),
-                },
-            });
-        }
-
-        // Encourage (20% chance, during the session)
-        if !p.messages.encourage.is_empty() && rng.chance(0.2) && duration > 0 {
-            let t_min = start_min + rng.range(duration);
-            events.push(Event {
-                at: t_min * 60,
-                msg: PresenceMessage {
-                    name: p.name.clone(),
-                    message: rng.pick(&p.messages.encourage).into(),
-                },
-            });
-        }
-    }
-
-    events.sort_by_key(|e| e.at);
-    events
+fn interval_from_ratio(ratio: f64) -> u32 {
+    (BASE_INTERVAL / ratio).round().max(20.0) as u32
 }
 
 // ── Scheduler loop ──────────────────────────────────────────
 
-pub fn spawn(app: tauri::AppHandle) {
-    let personas: Vec<Persona> =
-        serde_json::from_str(PERSONAS_JSON).expect("failed to parse personas.json");
-
+pub fn spawn(app: tauri::AppHandle, db_path: PathBuf) {
     tauri::async_runtime::spawn(async move {
+        let conn = Connection::open(&db_path).expect("failed to open chat.db");
         let mut rng = Rng::new(Local::now().timestamp() as u64);
 
         // Wait for webview to load before first message
         tokio::time::sleep(std::time::Duration::from_secs(8)).await;
 
         loop {
-            let now = Local::now();
-            let hour = now.hour();
+            let hour = Local::now().hour();
+            let messages = load_messages(&conn, hour);
 
-            // Find personas active at this hour
-            let active: Vec<&Persona> = personas
-                .iter()
-                .filter(|p| is_active_at(p, hour))
-                .collect();
-
-            if !active.is_empty() {
-                let persona = active[rng.range(active.len() as u32) as usize];
-                let msg = rng.pick(&persona.messages.during);
+            if !messages.is_empty() {
+                let idx = rng.range(messages.len() as u32) as usize;
+                let msg = &messages[idx];
                 if cfg!(debug_assertions) {
-                    eprintln!("[52Hz] presence: {} — {}", persona.name, msg);
+                    eprintln!("[52Hz] presence: {} — {}", msg.name, msg.message);
                 }
                 let _ = app.emit(
                     "presence-message",
                     PresenceMessage {
-                        name: persona.name.clone(),
-                        message: msg.into(),
+                        name: msg.name.clone(),
+                        message: msg.message.clone(),
                     },
                 );
             }
 
-            // ~1 message per minute (45–75 sec, randomised)
-            let delay = 45 + rng.range(31); // 45..75
+            // Interval based on hourly density from DB
+            let ratio = load_density(&conn, hour);
+            let base = interval_from_ratio(ratio);
+            // ±30% randomisation
+            let lo = (base as f64 * 0.7) as u32;
+            let spread = (base as f64 * 0.6) as u32 + 1;
+            let delay = lo + rng.range(spread);
             tokio::time::sleep(std::time::Duration::from_secs(delay as u64)).await;
         }
     });
@@ -243,95 +127,131 @@ pub fn spawn(app: tauri::AppHandle) {
 mod tests {
     use super::*;
 
-    #[test]
-    fn personas_json_parses() {
-        let personas: Vec<Persona> =
-            serde_json::from_str(PERSONAS_JSON).expect("should parse personas.json");
-        assert!(personas.len() >= 50);
+    fn setup_test_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE chat (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                message TEXT NOT NULL,
+                category TEXT NOT NULL,
+                hour_start INTEGER NOT NULL,
+                hour_end INTEGER NOT NULL
+            );
+            CREATE TABLE hourly_density (
+                hour INTEGER PRIMARY KEY,
+                ratio REAL NOT NULL
+            );
+
+            -- Test messages: 朝活 [5, 8)
+            INSERT INTO chat (name, message, category, hour_start, hour_end)
+            VALUES ('朝活エンジニア', '朝だ、コード書くぞ', 'during', 5, 8);
+            INSERT INTO chat (name, message, category, hour_start, hour_end)
+            VALUES ('朝活エンジニア', 'コーヒーうまい', 'during', 5, 8);
+            INSERT INTO chat (name, message, category, hour_start, hour_end)
+            VALUES ('朝活エンジニア', 'おはよう', 'enter', 5, 8);
+
+            -- Test messages: 夜型 [22, 3) wrap-around
+            INSERT INTO chat (name, message, category, hour_start, hour_end)
+            VALUES ('深夜勉強勢', '静かな夜に集中', 'during', 22, 3);
+            INSERT INTO chat (name, message, category, hour_start, hour_end)
+            VALUES ('深夜勉強勢', '眠いけどもう少し', 'during', 22, 3);
+
+            -- Test messages: all-day [0, 24)
+            INSERT INTO chat (name, message, category, hour_start, hour_end)
+            VALUES ('受験生A', 'がんばるぞ', 'during', 6, 23);
+
+            -- Hourly density
+            INSERT INTO hourly_density VALUES (0, 1.67);
+            INSERT INTO hourly_density VALUES (1, 1.69);
+            INSERT INTO hourly_density VALUES (5, 1.32);
+            INSERT INTO hourly_density VALUES (12, 0.47);
+            INSERT INTO hourly_density VALUES (20, 0.27);
+            INSERT INTO hourly_density VALUES (22, 0.86);
+            ",
+        )
+        .unwrap();
+        conn
     }
 
     #[test]
-    fn schedule_generates_events() {
-        let personas: Vec<Persona> = serde_json::from_str(PERSONAS_JSON).unwrap();
-        let schedule = build_schedule(&personas, "2026-03-04");
-        // With 50 personas, expect at least some events
-        assert!(schedule.len() > 20, "got {} events", schedule.len());
-        // Events should be sorted
-        for w in schedule.windows(2) {
-            assert!(w[0].at <= w[1].at);
+    fn load_messages_normal_range() {
+        let conn = setup_test_db();
+        // Hour 6: 朝活 [5,8) active, 受験生 [6,23) active
+        let msgs = load_messages(&conn, 6);
+        assert_eq!(msgs.len(), 3); // 2 朝活 during + 1 受験生 during
+        let names: Vec<&str> = msgs.iter().map(|m| m.name.as_str()).collect();
+        assert!(names.contains(&"朝活エンジニア"));
+        assert!(names.contains(&"受験生A"));
+    }
+
+    #[test]
+    fn load_messages_outside_range() {
+        let conn = setup_test_db();
+        // Hour 4: nobody active (朝活 starts at 5, 夜型 ends at 3)
+        let msgs = load_messages(&conn, 4);
+        assert!(msgs.is_empty());
+    }
+
+    #[test]
+    fn load_messages_wrap_around() {
+        let conn = setup_test_db();
+        // Hour 23: 夜型 [22,3) active
+        let msgs = load_messages(&conn, 23);
+        assert_eq!(msgs.len(), 2);
+        assert_eq!(msgs[0].name, "深夜勉強勢");
+
+        // Hour 1: 夜型 [22,3) still active
+        let msgs = load_messages(&conn, 1);
+        assert_eq!(msgs.len(), 2);
+        assert_eq!(msgs[0].name, "深夜勉強勢");
+    }
+
+    #[test]
+    fn load_messages_only_during_category() {
+        let conn = setup_test_db();
+        // Hour 6: should NOT include 'enter' messages
+        let msgs = load_messages(&conn, 6);
+        // 朝活 has 2 during + 1 enter, but only during should be returned
+        for m in &msgs {
+            // enter message "おはよう" should not appear
+            assert_ne!(m.message, "おはよう");
         }
     }
 
     #[test]
-    fn schedule_is_deterministic() {
-        let personas: Vec<Persona> = serde_json::from_str(PERSONAS_JSON).unwrap();
-        let s1 = build_schedule(&personas, "2026-03-04");
-        let s2 = build_schedule(&personas, "2026-03-04");
-        assert_eq!(s1.len(), s2.len());
-        for (a, b) in s1.iter().zip(s2.iter()) {
-            assert_eq!(a.at, b.at);
-            assert_eq!(a.msg.name, b.msg.name);
-            assert_eq!(a.msg.message, b.msg.message);
-        }
+    fn load_density_known_hour() {
+        let conn = setup_test_db();
+        let ratio = load_density(&conn, 1);
+        assert!((ratio - 1.69).abs() < 0.001);
     }
 
     #[test]
-    fn different_days_give_different_schedules() {
-        let personas: Vec<Persona> = serde_json::from_str(PERSONAS_JSON).unwrap();
-        let s1 = build_schedule(&personas, "2026-03-04");
-        let s2 = build_schedule(&personas, "2026-03-05");
-        // Very unlikely to be identical
-        let same = s1
-            .iter()
-            .zip(s2.iter())
-            .filter(|(a, b)| a.at == b.at && a.msg.name == b.msg.name)
-            .count();
-        assert!(same < s1.len());
+    fn load_density_missing_hour_returns_default() {
+        let conn = setup_test_db();
+        // Hour 10 not in test DB
+        let ratio = load_density(&conn, 10);
+        assert!((ratio - 1.0).abs() < 0.001);
     }
 
     #[test]
-    fn is_active_normal_range() {
-        let p = make_persona([9, 17]);
-        assert!(!is_active_at(&p, 8));
-        assert!(is_active_at(&p, 9));
-        assert!(is_active_at(&p, 12));
-        assert!(is_active_at(&p, 16));
-        assert!(!is_active_at(&p, 17));
+    fn interval_from_ratio_peak() {
+        // Peak: 60/1.69 ≈ 36
+        let iv = interval_from_ratio(1.69);
+        assert!(iv >= 30 && iv <= 40, "peak interval={iv}");
     }
 
     #[test]
-    fn is_active_wraps_midnight() {
-        let p = make_persona([22, 3]);
-        assert!(!is_active_at(&p, 21));
-        assert!(is_active_at(&p, 22));
-        assert!(is_active_at(&p, 23));
-        assert!(is_active_at(&p, 0));
-        assert!(is_active_at(&p, 2));
-        assert!(!is_active_at(&p, 3));
-    }
-
-    fn make_persona(hours: [u32; 2]) -> Persona {
-        Persona {
-            id: "test".into(),
-            name: "test".into(),
-            active_hours: hours,
-            session_minutes: 60,
-            message_frequency: "medium".into(),
-            messages: Messages {
-                enter: vec!["hi".into()],
-                exit: vec!["bye".into()],
-                during: vec!["working".into()],
-                encourage: vec!["go".into()],
-            },
-        }
+    fn interval_from_ratio_quiet() {
+        // Quiet: 60/0.27 ≈ 222
+        let iv = interval_from_ratio(0.27);
+        assert!(iv >= 200 && iv <= 230, "quiet interval={iv}");
     }
 
     #[test]
-    fn events_within_valid_time_range() {
-        let personas: Vec<Persona> = serde_json::from_str(PERSONAS_JSON).unwrap();
-        let schedule = build_schedule(&personas, "2026-03-04");
-        for ev in &schedule {
-            assert!(ev.at < 86400, "event at {} exceeds 24h", ev.at);
-        }
+    fn interval_minimum_20s() {
+        // Very high ratio should still be >= 20
+        let iv = interval_from_ratio(100.0);
+        assert!(iv >= 20);
     }
 }
