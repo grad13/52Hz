@@ -49,14 +49,14 @@ spec-v2.1 のセクション構造に対応:
 
 | ID | セクション | 乖離の種類 | 例 |
 |----|-----------|-----------|-----|
-| G1 | 0. Meta | Source パスの不一致 | spec は `parser.ts` だが実ファイルは `parsers/parser.ts` |
-| G2 | 1. Contract | 公開 IF の不一致 | spec は `f(a, b)` だが code は `f(a)` |
-| G3 | 1. Contract | 型の不一致 | spec は `string` だが code は `number` |
-| G4 | 2. State | 状態・初期値の不一致 | spec は初期値 `null` だが code は `undefined` |
+| G1 | 0. Meta | Source パスの不一致 | spec は `timer.rs` だが実装は `timer/` モジュールに分割 |
+| G2 | 1. Contract | 公開 IF の不一致 | spec は `advance(&mut self, idle: bool)` だが code は `advance(&mut self)` |
+| G3 | 1. Contract | 型の不一致 | Rust: spec は `Option<T>` だが code は `Result<T, E>` / TS: spec は `string` だが code は `number` |
+| G4 | 2. State | 状態・初期値の不一致 | Rust: spec は `None` だが code は `Default::default()` / TS: spec は `null` だが code は `undefined` |
 | G5 | 3. Logic | 決定表/ルールとの不一致 | spec は条件 X で Y を返すが code は Z を返す |
-| G6 | 4. SideEffects | 副作用の不一致 | spec は event A を emit するが code は emit しない |
-| G7 | - | spec にあるが code にない | spec が定義するメソッドが code に存在しない |
-| G8 | - | code にあるが spec にない | code の公開メソッドが spec に記載なし |
+| G6 | 4. SideEffects | 副作用の不一致 | spec は event `timer-tick` を emit するが code は emit しない |
+| G7 | - | spec にあるが code にない | spec が定義する `apply_settings()` が code に存在しない |
+| G8 | - | code にあるが spec にない | code の `pub fn` が spec に記載なし |
 
 ## 選択肢の評価
 
@@ -68,7 +68,7 @@ spec-v2.1 のセクション構造に対応:
 |------|------|-----|
 | 意味の正確さ | 命名・値がドメインの意味を正確に表しているか | `empty` vs `blank` |
 | 一貫性 | 既存コード・他モジュールとの命名・パターンの整合 | 他の mode 値との統一 |
-| 型安全性 | TypeScript の型チェックの恩恵を受けられるか | 型注釈の有無 |
+| 型安全性 | Rust の型チェック (`cargo check`) や TypeScript の型チェック (`svelte-check`) の恩恵を受けられるか | 型注釈の有無、`Option` vs `unwrap` |
 | 互換性 | 変更による既存コード・テストへの影響範囲 | 広く使われている値の変更リスク |
 | 拡張性 | 将来の機能追加・変更に対する柔軟性 | interface vs Record<string, any> |
 | 簡潔さ | 変更量・複雑さの少なさ | 1行変更 vs 複数ファイル変更 |
@@ -209,8 +209,8 @@ code/
 ├── .code-from-spec/
 │   ├── summary.md
 │   └── analysis/
-│       ├── shell/core.md            # 乖離あり: 選択肢付き
-│       ├── utils/sync-store.md      # 乖離あり: 選択肢付き
+│       ├── timer/timer.md            # 乖離あり: 選択肢付き
+│       ├── presence/presence.md     # 乖離あり: 選択肢付き
 │       └── ...                      # match は省略
 ```
 
@@ -226,36 +226,36 @@ Gaps: {乖離数}
 
 # {spec 名}
 
-## 乖離 1: [G5] Logic — mode 初期値
+## 乖離 1: [G5] Logic — Phase 初期値
 
-**spec**: Section 3 — mode 初期値は `'empty'`
-**code**: L42 — `mode: 'blank'`
+**spec**: Section 3 — phase 初期値は `Phase::Work`
+**code**: `tauri/src/timer.rs` L28 — `phase: Phase::Idle`
 
 ### 選択肢
 
 | 選択肢 | 内容 | 評価 |
 |--------|------|------|
-| **A（code修正）** | L42 を `mode: 'empty'` に変更 | `empty` は状態の意味を正確に表現。他の mode 値（`single`, `twin`）との命名一貫性あり |
-| **B（spec修正）** | spec の mode 初期値を `'blank'` に変更 | `blank` は既存コード全体で使われており互換性が高い |
+| **A（code修正）** | L28 を `phase: Phase::Work` に変更 | `Work` はタイマー開始時の意味を正確に表現。他の Phase 値（`Break`, `Done`）との一貫性あり |
+| **B（spec修正）** | spec の phase 初期値を `Phase::Idle` に変更 | `Idle` は既存コードの起動フローと整合しており互換性が高い |
 
-**推奨**: A — `empty` の方が意味が明確で命名一貫性がある
+**推奨**: A — `Work` の方がタイマーの意味が明確で命名一貫性がある
 
 ---
 
-## 乖離 2: [G2] Contract — createParser の型注釈
+## 乖離 2: [G2] Contract — apply_settings の引数型
 
-**spec**: Section 1.2 — `createParser(deps: { indentUtils: IndentUtils })`
-**code**: L15 — `function createParser(deps)`（型注釈なし、引数名は一致）
+**spec**: Section 1.2 — `pub fn apply_settings(&mut self, settings: &Settings)`
+**code**: `tauri/src/timer.rs` L85 — `pub fn apply_settings(&mut self, work: u64, short_break: u64)`（個別引数）
 
 ### 選択肢
 
 | 選択肢 | 内容 | 評価 |
 |--------|------|------|
-| **A（code修正）** | `deps` に型注釈を追加 | 型安全性が向上。IDE 補完が効く。strict: true 移行に備える |
-| **B（spec修正）** | `deps: Record<string, any>` に変更 | 現実を反映するが、spec の「あるべき姿」を示す機能を失う |
-| **C（保留）** | strict: true 移行時にまとめて対応 | 現時点で動作影響なし。乖離は残る |
+| **A（code修正）** | `Settings` 構造体を導入し引数を統合 | 型安全性が向上。将来の設定項目追加が容易 |
+| **B（spec修正）** | spec を個別引数 `(work: u64, short_break: u64)` に変更 | 現実を反映するが、拡張性が低い |
+| **C（保留）** | 設定項目が増えるタイミングでまとめてリファクタ | 現時点で動作影響なし。乖離は残る |
 
-**推奨**: A — 型注釈の追加は安全な変更で品質向上に直結する
+**推奨**: A — 構造体の導入は安全な変更で拡張性が向上する
 ```
 
 ## summary.md フォーマット
@@ -276,14 +276,14 @@ Gaps: {乖離数}
 
 | # | Spec | Source | ID | 概要 | 推奨 |
 |---|------|--------|----|------|------|
-| 1 | shell/core.md | js/shell/core.ts | G5 | mode 初期値 empty vs blank | A（code修正） |
+| 1 | timer/timer.md | tauri/src/timer.rs | G5 | phase 初期値 Work vs Idle | A（code修正） |
 | 2 | ... | ... | ... | ... | ... |
 
 ## match 一覧
 
 | Spec | Source |
 |------|--------|
-| utils/sync-store.md | js/utils/sync-store.ts |
+| frontend/settings-store.md | frontend/lib/settings-store.ts |
 | ... | ... |
 ```
 

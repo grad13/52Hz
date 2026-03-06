@@ -156,15 +156,15 @@ BAD:
 
 GOOD:
   未統合セクション:
-    "Widget Rendering" (L890-1013, 124行)
-    ← Supplement from: vitest-task-widget.test.ts (L883コメント)
+    "Overlay Control" (L200-280, 81行)
+    ← Supplement from: timer_tests.rs (L200コメント)
 
   対応する本文セクション:
-    本文に対応セクションなし。Task Parser とは別責務（Task Widget）。
+    本文に対応セクションなし。Timer とは別責務（Overlay制御）。
 
   マージ方針:
-    独立spec化を推奨: spec/journal/task-widget.md に移動。
-    tasks.md の L883-1013 を削除し、Meta に依存関係を追記。
+    独立spec化を推奨: spec/overlay.md に移動。
+    timer.md の L200-280 を削除し、Meta に依存関係を追記。
 ```
 
 ## 実行モード
