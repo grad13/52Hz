@@ -2,7 +2,7 @@
  * settings-store - Persistence Unit Tests
  *
  * Tests for: frontend/lib/settings-store.ts (loadSettings, saveSettings, loadPauseMediaOnBreak, savePauseMediaOnBreak, loadHideTrayIcon, saveHideTrayIcon)
- * Spec: documents/spec/frontend/lib/settings-store.md
+ * Spec: _documents/spec/frontend/lib/settings-store.md
  * Runtime: JS-ESM
  */
 

@@ -2,7 +2,7 @@
  * settings-store - Presence & Tick Volume Unit Tests
  *
  * Tests for: frontend/lib/settings-store.ts (loadTickVolume, saveTickVolume, loadPresenceToast, savePresenceToast, loadPresencePosition, savePresencePosition, loadPresenceLevel, savePresenceLevel)
- * Spec: documents/spec/frontend/lib/settings-store.md
+ * Spec: _documents/spec/frontend/lib/settings-store.md
  * Runtime: JS-ESM
  */
 

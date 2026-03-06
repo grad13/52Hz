@@ -2,7 +2,7 @@
  * settings-store - Conversion Unit Tests
  *
  * Tests for: frontend/lib/settings-store.ts (toTimerSettings, toDisplaySettings)
- * Spec: documents/spec/frontend/lib/settings-store.md
+ * Spec: _documents/spec/frontend/lib/settings-store.md
  * Runtime: JS-ESM
  */
 

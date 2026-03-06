@@ -2,7 +2,7 @@
  * BreakOverlay - Unit Tests
  *
  * Tests for: frontend/components/BreakOverlay.svelte
- * Spec: documents/spec/frontend/components/break-overlay.md
+ * Spec: _documents/spec/frontend/components/break-overlay.md
  * Runtime: JS-ESM (Svelte 5)
  */
 

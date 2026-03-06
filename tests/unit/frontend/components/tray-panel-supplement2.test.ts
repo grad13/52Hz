@@ -2,7 +2,7 @@
  * TrayPanel - Supplement Tests (from spec-to-tests)
  *
  * Tests for: frontend/components/TrayPanel.svelte
- * Spec: documents/spec/frontend/components/tray-panel.md
+ * Spec: _documents/spec/frontend/components/tray-panel.md
  * Runtime: JS-ESM (Svelte 5)
  *
  * Supplement for: tests/unit/frontend/components/tray-panel.test.ts

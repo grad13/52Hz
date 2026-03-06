@@ -2,7 +2,7 @@
  * timer.ts - Supplement Tests
  *
  * Tests for: frontend/lib/timer.ts
- * Spec: documents/spec/frontend/lib/timer.md
+ * Spec: _documents/spec/frontend/lib/timer.md
  * Runtime: JS-ESM
  *
  * Supplement for: tests/unit/frontend/lib/timer.test.ts

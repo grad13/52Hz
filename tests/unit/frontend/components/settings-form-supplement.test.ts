@@ -2,7 +2,7 @@
  * SettingsForm - Supplement Tests
  *
  * Tests for: code/frontend/components/SettingsForm.svelte
- * Spec: documents/spec/frontend/components/settings-form.md
+ * Spec: _documents/spec/frontend/components/settings-form.md
  * Runtime: JS-ESM (Svelte 5)
  *
  * Supplement for: tests/unit/frontend/components/settings-form.test.ts

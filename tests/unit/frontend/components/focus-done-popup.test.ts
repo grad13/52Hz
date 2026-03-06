@@ -2,7 +2,7 @@
  * FocusDonePopup - Unit Tests
  *
  * Tests for: frontend/components/FocusDonePopup.svelte
- * Spec: documents/spec/frontend/components/focus-done-popup.md
+ * Spec: _documents/spec/frontend/components/focus-done-popup.md
  * Runtime: JS-ESM (Svelte 5)
  */
 

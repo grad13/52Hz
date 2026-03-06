@@ -2,7 +2,7 @@
  * TimerStatus - Supplement Tests (from spec-to-tests)
  *
  * Tests for: code/frontend/components/TimerStatus.svelte
- * Spec: documents/spec/frontend/components/timer-status.md
+ * Spec: _documents/spec/frontend/components/timer-status.md
  * Runtime: JS-ESM (Svelte 5)
  *
  * Supplement for: tests/unit/frontend/components/timer-status.test.ts

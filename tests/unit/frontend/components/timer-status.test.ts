@@ -2,7 +2,7 @@
  * TimerStatus - Unit Tests
  *
  * Tests for: code/frontend/components/TimerStatus.svelte
- * Spec: documents/spec/frontend/components/timer-status.md
+ * Spec: _documents/spec/frontend/components/timer-status.md
  * Runtime: JS-ESM (Svelte 5)
  */
 
