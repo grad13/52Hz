@@ -83,7 +83,7 @@ git tag refactor-code-pre-$(date +%Y%m%d-%H%M%S)
 ### Step 1: 対象選定
 
 ```bash
-{skill_dir}/scripts/get-file-info.sh {code_dir}
+bash {skill_dir}/scripts/get-file-info.sh {code_dir}
 ```
 
 ### Step 2: 対象決定
@@ -114,7 +114,7 @@ git tag refactor-code-pre-$(date +%Y%m%d-%H%M%S)
 ### Step 5: checked更新
 
 ```bash
-{skill_dir}/scripts/update-checked.sh {code_dir}
+bash {skill_dir}/scripts/update-checked.sh {code_dir}
 ```
 
 ### Step 6: Post - git commit & tag（完了記録）
