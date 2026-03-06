@@ -230,5 +230,5 @@ impl TimerState {
 }
 
 #[cfg(test)]
-#[path = "timer_tests.rs"]
+#[path = "timer_tests/mod.rs"]
 mod tests;
