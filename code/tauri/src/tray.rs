@@ -1,3 +1,4 @@
+// meta: checked=2026-03-07
 use std::ffi::c_void;
 use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 use std::sync::OnceLock;

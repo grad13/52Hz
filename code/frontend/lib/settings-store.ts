@@ -1,3 +1,4 @@
+// meta: checked=2026-03-07
 import { load } from "@tauri-apps/plugin-store";
 import type { TimerSettings } from "./timer";
 
