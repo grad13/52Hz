@@ -66,6 +66,16 @@ const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => {
     toDisplaySettings: vi.fn(),
     loadPauseMediaOnBreak: vi.fn().mockResolvedValue(false),
     savePauseMediaOnBreak: vi.fn().mockResolvedValue(undefined),
+    loadHideTrayIcon: vi.fn().mockResolvedValue(false),
+    saveHideTrayIcon: vi.fn().mockResolvedValue(undefined),
+    loadTickVolume: vi.fn().mockResolvedValue(0),
+    saveTickVolume: vi.fn().mockResolvedValue(undefined),
+    loadPresenceToast: vi.fn().mockResolvedValue(true),
+    savePresenceToast: vi.fn().mockResolvedValue(undefined),
+    loadPresencePosition: vi.fn().mockResolvedValue('top-right'),
+    savePresencePosition: vi.fn().mockResolvedValue(undefined),
+    loadPresenceLevel: vi.fn().mockResolvedValue('front'),
+    savePresenceLevel: vi.fn().mockResolvedValue(undefined),
   },
   };
 });

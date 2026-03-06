@@ -87,19 +87,21 @@ export async function saveHideTrayIcon(enabled: boolean): Promise<void> {
   await store.set("hide_tray_icon", enabled);
 }
 
-export async function loadTickSound(): Promise<boolean> {
+export async function loadTickVolume(): Promise<number> {
   try {
     const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
-    const val = await store.get<boolean>("tick_sound");
-    return val ?? false;
+    const val = await store.get<number | boolean>("tick_sound");
+    if (val === true) return 0.5;
+    if (val === false || val == null) return 0;
+    return val;
   } catch {
-    return false;
+    return 0;
   }
 }
 
-export async function saveTickSound(enabled: boolean): Promise<void> {
+export async function saveTickVolume(volume: number): Promise<void> {
   const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
-  await store.set("tick_sound", enabled);
+  await store.set("tick_sound", volume);
 }
 
 export async function loadPresenceToast(): Promise<boolean> {
@@ -115,4 +117,38 @@ export async function loadPresenceToast(): Promise<boolean> {
 export async function savePresenceToast(enabled: boolean): Promise<void> {
   const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
   await store.set("presence_toast", enabled);
+}
+
+export type PresencePosition = "top-right" | "top-left" | "bottom-right" | "bottom-left";
+
+export async function loadPresencePosition(): Promise<PresencePosition> {
+  try {
+    const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
+    const val = await store.get<PresencePosition>("presence_position");
+    return val ?? "top-right";
+  } catch {
+    return "top-right";
+  }
+}
+
+export async function savePresencePosition(pos: PresencePosition): Promise<void> {
+  const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
+  await store.set("presence_position", pos);
+}
+
+export type PresenceLevel = "front" | "back";
+
+export async function loadPresenceLevel(): Promise<PresenceLevel> {
+  try {
+    const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
+    const val = await store.get<PresenceLevel>("presence_level");
+    return val ?? "front";
+  } catch {
+    return "front";
+  }
+}
+
+export async function savePresenceLevel(level: PresenceLevel): Promise<void> {
+  const store = await load("settings.json", { autoSave: true } as Parameters<typeof load>[1]);
+  await store.set("presence_level", level);
 }

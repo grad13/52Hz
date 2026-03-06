@@ -22,12 +22,18 @@
     savePauseMediaOnBreak,
     loadHideTrayIcon,
     saveHideTrayIcon,
-    loadTickSound,
-    saveTickSound,
+    loadTickVolume,
+    saveTickVolume,
     loadPresenceToast,
     savePresenceToast,
+    loadPresencePosition,
+    savePresencePosition,
+    loadPresenceLevel,
+    savePresenceLevel,
+    type PresencePosition,
+    type PresenceLevel,
   } from "../lib/settings-store";
-  import { emit } from "@tauri-apps/api/event";
+  import { emit, emitTo } from "@tauri-apps/api/event";
   import {
     enable as enableAutostart,
     disable as disableAutostart,
@@ -64,8 +70,10 @@
   let autostartEnabled = $state(false);
   let pauseMediaOnBreak = $state(false);
   let hideTrayIcon = $state(false);
-  let tickSound = $state(false);
+  let tickVolume = $state(0);
   let presenceToast = $state(true);
+  let presencePosition: PresencePosition = $state("top-right");
+  let presenceLevel: PresenceLevel = $state("front");
   let todaySessions = $state(0);
   let tickAudio: HTMLAudioElement | null = null;
 
@@ -77,8 +85,9 @@
     timerState = state;
     remaining = formatTime(remainingSecs(state));
     paused = state.paused;
-    if (tickSound && !state.paused) {
-      tickAudio?.play().catch(() => {});
+    if (tickVolume > 0 && !state.paused && tickAudio) {
+      tickAudio.volume = tickVolume;
+      tickAudio.play().catch(() => {});
     }
   }
 
@@ -97,15 +106,29 @@
     await savePauseMediaOnBreak(enabled);
   }
 
-  async function handleTickSoundChange(enabled: boolean) {
-    tickSound = enabled;
-    await saveTickSound(enabled);
+  async function handleTickVolumeChange(volume: number) {
+    tickVolume = volume;
+    await saveTickVolume(volume);
   }
 
   async function handlePresenceToastChange(enabled: boolean) {
     presenceToast = enabled;
     await savePresenceToast(enabled);
-    await emit("presence-toast-toggle", enabled);
+    await emitTo("presence-toast", "presence-toast-toggle", enabled);
+  }
+
+  async function handlePresencePositionChange(pos: PresencePosition) {
+    presencePosition = pos;
+    await savePresencePosition(pos);
+    await emitTo("presence-toast", "presence-position-change", pos);
+    await emit("presence-position-change", pos);
+  }
+
+  async function handlePresenceLevelChange(level: PresenceLevel) {
+    presenceLevel = level;
+    await savePresenceLevel(level);
+    await emitTo("presence-toast", "presence-level-change", level);
+    await emit("presence-level-change", level);
   }
 
   async function handleHideTrayIconChange(enabled: boolean) {
@@ -153,8 +176,10 @@
     autostartEnabled = await isAutostartEnabled().catch(() => false);
     pauseMediaOnBreak = await loadPauseMediaOnBreak();
     hideTrayIcon = await loadHideTrayIcon();
-    tickSound = await loadTickSound();
+    tickVolume = await loadTickVolume();
     presenceToast = await loadPresenceToast();
+    presencePosition = await loadPresencePosition();
+    presenceLevel = await loadPresenceLevel();
     tickAudio = new Audio(tickSrc);
     todaySessions = await getTodaySessions();
     const state = await getTimerState();
@@ -187,10 +212,14 @@
     onPauseMediaChange={handlePauseMediaChange}
     {hideTrayIcon}
     onHideTrayIconChange={handleHideTrayIconChange}
-    {tickSound}
-    onTickSoundChange={handleTickSoundChange}
+    {tickVolume}
+    onTickVolumeChange={handleTickVolumeChange}
     {presenceToast}
     onPresenceToastChange={handlePresenceToastChange}
+    {presencePosition}
+    onPresencePositionChange={handlePresencePositionChange}
+    {presenceLevel}
+    onPresenceLevelChange={handlePresenceLevelChange}
   />
 
   <div class="bottom-row">

@@ -23,6 +23,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn().mockResolvedValue(vi.fn()),
+  emit: vi.fn().mockResolvedValue(undefined),
+  emitTo: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@tauri-apps/api/window', () => ({
@@ -114,6 +116,16 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
   toDisplaySettings: vi.fn(),
   loadPauseMediaOnBreak: vi.fn().mockResolvedValue(false),
   savePauseMediaOnBreak: vi.fn().mockResolvedValue(undefined),
+  loadHideTrayIcon: vi.fn().mockResolvedValue(false),
+  saveHideTrayIcon: vi.fn().mockResolvedValue(undefined),
+  loadTickVolume: vi.fn().mockResolvedValue(0),
+  saveTickVolume: vi.fn().mockResolvedValue(undefined),
+  loadPresenceToast: vi.fn().mockResolvedValue(true),
+  savePresenceToast: vi.fn().mockResolvedValue(undefined),
+  loadPresencePosition: vi.fn().mockResolvedValue('top-right'),
+  savePresencePosition: vi.fn().mockResolvedValue(undefined),
+  loadPresenceLevel: vi.fn().mockResolvedValue('front'),
+  savePresenceLevel: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- Helpers ---
@@ -176,7 +188,9 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
         expect(mockGetTimerState).toHaveBeenCalled();
       });
 
-      const toggle = document.getElementById('autostart') as HTMLInputElement;
+      const label = screen.getByText('自動起動');
+      const row = label.closest('.toggle-row');
+      const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
       expect(toggle).toBeTruthy();
       await fireEvent.click(toggle!);
 
@@ -194,7 +208,9 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
         expect(mockGetTimerState).toHaveBeenCalled();
       });
 
-      const toggle = document.getElementById('autostart') as HTMLInputElement;
+      const label = screen.getByText('自動起動');
+      const row = label.closest('.toggle-row');
+      const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
       expect(toggle).toBeTruthy();
       await fireEvent.click(toggle!);
 
@@ -261,13 +277,13 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
     });
   });
 
-  it('8-2: セッション数が「今日のセッション: N 回」として表示される', async () => {
+  it('8-2: セッション数が「N回完了」として表示される', async () => {
     mockGetTodaySessions.mockResolvedValue(3);
 
     render(TrayPanel);
 
     await vi.waitFor(() => {
-      expect(screen.getByText(/今日のセッション.*3.*回/)).toBeTruthy();
+      expect(screen.getByText('3回完了')).toBeTruthy();
     });
   });
 });

@@ -20,6 +20,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn().mockResolvedValue(vi.fn()),
+  emit: vi.fn().mockResolvedValue(undefined),
+  emitTo: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@tauri-apps/api/window', () => ({
@@ -102,6 +104,14 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
   savePauseMediaOnBreak: vi.fn().mockResolvedValue(undefined),
   loadHideTrayIcon: vi.fn().mockResolvedValue(false),
   saveHideTrayIcon: vi.fn().mockResolvedValue(undefined),
+  loadTickVolume: vi.fn().mockResolvedValue(0),
+  saveTickVolume: vi.fn().mockResolvedValue(undefined),
+  loadPresenceToast: vi.fn().mockResolvedValue(true),
+  savePresenceToast: vi.fn().mockResolvedValue(undefined),
+  loadPresencePosition: vi.fn().mockResolvedValue('top-right'),
+  savePresencePosition: vi.fn().mockResolvedValue(undefined),
+  loadPresenceLevel: vi.fn().mockResolvedValue('front'),
+  savePresenceLevel: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- Helpers ---
@@ -171,93 +181,47 @@ describe('TrayPanel', () => {
   });
 
   // =========================================================================
-  // 2. Phase label mapping
+  // 2. UI rendering
   // =========================================================================
 
-  it('2-1: フェーズラベルマッピング - Focus → "フォーカス中"', async () => {
-    mockGetTimerState.mockResolvedValue(makeTimerState({ phase: 'Focus' }));
-
+  it('2-1: remaining タイマー表示が正しくレンダリングされる', async () => {
     render(TrayPanel);
 
     await vi.waitFor(() => {
-      expect(screen.getByText('フォーカス中')).toBeTruthy();
+      expect(screen.getByText('20:00')).toBeTruthy();
     });
   });
 
-  it('2-2: フェーズラベルマッピング - ShortBreak → "短い休憩中"', async () => {
-    mockGetTimerState.mockResolvedValue(
-      makeTimerState({ phase: 'ShortBreak', phase_duration_secs: 20 }),
-    );
-    mockRemainingSecs.mockReturnValue(20);
-    mockFormatTime.mockReturnValue('00:20');
-
-    render(TrayPanel);
-
-    await vi.waitFor(() => {
-      expect(screen.getByText('短い休憩中')).toBeTruthy();
-    });
-  });
-
-  it('2-3: フェーズラベルマッピング - LongBreak → "長い休憩中"', async () => {
-    mockGetTimerState.mockResolvedValue(
-      makeTimerState({ phase: 'LongBreak', phase_duration_secs: 180 }),
-    );
-    mockRemainingSecs.mockReturnValue(180);
-    mockFormatTime.mockReturnValue('03:00');
-
-    render(TrayPanel);
-
-    await vi.waitFor(() => {
-      expect(screen.getByText('長い休憩中')).toBeTruthy();
-    });
-  });
-
-  it('2-4: 未知のフェーズ → そのまま表示（フォールバック）', async () => {
-    mockGetTimerState.mockResolvedValue(
-      makeTimerState({ phase: 'UnknownPhase' }),
-    );
-
-    render(TrayPanel);
-
-    await vi.waitFor(() => {
-      expect(screen.getByText('UnknownPhase')).toBeTruthy();
-    });
-  });
-
-  // =========================================================================
-  // 3. UI rendering
-  // =========================================================================
-
-  it('3-1: "52Hz" ヘッダーが表示される', async () => {
-    render(TrayPanel);
-
-    await vi.waitFor(() => {
-      expect(screen.getByText('52Hz')).toBeTruthy();
-    });
-  });
-
-  it('3-2: TimerStatus, TimerControls, SettingsForm が子コンポーネントとしてマウントされる', async () => {
+  it('2-2: tray-panel クラスのコンテナが存在する', async () => {
     const { container } = render(TrayPanel);
 
     await vi.waitFor(() => {
-      // TimerStatus renders phase label and remaining time
-      expect(screen.getByText('フォーカス中')).toBeTruthy();
-      expect(screen.getByText('20:00')).toBeTruthy();
-
-      // TimerControls renders pause/quit buttons
-      // SettingsForm renders the settings form
-      // Verify the tray-panel structure contains expected child sections
       const trayPanel = container.querySelector('.tray-panel');
       expect(trayPanel).toBeTruthy();
-      expect(trayPanel!.children.length).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  it('2-3: 停止ボタンが表示される', async () => {
+    render(TrayPanel);
+
+    await vi.waitFor(() => {
+      expect(screen.getByText('■ 停止')).toBeTruthy();
+    });
+  });
+
+  it('2-4: アプリ終了ボタンが表示される', async () => {
+    render(TrayPanel);
+
+    await vi.waitFor(() => {
+      expect(screen.getByText('アプリを終了')).toBeTruthy();
     });
   });
 
   // =========================================================================
-  // 4. Settings save flow
+  // 3. Settings save flow
   // =========================================================================
 
-  it('4-1: 設定変更後に debounce で updateSettings → saveSettings が呼ばれる', async () => {
+  it('3-1: 設定変更後に debounce で updateSettings → saveSettings が呼ばれる', async () => {
     mockUpdateSettings.mockResolvedValue(undefined);
     mockSaveSettings.mockResolvedValue(undefined);
 

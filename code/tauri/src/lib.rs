@@ -142,7 +142,7 @@ pub fn run() {
                 WebviewUrl::App("index.html".into()),
             )
             .title("52Hz")
-            .inner_size(320.0, 420.0)
+            .inner_size(320.0, 480.0)
             .visible(false)
             .resizable(false)
             .decorations(false)
@@ -452,6 +452,24 @@ pub fn run() {
                 }
             }
 
+            // Load presence settings for toast window
+            let (initial_position, initial_level) = {
+                use tauri_plugin_store::StoreExt;
+                let pos = app
+                    .store("settings.json")
+                    .ok()
+                    .and_then(|s| s.get("presence_position"))
+                    .and_then(|v| v.as_str().map(String::from))
+                    .unwrap_or_else(|| "top-right".into());
+                let lvl = app
+                    .store("settings.json")
+                    .ok()
+                    .and_then(|s| s.get("presence_level"))
+                    .and_then(|v| v.as_str().map(String::from))
+                    .unwrap_or_else(|| "front".into());
+                (pos, lvl)
+            };
+
             // Create toast window (transparent, mouse-through, always on top)
             {
                 let toast_w = 290.0_f64;
@@ -465,7 +483,13 @@ pub fn run() {
                     let scale = monitor.scale_factor();
                     let phys = monitor.size();
                     let lw = phys.width as f64 / scale;
-                    ((lw - toast_w - margin).max(0.0), margin_top)
+                    let lh = phys.height as f64 / scale;
+                    match initial_position.as_str() {
+                        "top-left" => (margin, margin_top),
+                        "bottom-right" => ((lw - toast_w - margin).max(0.0), (lh - toast_h - margin).max(0.0)),
+                        "bottom-left" => (margin, (lh - toast_h - margin).max(0.0)),
+                        _ => ((lw - toast_w - margin).max(0.0), margin_top), // top-right default
+                    }
                 } else {
                     (margin, margin)
                 };
@@ -494,7 +518,8 @@ pub fn run() {
                         unsafe {
                             let ns_win: Retained<NSWindow> =
                                 Retained::retain(ns_window as *mut NSWindow).unwrap();
-                            ns_win.setLevel(25); // NSStatusWindowLevel
+                            let win_level = if initial_level == "back" { -1_isize } else { 25_isize };
+                            ns_win.setLevel(win_level);
 
                             // Transparent window background
                             ns_win.setOpaque(false);
@@ -614,6 +639,77 @@ pub fn run() {
                     );
                 std::mem::forget(toast_monitor);
                 std::mem::forget(toast_click_block);
+            }
+
+            // Listen for presence level changes (front/back)
+            #[cfg(target_os = "macos")]
+            {
+                let app_for_level = app.handle().clone();
+                app.listen("presence-level-change", move |event| {
+                    let is_back = event.payload().contains("back");
+                    let app_h = app_for_level.clone();
+                    let _ = app_for_level.run_on_main_thread(move || {
+                        if let Some(tw) = app_h.get_webview_window("presence-toast") {
+                            if let Ok(ns_ptr) = tw.ns_window() {
+                                unsafe {
+                                    let ns_w: objc2::rc::Retained<objc2_app_kit::NSWindow> =
+                                        objc2::rc::Retained::retain(
+                                            ns_ptr as *mut objc2_app_kit::NSWindow,
+                                        )
+                                        .unwrap();
+                                    let win_level: isize = if is_back { -1 } else { 25 };
+                                    ns_w.setLevel(win_level);
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Reposition toast window (fired on every toast add/remove + position setting change)
+            {
+                fn reposition_toast(app_h: &tauri::AppHandle, pos: &str) {
+                    if let Some(tw) = app_h.get_webview_window("presence-toast") {
+                        if let Some(monitor) = tw.primary_monitor().ok().flatten() {
+                            let scale = monitor.scale_factor();
+                            let phys = monitor.size();
+                            let lw = phys.width as f64 / scale;
+                            let lh = phys.height as f64 / scale;
+                            let size = tw.outer_size().unwrap_or(tauri::PhysicalSize::new(290, 80));
+                            let win_h = size.height as f64 / scale;
+                            let win_w = size.width as f64 / scale;
+                            let margin = 16.0;
+                            let margin_top = 40.0;
+                            let (x, y) = match pos {
+                                "top-left" => (margin, margin_top),
+                                "bottom-right" => (lw - win_w - margin, lh - win_h - margin),
+                                "bottom-left" => (margin, lh - win_h - margin),
+                                _ => (lw - win_w - margin, margin_top),
+                            };
+                            let _ = tw.set_position(tauri::LogicalPosition::new(x.max(0.0), y.max(0.0)));
+                        }
+                    }
+                }
+
+                // Reposition on every toast change (add/remove)
+                let app_r1 = app.handle().clone();
+                app.listen("presence-reposition", move |event| {
+                    let pos = event.payload().trim_matches('"').to_string();
+                    let app_h = app_r1.clone();
+                    let _ = app_r1.run_on_main_thread(move || {
+                        reposition_toast(&app_h, &pos);
+                    });
+                });
+
+                // Reposition on position setting change
+                let app_r2 = app.handle().clone();
+                app.listen("presence-position-change", move |event| {
+                    let pos = event.payload().trim_matches('"').to_string();
+                    let app_h = app_r2.clone();
+                    let _ = app_r2.run_on_main_thread(move || {
+                        reposition_toast(&app_h, &pos);
+                    });
+                });
             }
 
             // Start the timer

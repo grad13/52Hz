@@ -17,15 +17,29 @@ const defaultProps = {
   shortBreakMinutes: 1,
   longBreakMinutes: 15,
   shortBreaksBeforeLong: 4,
+  autostartEnabled: false,
+  onAutostartChange: vi.fn(),
+  pauseMediaOnBreak: false,
+  onPauseMediaChange: vi.fn(),
+  hideTrayIcon: false,
+  onHideTrayIconChange: vi.fn(),
+  tickVolume: 0,
+  onTickVolumeChange: vi.fn(),
+  presenceToast: true,
+  onPresenceToastChange: vi.fn(),
+  presencePosition: 'top-right' as const,
+  onPresencePositionChange: vi.fn(),
+  presenceLevel: 'front' as const,
+  onPresenceLevelChange: vi.fn(),
 };
 
 describe('SettingsForm', () => {
   it('3-1: 4つの入力フィールドが表示される', () => {
     render(SettingsForm, { props: { ...defaultProps } });
-    expect(screen.getByLabelText('フォーカス時間')).toBeTruthy();
+    expect(screen.getByLabelText('フォーカス')).toBeTruthy();
     expect(screen.getByLabelText('短い休憩')).toBeTruthy();
     expect(screen.getByLabelText('長い休憩')).toBeTruthy();
-    expect(screen.getByLabelText('長い休憩までの回数')).toBeTruthy();
+    expect(screen.getByLabelText('サイクル')).toBeTruthy();
   });
 
   it('3-4: フォーカス時間フィールドの min=1, max=120', () => {
@@ -64,24 +78,27 @@ describe('SettingsForm', () => {
     expect(input.max).toBe('10');
   });
 
-  it('3-8: トレイアイコン非表示トグルが表示される', () => {
+  it('3-8: アイコン非表示トグルが表示される', () => {
     render(SettingsForm, { props: { ...defaultProps } });
-    const input = document.getElementById('hide-tray-icon') as HTMLInputElement;
-    expect(input).toBeTruthy();
-    expect(input.type).toBe('checkbox');
+    expect(screen.getByText('アイコン非表示')).toBeTruthy();
   });
 
-  it('3-8b: トレイアイコン非表示トグルの checked が hideTrayIcon prop で制御される', () => {
-    render(SettingsForm, { props: { ...defaultProps, hideTrayIcon: true } });
-    const input = document.getElementById('hide-tray-icon') as HTMLInputElement;
+  it('3-8b: hideTrayIcon=true のときアイコン非表示トグルがチェック済み', () => {
+    const { container } = render(SettingsForm, { props: { ...defaultProps, hideTrayIcon: true } });
+    const label = screen.getByText('アイコン非表示');
+    const row = label.closest('.toggle-row');
+    const input = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(input).toBeTruthy();
     expect(input.checked).toBe(true);
   });
 
-  it('3-8c: トレイアイコン非表示トグル変更時に onHideTrayIconChange が呼ばれる', async () => {
+  it('3-8c: アイコン非表示トグル変更時に onHideTrayIconChange が呼ばれる', async () => {
     const onHideTrayIconChange = vi.fn();
-    render(SettingsForm, { props: { ...defaultProps, onHideTrayIconChange } });
-    const input = document.getElementById('hide-tray-icon') as HTMLInputElement;
-    await fireEvent.change(input, { target: { checked: true } });
-    expect(onHideTrayIconChange).toHaveBeenCalledWith(true);
+    const { container } = render(SettingsForm, { props: { ...defaultProps, onHideTrayIconChange } });
+    const label = screen.getByText('アイコン非表示');
+    const row = label.closest('.toggle-row');
+    const input = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    await fireEvent.click(input);
+    expect(onHideTrayIconChange).toHaveBeenCalledTimes(1);
   });
 });

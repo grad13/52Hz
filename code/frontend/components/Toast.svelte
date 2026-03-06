@@ -3,7 +3,8 @@
   import { listen } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { LogicalSize } from "@tauri-apps/api/dpi";
-  import { loadPresenceToast } from "../lib/settings-store";
+  import { loadPresenceToast, loadPresencePosition, type PresencePosition } from "../lib/settings-store";
+  import { emit } from "@tauri-apps/api/event";
   import { acceptBreak, skipBreakFromFocus } from "../lib/timer";
 
   interface ToastMessage {
@@ -37,10 +38,12 @@
   let items: StackItem[] = $state([]);
   let enabled = $state(true);
   let nextId = 0;
+  let position: PresencePosition = $state("top-right");
   let unlistenMsg: (() => void) | null = null;
   let unlistenToggle: (() => void) | null = null;
   let unlistenClick: (() => void) | null = null;
   let unlistenFocusDone: (() => void) | null = null;
+  let unlistenPosition: (() => void) | null = null;
   const win = getCurrentWindow();
   const timers = new Map<number, ReturnType<typeof setTimeout>>();
 
@@ -59,7 +62,9 @@
     if (active.length === 0) {
       await win.hide();
     } else {
-      await win.setSize(new LogicalSize(WIN_W, winHeight(active)));
+      const h = winHeight(active);
+      await win.setSize(new LogicalSize(WIN_W, h));
+      await emit("presence-reposition", position);
       await win.show();
     }
   }
@@ -100,7 +105,12 @@
     }
 
     const id = nextId++;
-    items = [...items, { id, type: "toast", msg, leaving: false }];
+    const isBottom = position === "bottom-left" || position === "bottom-right";
+    if (isBottom) {
+      items = [{ id, type: "toast", msg, leaving: false }, ...items];
+    } else {
+      items = [...items, { id, type: "toast", msg, leaving: false }];
+    }
     syncWindow();
 
     timers.set(
@@ -115,7 +125,12 @@
     if (existing) dismiss(existing.id);
 
     const id = nextId++;
-    items = [...items, { id, type: "focus-done", leaving: false }];
+    const isBottom = position === "bottom-left" || position === "bottom-right";
+    if (isBottom) {
+      items = [{ id, type: "focus-done", leaving: false }, ...items];
+    } else {
+      items = [...items, { id, type: "focus-done", leaving: false }];
+    }
     syncWindow();
     // No auto-dismiss — user must choose an action
   }
@@ -132,6 +147,7 @@
 
   onMount(async () => {
     enabled = await loadPresenceToast();
+    position = await loadPresencePosition();
 
     unlistenMsg = (await listen<ToastMessage>("presence-message", (event) => {
       addToast(event.payload);
@@ -155,6 +171,10 @@
     unlistenFocusDone = (await listen("focus-done-toast", () => {
       addFocusDone();
     })) as unknown as () => void;
+
+    unlistenPosition = (await listen<string>("presence-position-change", (event) => {
+      position = event.payload as PresencePosition;
+    })) as unknown as () => void;
   });
 
   onDestroy(() => {
@@ -162,11 +182,15 @@
     unlistenToggle?.();
     unlistenClick?.();
     unlistenFocusDone?.();
+    unlistenPosition?.();
     for (const t of timers.values()) clearTimeout(t);
   });
 </script>
 
-<div class="toast-stack">
+<div
+  class="toast-stack"
+  class:from-left={position === "top-left" || position === "bottom-left"}
+>
   {#each items as item (item.id)}
     {#if item.type === "focus-done"}
       <div class="toast-card focus-done-card" class:leaving={item.leaving}>
@@ -205,7 +229,7 @@
     cursor: pointer;
     text-align: left;
     outline: none;
-    animation: slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     transition: opacity 0.15s;
   }
 
@@ -224,29 +248,36 @@
   }
 
   .toast-card.leaving {
-    animation: slide-out 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+    animation: slide-out-right 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards;
   }
 
-  @keyframes slide-in {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+  .from-left .toast-card {
+    animation-name: slide-in-left;
   }
 
-  @keyframes slide-out {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(100%);
-      opacity: 0;
-    }
+  .from-left .toast-card.leaving {
+    animation-name: slide-out-left;
+  }
+
+
+  @keyframes slide-in-right {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes slide-out-right {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes slide-out-left {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(-100%); opacity: 0; }
   }
 
   .name, .label {
