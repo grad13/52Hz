@@ -45,13 +45,21 @@ pub(super) fn load_and_apply(app: &tauri::App, timer_state: &SharedTimerState) {
     }
 }
 
-/// Load presence position from store.
-pub(super) fn load_presence_position(app: &tauri::App) -> String {
+/// Load presence position and level from store.
+pub(super) fn load_presence_settings(app: &tauri::App) -> (String, String) {
     use tauri_plugin_store::StoreExt;
 
-    app.store("settings.json")
+    let pos = app
+        .store("settings.json")
         .ok()
         .and_then(|s| s.get("presence_position"))
         .and_then(|v| v.as_str().map(String::from))
-        .unwrap_or_else(|| "top-right".into())
+        .unwrap_or_else(|| "top-right".into());
+    let lvl = app
+        .store("settings.json")
+        .ok()
+        .and_then(|s| s.get("presence_level"))
+        .and_then(|v| v.as_str().map(String::from))
+        .unwrap_or_else(|| "front".into());
+    (pos, lvl)
 }
