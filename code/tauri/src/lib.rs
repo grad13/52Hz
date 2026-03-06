@@ -1,5 +1,6 @@
 // meta: checked=2026-03-07
 mod commands;
+mod hover_poll;
 mod media;
 mod overlay;
 mod presence;
