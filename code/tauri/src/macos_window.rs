@@ -69,7 +69,6 @@ pub(super) fn setup_rounded_corners(window: &tauri::WebviewWindow) {
 pub(super) fn setup_toast_transparency(
     toast_window: &tauri::WebviewWindow,
     app_handle: &tauri::AppHandle,
-    level: &str,
 ) {
     use objc2::rc::Retained;
     use objc2_app_kit::{NSColor, NSWindow};
@@ -78,8 +77,7 @@ pub(super) fn setup_toast_transparency(
         unsafe {
             let ns_win: Retained<NSWindow> =
                 Retained::retain(ns_window as *mut NSWindow).unwrap();
-            let win_level = if level == "back" { -1_isize } else { 25_isize };
-            ns_win.setLevel(win_level);
+            ns_win.setLevel(0_isize); // NSNormalWindowLevel
 
             // Transparent window background
             ns_win.setOpaque(false);
@@ -222,20 +220,3 @@ pub(super) fn setup_outside_click_monitor(main_window: &tauri::WebviewWindow) {
     std::mem::forget(block);
 }
 
-/// Set toast window NSWindow level (front=25, back=-1).
-#[cfg(target_os = "macos")]
-pub(crate) fn set_toast_level(app_handle: &tauri::AppHandle, is_back: bool) {
-    if let Some(tw) = app_handle.get_webview_window("presence-toast") {
-        if let Ok(ns_ptr) = tw.ns_window() {
-            unsafe {
-                let ns_w: objc2::rc::Retained<objc2_app_kit::NSWindow> =
-                    objc2::rc::Retained::retain(
-                        ns_ptr as *mut objc2_app_kit::NSWindow,
-                    )
-                    .unwrap();
-                let win_level: isize = if is_back { -1 } else { 25 };
-                ns_w.setLevel(win_level);
-            }
-        }
-    }
-}

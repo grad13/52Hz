@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PresencePosition, PresenceLevel } from "../lib/settings-store";
+  import type { PresencePosition } from "../lib/settings-store";
 
   let {
     focusMinutes = $bindable(),
@@ -18,8 +18,6 @@
     onPresenceToastChange,
     presencePosition = "top-right" as PresencePosition,
     onPresencePositionChange,
-    presenceLevel = "front" as PresenceLevel,
-    onPresenceLevelChange,
   }: {
     focusMinutes: number;
     shortBreakMinutes: number;
@@ -37,8 +35,6 @@
     onPresenceToastChange: (enabled: boolean) => void;
     presencePosition: PresencePosition;
     onPresencePositionChange: (pos: PresencePosition) => void;
-    presenceLevel: PresenceLevel;
-    onPresenceLevelChange: (level: PresenceLevel) => void;
   } = $props();
 
   const positions: { value: PresencePosition; label: string }[] = [
@@ -152,21 +148,6 @@
               onclick={() => onPresencePositionChange(pos.value)}
             >{pos.label}</button>
           {/each}
-        </div>
-      </div>
-      <div class="presence-row">
-        <span class="toggle-label">表示</span>
-        <div class="level-buttons">
-          <button
-            class="level-btn"
-            class:active={presenceLevel === "front"}
-            onclick={() => onPresenceLevelChange("front")}
-          >前面</button>
-          <button
-            class="level-btn"
-            class:active={presenceLevel === "back"}
-            onclick={() => onPresenceLevelChange("back")}
-          >背面</button>
         </div>
       </div>
     </div>
@@ -373,12 +354,12 @@
     gap: 0.4rem;
   }
 
-  .pos-buttons, .level-buttons {
+  .pos-buttons {
     display: flex;
     gap: 2px;
   }
 
-  .pos-btn, .level-btn {
+  .pos-btn {
     padding: 2px 6px;
     font-size: 0.65rem;
     border: 1px solid var(--border);
@@ -389,12 +370,12 @@
     transition: all var(--duration-fast);
   }
 
-  .pos-btn:hover, .level-btn:hover {
+  .pos-btn:hover {
     border-color: var(--text-secondary);
     color: var(--text-secondary);
   }
 
-  .pos-btn.active, .level-btn.active {
+  .pos-btn.active {
     background: var(--success);
     color: #1a1a2e;
     border-color: var(--success);
