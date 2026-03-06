@@ -1,4 +1,6 @@
 <script lang="ts">
+  import type { PresencePosition, PresenceLevel } from "../lib/settings-store";
+
   let {
     focusMinutes = $bindable(),
     shortBreakMinutes = $bindable(),
@@ -10,10 +12,14 @@
     onPauseMediaChange,
     hideTrayIcon = false,
     onHideTrayIconChange,
-    tickSound = false,
-    onTickSoundChange,
+    tickVolume = 0,
+    onTickVolumeChange,
     presenceToast = true,
     onPresenceToastChange,
+    presencePosition = "top-right" as PresencePosition,
+    onPresencePositionChange,
+    presenceLevel = "front" as PresenceLevel,
+    onPresenceLevelChange,
   }: {
     focusMinutes: number;
     shortBreakMinutes: number;
@@ -25,11 +31,22 @@
     onPauseMediaChange: (enabled: boolean) => void;
     hideTrayIcon: boolean;
     onHideTrayIconChange: (enabled: boolean) => void;
-    tickSound: boolean;
-    onTickSoundChange: (enabled: boolean) => void;
+    tickVolume: number;
+    onTickVolumeChange: (volume: number) => void;
     presenceToast: boolean;
     onPresenceToastChange: (enabled: boolean) => void;
+    presencePosition: PresencePosition;
+    onPresencePositionChange: (pos: PresencePosition) => void;
+    presenceLevel: PresenceLevel;
+    onPresenceLevelChange: (level: PresenceLevel) => void;
   } = $props();
+
+  const positions: { value: PresencePosition; label: string }[] = [
+    { value: "top-left", label: "↖" },
+    { value: "top-right", label: "↗" },
+    { value: "bottom-left", label: "↙" },
+    { value: "bottom-right", label: "↘" },
+  ];
 </script>
 
 <section class="form">
@@ -78,14 +95,15 @@
     </div>
     <div class="toggle-row">
       <span class="toggle-label">Tick音</span>
-      <label class="toggle-sm">
-        <input
-          type="checkbox"
-          checked={tickSound}
-          onchange={(e) => onTickSoundChange(e.currentTarget.checked)}
-        />
-        <span class="slider"></span>
-      </label>
+      <input
+        class="volume-slider"
+        type="range"
+        min="0"
+        max="1"
+        step="0.05"
+        value={tickVolume}
+        oninput={(e) => onTickVolumeChange(parseFloat(e.currentTarget.value))}
+      />
     </div>
     <div class="toggle-row">
       <span class="toggle-label">アイコン非表示</span>
@@ -109,8 +127,11 @@
         <span class="slider"></span>
       </label>
     </div>
-    <div class="toggle-row">
-      <span class="toggle-label">みんなの存在</span>
+  </div>
+
+  <div class="presence-section">
+    <div class="presence-header">
+      <span class="section-label">みんなの存在</span>
       <label class="toggle-sm">
         <input
           type="checkbox"
@@ -119,6 +140,35 @@
         />
         <span class="slider"></span>
       </label>
+    </div>
+    <div class="presence-options">
+      <div class="presence-row">
+        <span class="toggle-label">位置</span>
+        <div class="pos-buttons">
+          {#each positions as pos}
+            <button
+              class="pos-btn"
+              class:active={presencePosition === pos.value}
+              onclick={() => onPresencePositionChange(pos.value)}
+            >{pos.label}</button>
+          {/each}
+        </div>
+      </div>
+      <div class="presence-row">
+        <span class="toggle-label">表示</span>
+        <div class="level-buttons">
+          <button
+            class="level-btn"
+            class:active={presenceLevel === "front"}
+            onclick={() => onPresenceLevelChange("front")}
+          >前面</button>
+          <button
+            class="level-btn"
+            class:active={presenceLevel === "back"}
+            onclick={() => onPresenceLevelChange("back")}
+          >背面</button>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -213,6 +263,7 @@
     font-size: 0.7rem;
     color: var(--text-secondary);
     flex: 1;
+    min-width: 0;
     line-height: 1.2;
   }
 
@@ -258,5 +309,95 @@
 
   .toggle-sm input:checked + .slider::before {
     transform: translateX(13px);
+  }
+
+  .volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 90px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--text);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background var(--duration-fast);
+  }
+
+  .volume-slider::-webkit-slider-thumb:hover {
+    background: var(--success);
+  }
+
+  /* Presence section */
+  .presence-section {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.4rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .presence-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .presence-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .presence-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+  }
+
+  .pos-buttons, .level-buttons {
+    display: flex;
+    gap: 2px;
+  }
+
+  .pos-btn, .level-btn {
+    padding: 2px 6px;
+    font-size: 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+  }
+
+  .pos-btn:hover, .level-btn:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-secondary);
+  }
+
+  .pos-btn.active, .level-btn.active {
+    background: var(--success);
+    color: #1a1a2e;
+    border-color: var(--success);
+    font-weight: 600;
   }
 </style>

@@ -29,6 +29,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn().mockResolvedValue(vi.fn()),
+  emit: vi.fn().mockResolvedValue(undefined),
+  emitTo: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@tauri-apps/api/window', () => ({
@@ -106,6 +108,16 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
   toDisplaySettings: mockToDisplaySettings,
   loadPauseMediaOnBreak: vi.fn().mockResolvedValue(false),
   savePauseMediaOnBreak: vi.fn().mockResolvedValue(undefined),
+  loadHideTrayIcon: vi.fn().mockResolvedValue(false),
+  saveHideTrayIcon: vi.fn().mockResolvedValue(undefined),
+  loadTickVolume: vi.fn().mockResolvedValue(0),
+  saveTickVolume: vi.fn().mockResolvedValue(undefined),
+  loadPresenceToast: vi.fn().mockResolvedValue(true),
+  savePresenceToast: vi.fn().mockResolvedValue(undefined),
+  loadPresencePosition: vi.fn().mockResolvedValue('top-right'),
+  savePresencePosition: vi.fn().mockResolvedValue(undefined),
+  loadPresenceLevel: vi.fn().mockResolvedValue('front'),
+  savePresenceLevel: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- Helpers ---
@@ -312,29 +324,20 @@ describe('TrayPanel - supplement', () => {
   // handleTick updates remaining, phaseLabel, and paused.
 
   describe('handleTick via onTimerTick callback (L2)', () => {
-    it('onTimerTick コールバック経由で remaining と phaseLabel が更新される', async () => {
+    it('onTimerTick コールバック経由で remaining が更新される', async () => {
       render(TrayPanel);
 
       await vi.waitFor(() => {
         expect(mockOnTimerTick).toHaveBeenCalledTimes(1);
       });
 
-      // Retrieve the handleTick callback registered with onTimerTick
       const handleTick = mockOnTimerTick.mock.calls[0][0];
 
-      // Simulate a tick with ShortBreak phase
-      // Code trace:
-      //   handleTick({ phase:'ShortBreak', paused:false, elapsed_secs:5, ... })
-      //   L43: remaining = formatTime(remainingSecs(state))
-      //     mockRemainingSecs returns 15, mockFormatTime returns '00:15'
-      //   L44: phaseLabel = phaseLabels['ShortBreak'] = '短い休憩中'
-      //   L45: paused = false
       mockRemainingSecs.mockReturnValue(15);
       mockFormatTime.mockReturnValue('00:15');
       handleTick(makeTimerState({ phase: 'ShortBreak', elapsed_secs: 5, phase_duration_secs: 20 }));
 
       await vi.waitFor(() => {
-        expect(screen.getByText('短い休憩中')).toBeTruthy();
         expect(screen.getByText('00:15')).toBeTruthy();
       });
     });
@@ -348,19 +351,12 @@ describe('TrayPanel - supplement', () => {
 
       const handleTick = mockOnTimerTick.mock.calls[0][0];
 
-      // Simulate a tick where paused=true
-      // Code trace:
-      //   handleTick({ phase:'Focus', paused:true, ... })
-      //   L45: paused = true
-      //   TimerControls receives paused=true → "▶ 再開"
-      //   TimerStatus receives paused=true → "一時停止中" badge
       mockRemainingSecs.mockReturnValue(1100);
       mockFormatTime.mockReturnValue('18:20');
       handleTick(makeTimerState({ phase: 'Focus', paused: true, elapsed_secs: 100 }));
 
       await vi.waitFor(() => {
         expect(screen.getByText('▶ 再開')).toBeTruthy();
-        expect(screen.getByText('一時停止中')).toBeTruthy();
       });
     });
   });

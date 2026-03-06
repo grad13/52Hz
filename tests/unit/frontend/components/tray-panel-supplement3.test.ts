@@ -24,6 +24,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn().mockResolvedValue(vi.fn()),
+  emit: vi.fn().mockResolvedValue(undefined),
+  emitTo: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@tauri-apps/api/window', () => ({
@@ -119,6 +121,16 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
   toDisplaySettings: vi.fn(),
   loadPauseMediaOnBreak: mockLoadPauseMediaOnBreak,
   savePauseMediaOnBreak: mockSavePauseMediaOnBreak,
+  loadHideTrayIcon: vi.fn().mockResolvedValue(false),
+  saveHideTrayIcon: vi.fn().mockResolvedValue(undefined),
+  loadTickVolume: vi.fn().mockResolvedValue(0),
+  saveTickVolume: vi.fn().mockResolvedValue(undefined),
+  loadPresenceToast: vi.fn().mockResolvedValue(true),
+  savePresenceToast: vi.fn().mockResolvedValue(undefined),
+  loadPresencePosition: vi.fn().mockResolvedValue('top-right'),
+  savePresencePosition: vi.fn().mockResolvedValue(undefined),
+  loadPresenceLevel: vi.fn().mockResolvedValue('front'),
+  savePresenceLevel: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- Helpers ---
@@ -185,7 +197,9 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
       render(TrayPanel);
 
       await vi.waitFor(() => {
-        const toggle = document.getElementById('pause-media') as HTMLInputElement;
+        const label = screen.getByText('メディア自動中断');
+        const row = label.closest('.toggle-row');
+        const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
         expect(toggle).toBeTruthy();
         expect(toggle.checked).toBe(true);
       });
@@ -197,7 +211,9 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
       render(TrayPanel);
 
       await vi.waitFor(() => {
-        const toggle = document.getElementById('pause-media') as HTMLInputElement;
+        const label = screen.getByText('メディア自動中断');
+        const row = label.closest('.toggle-row');
+        const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
         expect(toggle).toBeTruthy();
         expect(toggle.checked).toBe(false);
       });
@@ -222,7 +238,9 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
         expect(mockGetTimerState).toHaveBeenCalled();
       });
 
-      const toggle = document.getElementById('autostart') as HTMLInputElement;
+      const label = screen.getByText('自動起動');
+      const row = label.closest('.toggle-row');
+      const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
       expect(toggle).toBeTruthy();
       await fireEvent.click(toggle!);
 
@@ -272,7 +290,9 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
         expect(mockGetTimerState).toHaveBeenCalled();
       });
 
-      const toggle = document.getElementById('pause-media') as HTMLInputElement;
+      const label = screen.getByText('メディア自動中断');
+      const row = label.closest('.toggle-row');
+      const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
       expect(toggle).toBeTruthy();
       await fireEvent.click(toggle!);
 
@@ -288,12 +308,16 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
       render(TrayPanel);
 
       await vi.waitFor(() => {
-        const toggle = document.getElementById('pause-media') as HTMLInputElement;
+        const label = screen.getByText('メディア自動中断');
+        const row = label.closest('.toggle-row');
+        const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
         expect(toggle).toBeTruthy();
         expect(toggle.checked).toBe(true);
       });
 
-      const toggle = document.getElementById('pause-media') as HTMLInputElement;
+      const label = screen.getByText('メディア自動中断');
+      const row = label.closest('.toggle-row');
+      const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
       await fireEvent.click(toggle!);
 
       await vi.waitFor(() => {
