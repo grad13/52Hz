@@ -178,7 +178,7 @@ pub fn run() {
 
             // Load settings from store
             settings_loader::load_and_apply(app, &timer_state);
-            let initial_position = settings_loader::load_presence_position(app);
+            let (initial_position, initial_level) = settings_loader::load_presence_settings(app);
 
             // Create toast window (transparent, mouse-through, always on top)
             {
@@ -216,12 +216,14 @@ pub fn run() {
                 .resizable(false)
                 .decorations(false)
                 .skip_taskbar(true)
+                .always_on_top(true)
                 .build()?;
 
                 #[cfg(target_os = "macos")]
                 macos_window::setup_toast_transparency(
                     &toast_window,
                     app.handle(),
+                    &initial_level,
                 );
             }
 

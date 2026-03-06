@@ -28,7 +28,10 @@
     savePresenceToast,
     loadPresencePosition,
     savePresencePosition,
+    loadPresenceLevel,
+    savePresenceLevel,
     type PresencePosition,
+    type PresenceLevel,
   } from "../lib/settings-store";
   import { emit, emitTo } from "@tauri-apps/api/event";
   import {
@@ -70,6 +73,7 @@
   let tickVolume = $state(0);
   let presenceToast = $state(true);
   let presencePosition: PresencePosition = $state("top-right");
+  let presenceLevel: PresenceLevel = $state("front");
   let todaySessions = $state(0);
   let tickAudio: HTMLAudioElement | null = null;
 
@@ -120,6 +124,13 @@
     await emit("presence-position-change", pos);
   }
 
+  async function handlePresenceLevelChange(level: PresenceLevel) {
+    presenceLevel = level;
+    await savePresenceLevel(level);
+    await emitTo("presence-toast", "presence-level-setting", level);
+    await emit("presence-level-change", level);
+  }
+
   async function handleHideTrayIconChange(enabled: boolean) {
     hideTrayIcon = enabled;
     await saveHideTrayIcon(enabled);
@@ -168,6 +179,7 @@
     tickVolume = await loadTickVolume();
     presenceToast = await loadPresenceToast();
     presencePosition = await loadPresencePosition();
+    presenceLevel = await loadPresenceLevel();
     tickAudio = new Audio(tickSrc);
     todaySessions = await getTodaySessions();
     const state = await getTimerState();
@@ -206,6 +218,8 @@
     onPresenceToastChange={handlePresenceToastChange}
     {presencePosition}
     onPresencePositionChange={handlePresencePositionChange}
+    {presenceLevel}
+    onPresenceLevelChange={handlePresenceLevelChange}
   />
 
   <div class="bottom-row">
