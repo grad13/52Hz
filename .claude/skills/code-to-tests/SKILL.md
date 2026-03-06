@@ -76,7 +76,7 @@ code-to-tests --from-refactor-code
 code-to-tests --from-tests-to-spec
 ```
 
-`documents/.spec-from-tests/summary.md` の Source 列からコードファイルを取得。
+`_documents/.spec-from-tests/summary.md` の Source 列からコードファイルを取得。
 
 ## 分類
 
@@ -144,7 +144,7 @@ git tag code-to-tests-pre-$(date +%Y%m%d-%H%M%S)
 - `code/.refactor/` の結果から対象ファイルリストを取得
 
 **--from-tests-to-specの場合:**
-- `documents/.spec-from-tests/summary.md` を読み込み
+- `_documents/.spec-from-tests/summary.md` を読み込み
 - Source 列からコードファイルを取得
 
 ### Step 2: 分析（1ファイル = 1サブエージェント、並列実行）

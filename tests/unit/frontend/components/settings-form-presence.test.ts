@@ -2,7 +2,7 @@
  * SettingsForm Presence - Unit Tests
  *
  * Tests for: code/frontend/components/SettingsForm.svelte
- * Spec: documents/spec/frontend/components/settings-form.md
+ * Spec: _documents/spec/frontend/components/settings-form.md
  * Runtime: JS-ESM (Svelte 5)
  */
 

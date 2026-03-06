@@ -1,11 +1,11 @@
 ---
 name: make-plan
-description: 計画書（`documents/plan/<topic>.md`）を作成する。
+description: 計画書（`_documents/plan/<topic>.md`）を作成する。
 ---
 
 # Make Plan
 
-計画書（`documents/plan/<topic>.md`）を作成する。
+計画書（`_documents/plan/<topic>.md`）を作成する。
 
 **plan mode は使わない。** plan mode はユーザーに内容が見えないため。
 
@@ -23,7 +23,7 @@ description: 計画書（`documents/plan/<topic>.md`）を作成する。
 
 ### Phase 1: ファイル作成（即座に）
 
-トピックを受け取ったら、**まず** `documents/plan/<topic>.md` にファイルを作成する。
+トピックを受け取ったら、**まず** `_documents/plan/<topic>.md` にファイルを作成する。
 この時点では骨格だけでよい。
 
 ```markdown
@@ -62,7 +62,7 @@ description: 計画書（`documents/plan/<topic>.md`）を作成する。
 3. 調査結果が返ってくるたびに **計画書ファイルを更新する**（Edit ツール）
 4. 「調査中」セクションのチェックボックスを埋めていく
 5. **Spec・テストへの影響を調査する**:
-   - 方針で変更・新規作成するコードファイルを特定したら、対応する spec（`documents/spec/`）とテスト（`tests/`, インラインテスト）を確認する
+   - 方針で変更・新規作成するコードファイルを特定したら、対応する spec（`_documents/spec/`）とテスト（`tests/`, インラインテスト）を確認する
    - 新規ファイル → spec 新規作成が必要か、テストが必要か
    - 既存ファイル変更 → 既存 spec の更新箇所、既存テストの追加・修正箇所を特定する
    - テスト困難な部分（OS 依存 API 等）はテスト方針（何をテストし、何をテストしないか）を明記する
@@ -111,7 +111,7 @@ description: 計画書（`documents/plan/<topic>.md`）を作成する。
 {ユーザーが言ったこと}
 
 ## 手順
-1. `documents/plan/{topic}.md` を Write ツールで作成する（骨格）
+1. `_documents/plan/{topic}.md` を Write ツールで作成する（骨格）
 2. 関連するコード・spec・テストを調査する
 3. 調査結果で計画書を Edit ツールで更新する
 4. 方針・実行順序・確認項目を埋める
@@ -120,9 +120,9 @@ description: 計画書（`documents/plan/<topic>.md`）を作成する。
 ## 調査対象のヒント
 - コード: `code/frontend/`, `code/tauri/`
 - テスト: `tests/integration/`, `code/tauri/src/timer.rs`（インラインテスト）
-- Spec: `documents/spec/`
-- 既存計画: `documents/plan/`
-- 参考: `documents/reference/`
+- Spec: `_documents/spec/`
+- 既存計画: `_documents/plan/`
+- 参考: `_documents/reference/`
 
 ## 戻り値
 作成した計画書の絶対パスと、ユーザーに確認すべき曖昧な点のリスト。

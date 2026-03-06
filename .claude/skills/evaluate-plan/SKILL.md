@@ -1,11 +1,11 @@
 ---
 name: evaluate-plan
-description: 計画書（`documents/plan/*.md`）を作成・更新した直後に実行する。
+description: 計画書（`_documents/plan/*.md`）を作成・更新した直後に実行する。
 ---
 
 # Evaluate Plan
 
-計画書（`documents/plan/*.md`）を作成・更新した直後に実行する。
+計画書（`_documents/plan/*.md`）を作成・更新した直後に実行する。
 計画書の品質を100点満点で自己評価し、不足点を特定・改善し、最終的に矛盾や漏れがないことを確認する。
 
 ultrathink
@@ -20,7 +20,7 @@ ultrathink
 
 ## 対象
 
-`documents/plan/*.md`（README.md 除外、使用終了日が設定済みのものも除外）
+`_documents/plan/*.md`（README.md 除外、使用終了日が設定済みのものも除外）
 
 ## 実行モード
 
@@ -32,14 +32,14 @@ ultrathink
 ### 単体モード
 
 ```
-evaluate-plan documents/plan/2026-02-23_topic.md
+evaluate-plan _documents/plan/2026-02-23_topic.md
 ```
 
 ### 並列モード
 
 ```
 evaluate-plan                                    # 全アクティブplan
-evaluate-plan documents/plan/a.md documents/plan/b.md  # 複数指定
+evaluate-plan _documents/plan/a.md _documents/plan/b.md  # 複数指定
 ```
 
 引数なしの場合:
@@ -63,8 +63,8 @@ evaluate-plan documents/plan/a.md documents/plan/b.md  # 複数指定
 **並列モード**: 各サブエージェントが担当ファイルを読み込む。
 
 確認対象:
-- 計画書本体（`documents/plan/<topic>.md`）
-- 計画書が参照しているドキュメント（`documents/spec/`, `documents/reference/`）
+- 計画書本体（`_documents/plan/<topic>.md`）
+- 計画書が参照しているドキュメント（`_documents/spec/`, `_documents/reference/`）
 - 計画書が参照している外部資料（`externals/`）
 - 計画書が修正対象とするコード（`code/`）
 - 計画書が修正対象とするテスト（`tests/`）

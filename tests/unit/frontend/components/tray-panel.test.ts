@@ -2,7 +2,7 @@
  * TrayPanel - Unit Tests
  *
  * Tests for: frontend/components/TrayPanel.svelte
- * Spec: documents/spec/frontend/components/tray-panel.md
+ * Spec: _documents/spec/frontend/components/tray-panel.md
  * Runtime: JS-ESM (Svelte 5)
  */
 

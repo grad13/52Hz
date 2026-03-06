@@ -10,7 +10,7 @@
 
 <!--
 使い方:
-- Spec: documents/spec/ からの相対パス
+- Spec: _documents/spec/ からの相対パス
 - Format: Contract, StateMachine, Gherkin, DecisionTable のいずれか
 - Source: code/ からの相対パス
 - Check: covered(spec完備), partial(一部不足), missing(spec無し), ref(委譲のみ)

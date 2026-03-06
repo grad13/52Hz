@@ -35,7 +35,7 @@ git tag --sort=-v:refname | head -5
 
 ### Step 4: CHANGELOG 更新
 
-`documents/CHANGELOG.md` に新エントリを追加する。
+`_documents/CHANGELOG.md` に新エントリを追加する。
 
 フォーマット:
 ```markdown
@@ -50,7 +50,7 @@ git tag --sort=-v:refname | head -5
 ### Step 5: コミット
 
 ```bash
-git add <更新したファイル> documents/CHANGELOG.md
+git add <更新したファイル> _documents/CHANGELOG.md
 git commit -m "chore: bump version to vX.Y.Z"
 ```
 
@@ -68,6 +68,15 @@ rm -rf /Applications/52Hz.app
 # ビルド成果物をコピー
 cp -R code/tauri/target/release/bundle/macos/52Hz.app /Applications/
 ```
+
+### Step 6.5: ビルドキャッシュ削除
+
+```bash
+cd code/tauri && cargo clean
+```
+
+デプロイ完了後にビルドキャッシュを削除し、ディスク容量を回収する（target/ は約10G）。
+次回ビルド時にフルビルドが必要になるが、deploy の頻度は低いため許容範囲。
 
 ### Step 7: タグ作成（ビルド成功時のみ）
 

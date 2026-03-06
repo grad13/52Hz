@@ -2,7 +2,7 @@
  * App - Unit Tests
  *
  * Tests for: code/frontend/App.svelte
- * Spec: documents/spec/frontend/app.md
+ * Spec: _documents/spec/frontend/app.md
  * Runtime: JS-ESM (Svelte 5)
  */
 

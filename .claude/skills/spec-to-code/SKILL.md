@@ -86,8 +86,8 @@ spec-v2.1 のセクション構造に対応:
 ### オプションA: ディレクトリ指定
 
 ```
-spec-to-code documents/spec/shell
-spec-to-code documents/spec/journal
+spec-to-code _documents/spec/shell
+spec-to-code _documents/spec/journal
 ```
 
 指定ディレクトリ内の spec ファイル（`*.md`、Format: spec-v2.1）を対象とする。
@@ -98,7 +98,7 @@ spec-to-code documents/spec/journal
 spec-to-code --from-tests-to-spec
 ```
 
-`documents/.spec-from-tests/summary.md` から対処済み spec リストを取得。
+`_documents/.spec-from-tests/summary.md` から対処済み spec リストを取得。
 tests-to-spec で更新/生成された spec を優先的に検証できる。
 
 ### オプションC: code-to-spec の結果を使用
@@ -107,7 +107,7 @@ tests-to-spec で更新/生成された spec を優先的に検証できる。
 spec-to-code --from-code-to-spec
 ```
 
-`documents/.spec-from-code/summary.md` から生成済み spec リストを取得。
+`_documents/.spec-from-code/summary.md` から生成済み spec リストを取得。
 
 ## ワークフロー
 
@@ -127,11 +127,11 @@ git tag spec-to-code-pre-$(date +%Y%m%d-%H%M%S)
 - Meta > Source テーブルからコードファイルを特定
 
 **--from-tests-to-spec の場合:**
-- `documents/.spec-from-tests/summary.md` を読み込み
+- `_documents/.spec-from-tests/summary.md` を読み込み
 - Action が `-` でないもの（generated / updated / mapped）を対象リストに追加
 
 **--from-code-to-spec の場合:**
-- `documents/.spec-from-code/summary.md` を読み込み
+- `_documents/.spec-from-code/summary.md` を読み込み
 - Action が `-` でないものを対象リストに追加
 
 ### Step 2: 分析（1 spec = 1 サブエージェント、並列実行）

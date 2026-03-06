@@ -36,7 +36,7 @@ Tauri v2 + Svelte 5 + Rust で構成。
 │   │   └── app_lifecycle.rs  # 統合テスト（正本）
 │   └── test-run.sh
 │
-├── documents/              # ドキュメント
+├── _documents/              # ドキュメント
 │   ├── spec/ plan/ reference/ reports/ archive/
 │
 └── externals/              # ユーザが渡す資料
