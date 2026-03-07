@@ -23,7 +23,7 @@ export interface DisplaySettings {
 
 export type PresencePosition = "top-right" | "top-left" | "bottom-right" | "bottom-left";
 
-export type PresenceLevel = "front" | "back";
+export type PresenceLevel = "always-front" | "dynamic" | "always-back";
 
 // ---------------------------------------------------------------
 // Unit conversion (DisplaySettings ↔ TimerSettings)
@@ -166,10 +166,13 @@ export async function savePresencePosition(pos: PresencePosition): Promise<void>
 export async function loadPresenceLevel(): Promise<PresenceLevel> {
   try {
     const store = await getStore();
-    const val = await store.get<PresenceLevel>("presence_level");
-    return val ?? "front";
+    const val = await store.get<string>("presence_level");
+    if (val === "front") return "always-front";
+    if (val === "back") return "always-back";
+    if (val === "always-front" || val === "dynamic" || val === "always-back") return val;
+    return "dynamic";
   } catch {
-    return "front";
+    return "dynamic";
   }
 }
 

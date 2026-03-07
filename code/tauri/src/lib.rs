@@ -216,7 +216,6 @@ pub fn run() {
                 .resizable(false)
                 .decorations(false)
                 .skip_taskbar(true)
-                .always_on_top(true)
                 .build()?;
 
                 #[cfg(target_os = "macos")]

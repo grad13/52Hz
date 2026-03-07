@@ -27,7 +27,7 @@ const defaultProps = {
   tickVolume: 0.5,
   presenceToast: true,
   presencePosition: "top-right" as const,
-  presenceLevel: "front" as const,
+  presenceLevel: "dynamic" as const,
 };
 
 describe('SettingsForm - Volume slider', () => {
@@ -102,29 +102,29 @@ describe('SettingsForm - Presence section', () => {
     expect(onPresencePositionChange).toHaveBeenCalledWith('bottom-left');
   });
 
-  it('3-11d: 2つのレベルボタンが存在する (前面, 背面)', () => {
+  it('3-11d: 3つのレベルボタンが存在する (常に前面, 動的, 常に背面)', () => {
     render(SettingsForm, { props: { ...defaultProps } });
     const buttons = document.querySelectorAll('.level-btn');
-    expect(buttons.length).toBe(2);
+    expect(buttons.length).toBe(3);
     const labels = Array.from(buttons).map((b) => b.textContent);
-    expect(labels).toEqual(['前面', '背面']);
+    expect(labels).toEqual(['常に前面', '動的', '常に背面']);
   });
 
   it('3-11e: アクティブなレベルボタンに active クラスが付く', () => {
-    render(SettingsForm, { props: { ...defaultProps, presenceLevel: 'front' as const } });
+    render(SettingsForm, { props: { ...defaultProps, presenceLevel: 'always-front' as const } });
     const buttons = document.querySelectorAll('.level-btn');
-    const front = Array.from(buttons).find((b) => b.textContent === '前面')!;
+    const front = Array.from(buttons).find((b) => b.textContent === '常に前面')!;
     expect(front.classList.contains('active')).toBe(true);
-    const back = Array.from(buttons).find((b) => b.textContent === '背面')!;
-    expect(back.classList.contains('active')).toBe(false);
+    const dynamic = Array.from(buttons).find((b) => b.textContent === '動的')!;
+    expect(dynamic.classList.contains('active')).toBe(false);
   });
 
   it('3-11f: レベルボタンクリック時に onPresenceLevelChange が呼ばれる', async () => {
     const onPresenceLevelChange = vi.fn();
     render(SettingsForm, { props: { ...defaultProps, onPresenceLevelChange } });
     const buttons = document.querySelectorAll('.level-btn');
-    const back = Array.from(buttons).find((b) => b.textContent === '背面')!;
+    const back = Array.from(buttons).find((b) => b.textContent === '常に背面')!;
     await fireEvent.click(back);
-    expect(onPresenceLevelChange).toHaveBeenCalledWith('back');
+    expect(onPresenceLevelChange).toHaveBeenCalledWith('always-back');
   });
 });

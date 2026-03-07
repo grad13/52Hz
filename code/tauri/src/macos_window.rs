@@ -78,7 +78,11 @@ pub(super) fn setup_toast_transparency(
         unsafe {
             let ns_win: Retained<NSWindow> =
                 Retained::retain(ns_window as *mut NSWindow).unwrap();
-            let win_level = if level == "back" { -1_isize } else { 25_isize };
+            let win_level = match level {
+                "always-back" | "back" => -1_isize,
+                "dynamic" => 0_isize,
+                _ => 25_isize, // "always-front" or legacy "front"
+            };
             ns_win.setLevel(win_level);
 
             // Transparent window background
@@ -222,9 +226,9 @@ pub(super) fn setup_outside_click_monitor(main_window: &tauri::WebviewWindow) {
     std::mem::forget(block);
 }
 
-/// Set toast window NSWindow level (front=25, back=-1).
+/// Set toast window NSWindow level: always-front=25, dynamic=0, always-back=-1.
 #[cfg(target_os = "macos")]
-pub(crate) fn set_toast_level(app_handle: &tauri::AppHandle, is_back: bool) {
+pub(crate) fn set_toast_level(app_handle: &tauri::AppHandle, level: &str) {
     if let Some(tw) = app_handle.get_webview_window("presence-toast") {
         if let Ok(ns_ptr) = tw.ns_window() {
             unsafe {
@@ -233,7 +237,11 @@ pub(crate) fn set_toast_level(app_handle: &tauri::AppHandle, is_back: bool) {
                         ns_ptr as *mut objc2_app_kit::NSWindow,
                     )
                     .unwrap();
-                let win_level: isize = if is_back { -1 } else { 25 };
+                let win_level: isize = match level {
+                    "always-back" | "back" => -1,
+                    "dynamic" => 0,
+                    _ => 25, // "always-front" or legacy "front"
+                };
                 ns_w.setLevel(win_level);
             }
         }
