@@ -141,10 +141,8 @@
     if (level === "always-back") {
       raised = true;
       emit("presence-level-change", "always-front");
-    } else if (level === "dynamic") {
-      // Just bring to front within normal level; no level change needed
-      win.show();
     }
+    // dynamic: do nothing — let the window stay wherever it is
   }
 
   function restoreIfNeeded() {
