@@ -37,6 +37,29 @@
   const PAD = 8;
   const WIN_W = 276;
 
+  function hashCode(s: string): number {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) {
+      h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+    }
+    return h >>> 0;
+  }
+
+  interface PersonaColors {
+    body: string;
+    iris: string;
+  }
+
+  function personaColors(name: string): PersonaColors {
+    const h = hashCode(name);
+    const bodyHue = h % 360;
+    const irisHue = (h >>> 8) % 360;
+    return {
+      body: `hsl(${bodyHue}, 40%, 25%)`,
+      iris: `hsl(${irisHue}, 80%, 55%)`,
+    };
+  }
+
   function nowTime(): string {
     const d = new Date();
     return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -47,6 +70,8 @@
   let nextId = 0;
   let position: PresencePosition = $state("top-right");
   let level: PresenceLevel = $state("dynamic");
+  let hasLikedThisSession: boolean = $state(false);
+  let likedId: number | null = $state(null);
   let raised = false; // temporarily raised from back to front
   let shown = false; // track whether window is currently shown (to avoid re-show changing Z-order)
   let needsRaise = true; // first click brings to front, second click dismisses
@@ -152,7 +177,16 @@
     }
   }
 
+  function handleLike(id: number, e: MouseEvent) {
+    e.stopPropagation();
+    if (hasLikedThisSession) return;
+    hasLikedThisSession = true;
+    likedId = id;
+  }
+
   function addFocusDone() {
+    hasLikedThisSession = false;
+    likedId = null;
     // Remove existing focus-done if any
     const existing = items.find((i) => i.type === "focus-done" && !i.leaving);
     if (existing) dismiss(existing.id);
@@ -253,14 +287,33 @@
           <button class="btn" onclick={() => handleSkip(item.id)}>スキップ</button>
         </div>
       </div>
-    {:else}
-      <button class="toast-card" class:leaving={item.leaving} onclick={() => dismiss(item.id)}>
+    {:else if item.type === "toast"}
+      {@const colors = personaColors(item.msg.name)}
+      {@const isLiked = likedId === item.id}
+      <div class="toast-card" class:leaving={item.leaving} role="button" tabindex="0" onclick={() => dismiss(item.id)}>
+        {#if isLiked}
+          <span class="bg-art bg-like">♥</span>
+        {:else}
+          <svg class="bg-art" viewBox="0 0 178 116">
+            <g transform="translate(0,116) scale(0.1,-0.1)">
+              <g fill={colors.body}><path d="M1324 1074 c-11 -57 2 -102 46 -160 46 -61 50 -95 16 -129 -54 -54 -113 -45 -222 31 -213 149 -370 194 -569 164 -181 -28 -328 -102 -462 -234 -85 -84 -93 -95 -93 -130 0 -33 8 -46 63 -103 34 -36 89 -84 122 -108 66 -47 182 -108 195 -103 14 5 -23 80 -60 121 -48 55 -34 62 46 23 82 -41 151 -99 195 -162 l30 -44 93 0 c197 0 404 87 566 237 64 59 141 166 189 260 35 70 57 88 120 98 57 9 128 73 138 124 5 28 4 32 -8 25 -8 -5 -51 -11 -96 -14 -60 -5 -88 -11 -103 -25 -23 -21 -22 -22 -45 27 -10 23 -35 49 -66 69 -27 17 -54 40 -60 50 -15 29 -27 23 -35 -17z m-495 -191 c55 -20 114 -72 149 -132 24 -41 27 -56 27 -136 0 -73 -4 -98 -22 -130 -75 -140 -248 -199 -386 -132 -129 64 -192 204 -153 340 49 168 215 250 385 190z M390 420 c0 -13 18 -22 24 -11 3 5 -1 11 -9 15 -8 3 -15 1 -15 -4z M450 398 c0 -2 21 -21 48 -43 26 -21 38 -28 27 -16 -19 23 -75 66 -75 59z M470 337 c16 -44 12 -101 -10 -148 -24 -54 -25 -87 -4 -117 23 -33 57 -43 95 -30 85 29 64 156 -45 274 -39 42 -45 45 -36 21z m20 -192 c0 -25 7 -43 25 -59 31 -29 31 -36 1 -36 -47 0 -76 53 -57 103 15 38 31 34 31 -8z"/></g>
+              <g fill="#ffffff"><path d="M1314 1105 c-28 -69 -13 -142 46 -213 37 -45 38 -74 4 -101 -49 -38 -96 -25 -221 63 -146 102 -297 156 -436 156 -87 0 -221 -28 -312 -64 -115 -47 -207 -110 -298 -206 -73 -75 -77 -82 -77 -125 0 -41 5 -50 61 -110 34 -36 89 -86 122 -111 71 -53 222 -128 238 -119 10 7 8 24 -7 72 -3 10 1 7 10 -7 21 -34 20 -85 -4 -148 -34 -89 -21 -140 44 -167 40 -17 79 -9 110 21 63 63 25 188 -93 304 -31 30 -42 45 -26 33 37 -26 94 -86 125 -132 l23 -34 126 6 c105 4 140 9 213 34 111 38 221 102 313 179 84 72 132 133 200 257 52 95 68 109 143 127 75 19 142 96 142 166 0 23 -3 25 -22 19 -13 -4 -59 -10 -103 -14 -44 -3 -89 -11 -100 -18 -17 -10 -22 -7 -37 17 -9 16 -41 47 -72 69 -30 22 -57 50 -61 61 -10 31 -34 24 -51 -15z m45 -14 c6 -10 33 -33 60 -50 31 -20 56 -46 66 -69 23 -49 22 -48 45 -27 15 14 43 20 103 25 45 3 88 9 96 14 12 7 13 3 8 -25 -10 -51 -81 -115 -138 -124 -63 -10 -85 -28 -120 -98 -48 -94 -125 -201 -189 -260 -162 -150 -369 -237 -566 -237 l-93 0 -30 44 c-44 63 -113 121 -195 162 -80 39 -94 32 -46 -23 37 -41 74 -116 60 -121 -13 -5 -129 56 -195 103 -33 24 -88 72 -122 108 -55 57 -63 70 -63 103 0 35 8 46 93 130 134 132 281 206 462 234 199 30 356 -15 569 -164 109 -76 168 -85 222 -31 34 34 30 68 -16 129 -44 58 -57 103 -46 160 8 40 20 46 35 17z m-945 -682 c-6 -11 -24 -2 -24 11 0 5 7 7 15 4 8 -4 12 -10 9 -15z m158 -183 c32 -62 39 -105 23 -141 -24 -59 -102 -66 -139 -13 -21 30 -20 63 4 117 22 47 26 104 10 148 -9 24 -3 21 36 -21 25 -27 55 -68 66 -90z M666 899 c-140 -22 -249 -171 -232 -316 28 -240 316 -343 489 -175 66 63 82 104 82 207 0 80 -3 95 -27 136 -67 114 -182 168 -312 148z m169 -33 c58 -27 108 -74 138 -131 17 -31 22 -58 22 -120 0 -70 -4 -87 -30 -134 -31 -56 -88 -106 -148 -128 -18 -6 -61 -12 -97 -12 -262 -2 -375 326 -169 491 77 62 194 76 284 34z M459 153 c-19 -50 10 -103 57 -103 30 0 30 7 -1 36 -18 16 -25 34 -25 59 0 42 -16 46 -31 8z"/></g>
+              <g fill="#000000"><path d="M665 881 c-134 -33 -224 -157 -212 -291 6 -73 35 -127 93 -179 144 -126 375 -64 435 116 7 21 9 66 7 109 -4 60 -10 81 -37 122 -38 60 -94 101 -163 119 -57 14 -77 15 -123 4z m163 -117 c43 -35 82 -105 82 -149 0 -46 -44 -127 -85 -154 -80 -54 -192 -34 -252 46 -25 32 -28 45 -28 108 0 63 3 76 29 109 61 81 179 99 254 40z"/></g>
+              <g fill={colors.iris}><path d="M668 790 c-46 -14 -85 -48 -107 -93 -87 -180 127 -348 280 -220 81 68 85 198 7 270 -48 45 -118 62 -180 43z M443 615 c0 -22 2 -30 4 -17 2 12 2 30 0 40 -3 9 -5 -1 -4 -23z M914 418 l-19 -23 23 19 c21 18 27 26 19 26 -2 0 -12 -10 -23 -22z"/></g>
+            </g>
+          </svg>
+        {/if}
         <div class="card-header">
           <span class="name">{item.msg.name}</span>
-          <span class="time">{item.time}</span>
+          <span class="header-right">
+            {#if !hasLikedThisSession}
+              <button class="like-btn" onclick={(e) => handleLike(item.id, e)}>♥</button>
+            {/if}
+            <span class="time">{item.time}</span>
+          </span>
         </div>
         <span class="msg">{item.msg.message}</span>
-      </button>
+      </div>
     {/if}
   {/each}
 </div>
@@ -278,6 +331,8 @@
   }
 
   .toast-card {
+    position: relative;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -339,7 +394,63 @@
     to { transform: translateX(-100%); opacity: 0; }
   }
 
+  .bg-art {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 44px;
+    width: auto;
+    opacity: 0.10;
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .bg-like {
+    font-size: 40px;
+    line-height: 1;
+    color: #e8547a;
+    opacity: 0.25;
+    z-index: 0;
+    animation: like-pop 0.3s ease-out;
+  }
+
+  @keyframes like-pop {
+    0% { transform: translate(-50%, -50%) scale(0.5); }
+    60% { transform: translate(-50%, -50%) scale(1.2); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .like-btn {
+    position: relative;
+    z-index: 2;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.6rem;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    opacity: 0.4;
+    transition: opacity 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .like-btn:active {
+    opacity: 1;
+    color: #e8547a;
+  }
+
   .card-header {
+    position: relative;
+    z-index: 1;
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -360,6 +471,8 @@
   }
 
   .msg {
+    position: relative;
+    z-index: 1;
     font-size: 0.78rem;
     color: var(--text);
     line-height: 1.35;

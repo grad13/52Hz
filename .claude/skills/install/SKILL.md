@@ -17,8 +17,7 @@ pkill -f "52Hz" 2>/dev/null; sleep 1
 # 2. .app のみビルド（DMG は作らない）
 cd code && npx tauri build --bundles app
 
-# 3. /Applications にインストール
-rm -rf /Applications/52Hz.app
+# 3. /Applications にインストール（cp -R は上書きするので rm 不要）
 cp -R code/tauri/target/release/bundle/macos/52Hz.app /Applications/
 
 # 4. 起動
