@@ -18,7 +18,7 @@ const { mockListen, mockEmit, mockWin, mockLoadPresenceToast, mockLoadPresencePo
   },
   mockLoadPresenceToast: vi.fn().mockResolvedValue(true),
   mockLoadPresencePosition: vi.fn().mockResolvedValue('top-right'),
-  mockLoadPresenceLevel: vi.fn().mockResolvedValue('front'),
+  mockLoadPresenceLevel: vi.fn().mockResolvedValue('dynamic'),
 }));
 
 const { mockAcceptBreak, mockSkipBreakFromFocus } = vi.hoisted(() => ({
@@ -66,7 +66,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockLoadPresenceToast.mockResolvedValue(true);
   mockLoadPresencePosition.mockResolvedValue('top-right');
-  mockLoadPresenceLevel.mockResolvedValue('front');
+  mockLoadPresenceLevel.mockResolvedValue('dynamic');
 });
 
 afterEach(() => {

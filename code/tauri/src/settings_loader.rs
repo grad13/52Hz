@@ -55,11 +55,17 @@ pub(super) fn load_presence_settings(app: &tauri::App) -> (String, String) {
         .and_then(|s| s.get("presence_position"))
         .and_then(|v| v.as_str().map(String::from))
         .unwrap_or_else(|| "top-right".into());
-    let lvl = app
+    let raw_lvl = app
         .store("settings.json")
         .ok()
         .and_then(|s| s.get("presence_level"))
         .and_then(|v| v.as_str().map(String::from))
-        .unwrap_or_else(|| "front".into());
+        .unwrap_or_else(|| "dynamic".into());
+    let lvl = match raw_lvl.as_str() {
+        "front" => "always-front".into(),
+        "back" => "always-back".into(),
+        "always-front" | "dynamic" | "always-back" => raw_lvl,
+        _ => "dynamic".into(),
+    };
     (pos, lvl)
 }

@@ -110,7 +110,7 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
   savePresenceToast: vi.fn().mockResolvedValue(undefined),
   loadPresencePosition: vi.fn().mockResolvedValue('top-right'),
   savePresencePosition: vi.fn().mockResolvedValue(undefined),
-  loadPresenceLevel: vi.fn().mockResolvedValue('front'),
+  loadPresenceLevel: vi.fn().mockResolvedValue('dynamic'),
   savePresenceLevel: vi.fn().mockResolvedValue(undefined),
 }));
 

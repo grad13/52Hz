@@ -291,28 +291,48 @@ describe('loadPresenceLevel', () => {
     vi.clearAllMocks();
   });
 
-  it('returns stored value when present', async () => {
+  it('returns stored value when present (new 3-value)', async () => {
+    mockStore.get.mockImplementation((key: string) => {
+      if (key === 'presence_level') return Promise.resolve('always-back');
+      return Promise.resolve(null);
+    });
+
+    const result = await loadPresenceLevel();
+    expect(result).toBe('always-back');
+  });
+
+  it('migrates legacy "front" to "always-front"', async () => {
+    mockStore.get.mockImplementation((key: string) => {
+      if (key === 'presence_level') return Promise.resolve('front');
+      return Promise.resolve(null);
+    });
+
+    const result = await loadPresenceLevel();
+    expect(result).toBe('always-front');
+  });
+
+  it('migrates legacy "back" to "always-back"', async () => {
     mockStore.get.mockImplementation((key: string) => {
       if (key === 'presence_level') return Promise.resolve('back');
       return Promise.resolve(null);
     });
 
     const result = await loadPresenceLevel();
-    expect(result).toBe('back');
+    expect(result).toBe('always-back');
   });
 
-  it('returns "front" (default) when null', async () => {
+  it('returns "dynamic" (default) when null', async () => {
     mockStore.get.mockResolvedValue(null);
 
     const result = await loadPresenceLevel();
-    expect(result).toBe('front');
+    expect(result).toBe('dynamic');
   });
 
-  it('returns "front" on error', async () => {
+  it('returns "dynamic" on error', async () => {
     mockStore.get.mockRejectedValue(new Error('Store not available'));
 
     const result = await loadPresenceLevel();
-    expect(result).toBe('front');
+    expect(result).toBe('dynamic');
   });
 
   it('reads from key "presence_level"', async () => {
@@ -335,15 +355,15 @@ describe('savePresenceLevel', () => {
   it('writes level string to "presence_level" key', async () => {
     mockStore.set.mockResolvedValue(undefined);
 
-    await savePresenceLevel('back');
+    await savePresenceLevel('always-back');
 
-    expect(mockStore.set).toHaveBeenCalledWith('presence_level', 'back');
+    expect(mockStore.set).toHaveBeenCalledWith('presence_level', 'always-back');
   });
 
   it('calls store.set exactly 1 time', async () => {
     mockStore.set.mockResolvedValue(undefined);
 
-    await savePresenceLevel('front');
+    await savePresenceLevel('dynamic');
 
     expect(mockStore.set).toHaveBeenCalledTimes(1);
   });
@@ -351,6 +371,6 @@ describe('savePresenceLevel', () => {
   it('propagates errors from store.set to the caller', async () => {
     mockStore.set.mockRejectedValue(new Error('Write failed'));
 
-    await expect(savePresenceLevel('front')).rejects.toThrow('Write failed');
+    await expect(savePresenceLevel('always-front')).rejects.toThrow('Write failed');
   });
 });

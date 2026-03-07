@@ -18,7 +18,7 @@
     onPresenceToastChange,
     presencePosition = "top-right" as PresencePosition,
     onPresencePositionChange,
-    presenceLevel = "front" as PresenceLevel,
+    presenceLevel = "dynamic" as PresenceLevel,
     onPresenceLevelChange,
   }: {
     focusMinutes: number;
@@ -159,14 +159,19 @@
         <div class="level-buttons">
           <button
             class="level-btn"
-            class:active={presenceLevel === "front"}
-            onclick={() => onPresenceLevelChange("front")}
-          >前面</button>
+            class:active={presenceLevel === "always-front"}
+            onclick={() => onPresenceLevelChange("always-front")}
+          >常に前面</button>
           <button
             class="level-btn"
-            class:active={presenceLevel === "back"}
-            onclick={() => onPresenceLevelChange("back")}
-          >背面</button>
+            class:active={presenceLevel === "dynamic"}
+            onclick={() => onPresenceLevelChange("dynamic")}
+          >動的</button>
+          <button
+            class="level-btn"
+            class:active={presenceLevel === "always-back"}
+            onclick={() => onPresenceLevelChange("always-back")}
+          >常に背面</button>
         </div>
       </div>
     </div>

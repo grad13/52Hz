@@ -170,10 +170,10 @@ fn register_presence_level_change(app: &tauri::App) {
     {
         let app_handle = app.handle().clone();
         app.listen("presence-level-change", move |event| {
-            let is_back = event.payload().contains("back");
+            let level = event.payload().trim_matches('"').to_string();
             let app_h = app_handle.clone();
             let _ = app_handle.run_on_main_thread(move || {
-                macos_window::set_toast_level(&app_h, is_back);
+                macos_window::set_toast_level(&app_h, &level);
             });
         });
     }

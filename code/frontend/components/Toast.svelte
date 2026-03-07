@@ -3,7 +3,7 @@
   import { listen } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { LogicalSize } from "@tauri-apps/api/dpi";
-  import { loadPresenceToast, loadPresencePosition, loadPresenceLevel, type PresencePosition } from "../lib/settings-store";
+  import { loadPresenceToast, loadPresencePosition, loadPresenceLevel, type PresencePosition, type PresenceLevel } from "../lib/settings-store";
   import { emit } from "@tauri-apps/api/event";
   import { acceptBreak, skipBreakFromFocus } from "../lib/timer";
 
@@ -46,7 +46,7 @@
   let enabled = $state(true);
   let nextId = 0;
   let position: PresencePosition = $state("top-right");
-  let level: "front" | "back" = $state("front");
+  let level: PresenceLevel = $state("dynamic");
   let raised = false; // temporarily raised from back to front
   let shown = false; // track whether window is currently shown (to avoid re-show changing Z-order)
   let needsRaise = true; // first click brings to front, second click dismisses
@@ -137,16 +137,20 @@
   }
 
   function raise() {
-    if (level === "back" && !raised) {
+    if (raised) return;
+    if (level === "always-back") {
       raised = true;
-      emit("presence-level-change", "front");
+      emit("presence-level-change", "always-front");
+    } else if (level === "dynamic") {
+      // Just bring to front within normal level; no level change needed
+      win.show();
     }
   }
 
   function restoreIfNeeded() {
     if (raised) {
       raised = false;
-      emit("presence-level-change", "back");
+      emit("presence-level-change", "always-back");
     }
   }
 
@@ -175,7 +179,7 @@
   onMount(async () => {
     enabled = await loadPresenceToast();
     position = await loadPresencePosition();
-    level = (await loadPresenceLevel()) as "front" | "back";
+    level = await loadPresenceLevel();
 
     unlistenMsg = (await listen<ToastMessage>("presence-message", (event) => {
       addToast(event.payload);
@@ -189,8 +193,10 @@
     // Handle first-click from native global event monitor
     // First click: bring to front. Second click: dismiss oldest toast.
     unlistenClick = (await listen("presence-toast-click", () => {
-      if (needsRaise) {
-        if (level === "back" && !raised) {
+      // Two-click interaction only applies in "always-back" mode:
+      // first click raises to front, second click dismisses.
+      if (level === "always-back" && needsRaise) {
+        if (!raised) {
           raise();
         }
         win.show();
@@ -214,8 +220,9 @@
     })) as unknown as () => void;
 
     unlistenLevel = (await listen<string>("presence-level-setting", (event) => {
-      level = event.payload as "front" | "back";
+      level = event.payload as PresenceLevel;
       raised = false;
+      needsRaise = true;
     })) as unknown as () => void;
   });
 

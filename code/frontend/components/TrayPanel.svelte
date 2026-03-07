@@ -73,7 +73,7 @@
   let tickVolume = $state(0);
   let presenceToast = $state(true);
   let presencePosition: PresencePosition = $state("top-right");
-  let presenceLevel: PresenceLevel = $state("front");
+  let presenceLevel: PresenceLevel = $state("dynamic");
   let todaySessions = $state(0);
   let tickAudio: HTMLAudioElement | null = null;
 
