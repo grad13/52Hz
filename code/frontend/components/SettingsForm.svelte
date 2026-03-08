@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PresencePosition, PresenceLevel } from "../lib/settings-store";
+  import type { PresencePosition, PresenceLevel, PresenceLikeIcon } from "../lib/settings-store";
 
   let {
     focusMinutes = $bindable(),
@@ -20,6 +20,12 @@
     onPresencePositionChange,
     presenceLevel = "dynamic" as PresenceLevel,
     onPresenceLevelChange,
+    presenceMaxToasts = 4,
+    onPresenceMaxToastsChange,
+    presenceShowIcon = true,
+    onPresenceShowIconChange,
+    presenceLikeIcon = "heart" as PresenceLikeIcon,
+    onPresenceLikeIconChange,
   }: {
     focusMinutes: number;
     shortBreakMinutes: number;
@@ -39,6 +45,12 @@
     onPresencePositionChange: (pos: PresencePosition) => void;
     presenceLevel: PresenceLevel;
     onPresenceLevelChange: (level: PresenceLevel) => void;
+    presenceMaxToasts: number;
+    onPresenceMaxToastsChange: (n: number) => void;
+    presenceShowIcon: boolean;
+    onPresenceShowIconChange: (v: boolean) => void;
+    presenceLikeIcon: PresenceLikeIcon;
+    onPresenceLikeIconChange: (v: PresenceLikeIcon) => void;
   } = $props();
 
   const positions: { value: PresencePosition; label: string }[] = [
@@ -46,6 +58,12 @@
     { value: "top-right", label: "↗" },
     { value: "bottom-left", label: "↙" },
     { value: "bottom-right", label: "↘" },
+  ];
+
+  const likeOptions: { value: PresenceLikeIcon; label: string }[] = [
+    { value: "heart", label: "♥" },
+    { value: "star", label: "★" },
+    { value: "none", label: "なし" },
   ];
 </script>
 
@@ -131,7 +149,7 @@
 
   <div class="presence-section">
     <div class="presence-header">
-      <span class="section-label">みんなの存在</span>
+      <span class="section-label">みんなの存在 (On52Hz)</span>
       <label class="toggle-sm">
         <input
           type="checkbox"
@@ -141,40 +159,83 @@
         <span class="slider"></span>
       </label>
     </div>
-    <div class="presence-options">
-      <div class="presence-row">
-        <span class="toggle-label">位置</span>
-        <div class="pos-buttons">
-          {#each positions as pos}
-            <button
-              class="pos-btn"
-              class:active={presencePosition === pos.value}
-              onclick={() => onPresencePositionChange(pos.value)}
-            >{pos.label}</button>
-          {/each}
+    {#if presenceToast}
+      <div class="presence-options">
+        <div class="sub-group">
+          <span class="sub-group-label">一般</span>
+          <div class="presence-row">
+            <span class="toggle-label">ユーザアイコン表示</span>
+            <label class="toggle-sm">
+              <input
+                type="checkbox"
+                checked={presenceShowIcon}
+                onchange={(e) => onPresenceShowIconChange(e.currentTarget.checked)}
+              />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="presence-row">
+            <span class="toggle-label">いいね機能</span>
+            <div class="like-buttons">
+              {#each likeOptions as opt}
+                <button
+                  class="like-btn"
+                  class:active={presenceLikeIcon === opt.value}
+                  onclick={() => onPresenceLikeIconChange(opt.value)}
+                >{opt.label}</button>
+              {/each}
+            </div>
+          </div>
+        </div>
+        <div class="sub-group">
+          <span class="sub-group-label">メッセージ</span>
+          <div class="presence-row">
+            <span class="toggle-label">位置</span>
+            <div class="pos-buttons">
+              {#each positions as pos}
+                <button
+                  class="pos-btn"
+                  class:active={presencePosition === pos.value}
+                  onclick={() => onPresencePositionChange(pos.value)}
+                >{pos.label}</button>
+              {/each}
+            </div>
+          </div>
+          <div class="presence-row">
+            <span class="toggle-label">順番</span>
+            <div class="level-buttons">
+              <button
+                class="level-btn"
+                class:active={presenceLevel === "always-front"}
+                onclick={() => onPresenceLevelChange("always-front")}
+              >常に前面</button>
+              <button
+                class="level-btn"
+                class:active={presenceLevel === "dynamic"}
+                onclick={() => onPresenceLevelChange("dynamic")}
+              >動的</button>
+              <button
+                class="level-btn"
+                class:active={presenceLevel === "always-back"}
+                onclick={() => onPresenceLevelChange("always-back")}
+              >常に背面</button>
+            </div>
+          </div>
+          <div class="presence-row">
+            <span class="toggle-label">最大数</span>
+            <div class="limit-buttons">
+              {#each [2, 3, 4, 5] as n}
+                <button
+                  class="limit-btn"
+                  class:active={presenceMaxToasts === n}
+                  onclick={() => onPresenceMaxToastsChange(n)}
+                >{n}</button>
+              {/each}
+            </div>
+          </div>
         </div>
       </div>
-      <div class="presence-row">
-        <span class="toggle-label">表示</span>
-        <div class="level-buttons">
-          <button
-            class="level-btn"
-            class:active={presenceLevel === "always-front"}
-            onclick={() => onPresenceLevelChange("always-front")}
-          >常に前面</button>
-          <button
-            class="level-btn"
-            class:active={presenceLevel === "dynamic"}
-            onclick={() => onPresenceLevelChange("dynamic")}
-          >動的</button>
-          <button
-            class="level-btn"
-            class:active={presenceLevel === "always-back"}
-            onclick={() => onPresenceLevelChange("always-back")}
-          >常に背面</button>
-        </div>
-      </div>
-    </div>
+    {/if}
   </div>
 </section>
 
@@ -371,6 +432,33 @@
     gap: 0.3rem;
   }
 
+  .sub-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.15rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.35rem;
+  }
+
+  .sub-group:first-child {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  .sub-group-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .sub-group .presence-row {
+    padding-left: 0.5rem;
+  }
+
   .presence-row {
     display: flex;
     align-items: center;
@@ -378,12 +466,12 @@
     gap: 0.4rem;
   }
 
-  .pos-buttons, .level-buttons {
+  .pos-buttons, .level-buttons, .limit-buttons, .like-buttons {
     display: flex;
     gap: 2px;
   }
 
-  .pos-btn, .level-btn {
+  .pos-btn, .level-btn, .limit-btn, .like-btn {
     padding: 2px 6px;
     font-size: 0.65rem;
     border: 1px solid var(--border);
@@ -394,12 +482,12 @@
     transition: all var(--duration-fast);
   }
 
-  .pos-btn:hover, .level-btn:hover {
+  .pos-btn:hover, .level-btn:hover, .limit-btn:hover, .like-btn:hover {
     border-color: var(--text-secondary);
     color: var(--text-secondary);
   }
 
-  .pos-btn.active, .level-btn.active {
+  .pos-btn.active, .level-btn.active, .limit-btn.active, .like-btn.active {
     background: var(--success);
     color: #1a1a2e;
     border-color: var(--success);

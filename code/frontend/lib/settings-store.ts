@@ -25,6 +25,8 @@ export type PresencePosition = "top-right" | "top-left" | "bottom-right" | "bott
 
 export type PresenceLevel = "always-front" | "dynamic" | "always-back";
 
+export type PresenceLikeIcon = "heart" | "star" | "none";
+
 // ---------------------------------------------------------------
 // Unit conversion (DisplaySettings ↔ TimerSettings)
 // ---------------------------------------------------------------
@@ -179,5 +181,51 @@ export async function loadPresenceLevel(): Promise<PresenceLevel> {
 export async function savePresenceLevel(level: PresenceLevel): Promise<void> {
   const store = await getStore();
   await store.set("presence_level", level);
+}
+
+export async function loadPresenceMaxToasts(): Promise<number> {
+  try {
+    const store = await getStore();
+    const val = await store.get<number>("presence_max_toasts");
+    return val ?? 4;
+  } catch {
+    return 4;
+  }
+}
+
+export async function savePresenceMaxToasts(n: number): Promise<void> {
+  const store = await getStore();
+  await store.set("presence_max_toasts", n);
+}
+
+export async function loadPresenceShowIcon(): Promise<boolean> {
+  try {
+    const store = await getStore();
+    const val = await store.get<boolean>("presence_show_icon");
+    return val ?? true;
+  } catch {
+    return true;
+  }
+}
+
+export async function savePresenceShowIcon(v: boolean): Promise<void> {
+  const store = await getStore();
+  await store.set("presence_show_icon", v);
+}
+
+export async function loadPresenceLikeIcon(): Promise<PresenceLikeIcon> {
+  try {
+    const store = await getStore();
+    const val = await store.get<string>("presence_like_icon");
+    if (val === "heart" || val === "star" || val === "none") return val;
+    return "heart";
+  } catch {
+    return "heart";
+  }
+}
+
+export async function savePresenceLikeIcon(v: PresenceLikeIcon): Promise<void> {
+  const store = await getStore();
+  await store.set("presence_like_icon", v);
 }
 

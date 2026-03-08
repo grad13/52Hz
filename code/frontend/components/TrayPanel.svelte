@@ -30,10 +30,19 @@
     savePresencePosition,
     loadPresenceLevel,
     savePresenceLevel,
+    loadPresenceMaxToasts,
+    savePresenceMaxToasts,
+    loadPresenceShowIcon,
+    savePresenceShowIcon,
+    loadPresenceLikeIcon,
+    savePresenceLikeIcon,
     type PresencePosition,
     type PresenceLevel,
+    type PresenceLikeIcon,
   } from "../lib/settings-store";
   import { emit, emitTo } from "@tauri-apps/api/event";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
+  import { LogicalSize } from "@tauri-apps/api/dpi";
   import {
     enable as enableAutostart,
     disable as disableAutostart,
@@ -41,6 +50,7 @@
   } from "@tauri-apps/plugin-autostart";
   import TimerStatus from "./TimerStatus.svelte";
   import SettingsForm from "./SettingsForm.svelte";
+  import { tick } from "svelte";
   import tickSrc from "../assets/tick.mp3";
 
   let timerState: TimerState | null = $state(null);
@@ -74,8 +84,13 @@
   let presenceToast = $state(true);
   let presencePosition: PresencePosition = $state("top-right");
   let presenceLevel: PresenceLevel = $state("dynamic");
+  let presenceMaxToasts = $state(4);
+  let presenceShowIcon = $state(true);
+  let presenceLikeIcon: PresenceLikeIcon = $state("heart");
   let todaySessions = $state(0);
   let tickAudio: HTMLAudioElement | null = null;
+  let panelEl: HTMLDivElement;
+  const win = getCurrentWindow();
 
   let unlistenTick: (() => void) | null = null;
   let unlistenPhaseChanged: (() => void) | null = null;
@@ -111,10 +126,19 @@
     await saveTickVolume(volume);
   }
 
+  async function syncPanelHeight() {
+    await tick();
+    if (panelEl) {
+      const h = panelEl.scrollHeight;
+      await win.setSize(new LogicalSize(320, h));
+    }
+  }
+
   async function handlePresenceToastChange(enabled: boolean) {
     presenceToast = enabled;
     await savePresenceToast(enabled);
     await emitTo("presence-toast", "presence-toast-toggle", enabled);
+    await syncPanelHeight();
   }
 
   async function handlePresencePositionChange(pos: PresencePosition) {
@@ -129,6 +153,24 @@
     await savePresenceLevel(level);
     await emitTo("presence-toast", "presence-level-setting", level);
     await emit("presence-level-change", level);
+  }
+
+  async function handlePresenceMaxToastsChange(n: number) {
+    presenceMaxToasts = n;
+    await savePresenceMaxToasts(n);
+    await emitTo("presence-toast", "presence-max-toasts-change", n);
+  }
+
+  async function handlePresenceShowIconChange(v: boolean) {
+    presenceShowIcon = v;
+    await savePresenceShowIcon(v);
+    await emitTo("presence-toast", "presence-show-icon-change", v);
+  }
+
+  async function handlePresenceLikeIconChange(v: PresenceLikeIcon) {
+    presenceLikeIcon = v;
+    await savePresenceLikeIcon(v);
+    await emitTo("presence-toast", "presence-like-icon-change", v);
   }
 
   async function handleHideTrayIconChange(enabled: boolean) {
@@ -180,6 +222,9 @@
     presenceToast = await loadPresenceToast();
     presencePosition = await loadPresencePosition();
     presenceLevel = await loadPresenceLevel();
+    presenceMaxToasts = await loadPresenceMaxToasts();
+    presenceShowIcon = await loadPresenceShowIcon();
+    presenceLikeIcon = await loadPresenceLikeIcon();
     tickAudio = new Audio(tickSrc);
     todaySessions = await getTodaySessions();
     const state = await getTimerState();
@@ -188,6 +233,7 @@
     unlistenPhaseChanged = (await onPhaseChanged(async () => {
       todaySessions = await getTodaySessions();
     })) as unknown as () => void;
+    await syncPanelHeight();
   });
 
   onDestroy(() => {
@@ -196,7 +242,7 @@
   });
 </script>
 
-<div class="tray-panel">
+<div class="tray-panel" bind:this={panelEl}>
   <TimerStatus {remaining} {paused} {cycleCompleted} {cycleTotal} {isLongBreak} {todaySessions} onTogglePause={handleTogglePause} />
 
   <div class="divider"></div>
@@ -220,6 +266,12 @@
     onPresencePositionChange={handlePresencePositionChange}
     {presenceLevel}
     onPresenceLevelChange={handlePresenceLevelChange}
+    {presenceMaxToasts}
+    onPresenceMaxToastsChange={handlePresenceMaxToastsChange}
+    {presenceShowIcon}
+    onPresenceShowIconChange={handlePresenceShowIconChange}
+    {presenceLikeIcon}
+    onPresenceLikeIconChange={handlePresenceLikeIconChange}
   />
 
   <div class="bottom-row">
@@ -233,7 +285,6 @@
   .tray-panel {
     display: flex;
     flex-direction: column;
-    height: 100%;
     padding: 0.75rem;
     gap: 0.5rem;
     background: var(--bg);
