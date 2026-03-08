@@ -19,7 +19,7 @@
     "active": true,
     "targets": "all",
     "resources": {
-      "../frontend/assets/chat.db": "chat.db"
+      "../frontend/assets/default.hz": "default.hz"
     },
     "icon": [
       "icons/32x32.png",

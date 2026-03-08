@@ -1,7 +1,8 @@
-use chrono::{Local, Timelike};
+use chrono::{Datelike, Local, Timelike};
 use rusqlite::Connection;
 use std::path::PathBuf;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
+use tokio::sync::watch;
 
 // ── Data types ──────────────────────────────────────────────
 
@@ -11,112 +12,220 @@ pub struct PresenceMessage {
     pub message: String,
 }
 
-struct ChatMessage {
+struct TapeMessage {
+    id: i64,
     name: String,
-    message: String,
+    text: String,
+    at: i64,
 }
 
-// ── Simple xorshift64 PRNG ──────────────────────────────────
+// ── Tape position helpers ───────────────────────────────────
 
-struct Rng(u64);
-
-impl Rng {
-    fn new(seed: u64) -> Self {
-        Self(seed.max(1))
-    }
-
-    fn next(&mut self) -> u64 {
-        self.0 ^= self.0 << 13;
-        self.0 ^= self.0 >> 7;
-        self.0 ^= self.0 << 17;
-        self.0
-    }
-
-    fn range(&mut self, n: u32) -> u32 {
-        (self.next() % n as u64) as u32
-    }
+/// Convert current local time to tape position (minutes from Monday 00:00).
+/// Monday=0, Tuesday=1, ..., Sunday=6.
+fn current_tape_position() -> i64 {
+    let now = Local::now();
+    let dow = now.weekday().num_days_from_monday() as i64; // Mon=0
+    dow * 1440 + now.hour() as i64 * 60 + now.minute() as i64
 }
+
+/// Total minutes in one week (tape length).
+const TAPE_LENGTH: i64 = 10080; // 7 * 1440
 
 // ── DB queries ──────────────────────────────────────────────
 
-fn load_messages(conn: &Connection, hour: u32) -> Vec<ChatMessage> {
-    // Handle wrap-around hours (e.g. 22→3)
-    let mut stmt = conn
-        .prepare_cached(
-            "SELECT name, message FROM chat
-             WHERE category = 'during'
-               AND (
-                 (hour_start < hour_end AND ? >= hour_start AND ? < hour_end)
-                 OR (hour_start >= hour_end AND (? >= hour_start OR ? < hour_end))
-               )",
-        )
-        .expect("prepare chat query");
-
-    stmt.query_map([hour, hour, hour, hour], |row| {
-        Ok(ChatMessage {
-            name: row.get(0)?,
-            message: row.get(1)?,
+/// Get the next message at or after the given tape position.
+/// If none found (past end of tape), returns None.
+fn next_message(conn: &Connection, at: i64) -> Option<TapeMessage> {
+    conn.prepare_cached(
+        "SELECT m.id, u.name, m.text, m.at
+         FROM message m JOIN user u ON m.user_id = u.id
+         WHERE m.at >= ?
+         ORDER BY m.at, m.id
+         LIMIT 1",
+    )
+    .expect("prepare next_message query")
+    .query_row([at], |row| {
+        Ok(TapeMessage {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            text: row.get(2)?,
+            at: row.get(3)?,
         })
     })
-    .expect("query chat")
-    .filter_map(|r| r.ok())
-    .collect()
+    .ok()
 }
 
-fn load_density(conn: &Connection, hour: u32) -> f64 {
-    conn.query_row(
-        "SELECT ratio FROM hourly_density WHERE hour = ?",
-        [hour],
-        |row| row.get(0),
+/// Get the next message after a specific id at the same or later tape position.
+/// Used to advance through multiple messages at the same `at`.
+fn next_message_after(conn: &Connection, at: i64, after_id: i64) -> Option<TapeMessage> {
+    conn.prepare_cached(
+        "SELECT m.id, u.name, m.text, m.at
+         FROM message m JOIN user u ON m.user_id = u.id
+         WHERE m.at >= ? AND m.id > ?
+         ORDER BY m.at, m.id
+         LIMIT 1",
     )
-    .unwrap_or(1.0)
+    .expect("prepare next_message_after query")
+    .query_row([at, after_id], |row| {
+        Ok(TapeMessage {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            text: row.get(2)?,
+            at: row.get(3)?,
+        })
+    })
+    .ok()
 }
 
-// ── Time helpers ────────────────────────────────────────────
+/// Get the first message on the tape (for wrap-around).
+fn first_message(conn: &Connection) -> Option<TapeMessage> {
+    next_message(conn, 0)
+}
 
-const BASE_INTERVAL: f64 = 60.0; // seconds
+// ── Cassette directory management ───────────────────────────
 
-fn interval_from_ratio(ratio: f64) -> u32 {
-    (BASE_INTERVAL / ratio).round().max(20.0) as u32
+/// Ensure ~/Documents/52Hz/ exists and copy default.hz if needed.
+pub fn ensure_cassette_dir(app: &tauri::AppHandle) -> PathBuf {
+    let dir = dirs::document_dir()
+        .expect("document_dir")
+        .join("52Hz");
+    std::fs::create_dir_all(&dir).ok();
+
+    let default_dst = dir.join("default.hz");
+    if !default_dst.exists() {
+        if let Ok(resource_dir) = app.path().resource_dir() {
+            let bundled: PathBuf = resource_dir.join("default.hz");
+            if bundled.exists() {
+                std::fs::copy(&bundled, &default_dst).ok();
+            }
+        }
+    }
+    dir
+}
+
+/// List available cassettes in the cassette directory.
+/// Returns Vec of (path, title).
+pub fn list_cassettes(cassette_dir: &std::path::Path) -> Vec<(PathBuf, String)> {
+    let mut result = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(cassette_dir) {
+        for entry in entries.filter_map(|e| e.ok()) {
+            let path = entry.path();
+            if path.extension().map(|e| e == "hz").unwrap_or(false) {
+                let title = cassette_title(&path).unwrap_or_else(|| {
+                    path.file_stem()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .into_owned()
+                });
+                result.push((path, title));
+            }
+        }
+    }
+    result.sort_by(|a, b| a.1.cmp(&b.1));
+    result
+}
+
+/// Read the title from a .hz file.
+fn cassette_title(path: &std::path::Path) -> Option<String> {
+    let conn = Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY).ok()?;
+    conn.query_row("SELECT title FROM cassette", [], |row| row.get(0)).ok()
+}
+
+// ── Sleep with cassette switch check ────────────────────────
+
+/// Sleep for `secs` seconds, but wake up if cassette is switched.
+/// Returns `true` if a cassette switch happened.
+async fn wait_for_or_switch(
+    rx: &mut watch::Receiver<PathBuf>,
+    current_path: &mut PathBuf,
+    conn: &mut Connection,
+    secs: u64,
+) -> bool {
+    let mut remaining = secs;
+    while remaining > 0 {
+        let chunk = remaining.min(5); // check every 5 seconds
+        tokio::select! {
+            _ = tokio::time::sleep(std::time::Duration::from_secs(chunk)) => {
+                remaining = remaining.saturating_sub(chunk);
+            }
+            _ = rx.changed() => {
+                let new_path = rx.borrow().clone();
+                if new_path != *current_path {
+                    *current_path = new_path;
+                    if let Ok(new_conn) = Connection::open_with_flags(
+                        &*current_path,
+                        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+                    ) {
+                        *conn = new_conn;
+                        if cfg!(debug_assertions) {
+                            eprintln!("[52Hz] presence: cassette switched to {:?}", current_path);
+                        }
+                    }
+                    return true;
+                }
+            }
+        }
+    }
+    false
 }
 
 // ── Scheduler loop ──────────────────────────────────────────
 
-pub fn spawn(app: tauri::AppHandle, db_path: PathBuf) {
+pub fn spawn(app: tauri::AppHandle, hz_path: PathBuf, mut rx: watch::Receiver<PathBuf>) {
     tauri::async_runtime::spawn(async move {
-        let conn = Connection::open(&db_path).expect("failed to open chat.db");
-        let mut rng = Rng::new(Local::now().timestamp() as u64);
-
         // Wait for webview to load before first message
         tokio::time::sleep(std::time::Duration::from_secs(8)).await;
 
-        loop {
-            let hour = Local::now().hour();
-            let messages = load_messages(&conn, hour);
+        let mut current_path = hz_path;
+        let mut conn = Connection::open_with_flags(
+            &current_path,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+        )
+        .expect("failed to open .hz cassette");
 
-            if !messages.is_empty() {
-                let idx = rng.range(messages.len() as u32) as usize;
-                let msg = &messages[idx];
+        // Track the last emitted message id to advance through the tape
+        let mut last_emitted_id: i64 = 0;
+
+        loop {
+            let tape_pos = current_tape_position();
+
+            // Find next message: after current tape position,
+            // or if multiple at same `at`, advance by id
+            let msg = next_message_after(&conn, tape_pos, last_emitted_id)
+                .or_else(|| next_message(&conn, tape_pos))
+                .or_else(|| first_message(&conn)); // wrap around
+
+            if let Some(msg) = msg {
+                // Calculate wait time
+                let wait_mins = if msg.at >= tape_pos {
+                    msg.at - tape_pos
+                } else {
+                    (TAPE_LENGTH - tape_pos) + msg.at
+                };
+
+                if wait_mins > 0 {
+                    let wait_secs = wait_mins as u64 * 60;
+                    if wait_for_or_switch(&mut rx, &mut current_path, &mut conn, wait_secs).await {
+                        last_emitted_id = 0;
+                        continue;
+                    }
+                }
+
                 if cfg!(debug_assertions) {
-                    eprintln!("[52Hz] presence: {} — {}", msg.name, msg.message);
+                    eprintln!("[52Hz] presence: {} — {}", msg.name, msg.text);
                 }
                 let _ = app.emit(
                     "presence-message",
                     PresenceMessage {
                         name: msg.name.clone(),
-                        message: msg.message.clone(),
+                        message: msg.text.clone(),
                     },
                 );
+                last_emitted_id = msg.id;
+            } else {
+                tokio::time::sleep(std::time::Duration::from_secs(60)).await;
             }
-
-            // Interval based on hourly density from DB
-            let ratio = load_density(&conn, hour);
-            let base = interval_from_ratio(ratio);
-            // ±30% randomisation
-            let lo = (base as f64 * 0.7) as u32;
-            let spread = (base as f64 * 0.6) as u32 + 1;
-            let delay = lo + rng.range(spread);
-            tokio::time::sleep(std::time::Duration::from_secs(delay as u64)).await;
         }
     });
 }
@@ -127,47 +236,33 @@ pub fn spawn(app: tauri::AppHandle, db_path: PathBuf) {
 mod tests {
     use super::*;
 
-    fn setup_test_db() -> Connection {
+    fn setup_test_hz() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(
-            "CREATE TABLE chat (
-                id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL,
-                message TEXT NOT NULL,
-                category TEXT NOT NULL,
-                hour_start INTEGER NOT NULL,
-                hour_end INTEGER NOT NULL
-            );
-            CREATE TABLE hourly_density (
-                hour INTEGER PRIMARY KEY,
-                ratio REAL NOT NULL
-            );
+            "CREATE TABLE cassette (version REAL NOT NULL, title TEXT NOT NULL);
+             CREATE TABLE user (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+             CREATE TABLE message (
+                 id INTEGER PRIMARY KEY,
+                 user_id INTEGER NOT NULL REFERENCES user(id),
+                 at INTEGER NOT NULL,
+                 text TEXT NOT NULL
+             );
+             CREATE INDEX idx_message_at ON message(at);
 
-            -- Test messages: 朝活 [5, 8)
-            INSERT INTO chat (name, message, category, hour_start, hour_end)
-            VALUES ('朝活エンジニア', '朝だ、コード書くぞ', 'during', 5, 8);
-            INSERT INTO chat (name, message, category, hour_start, hour_end)
-            VALUES ('朝活エンジニア', 'コーヒーうまい', 'during', 5, 8);
-            INSERT INTO chat (name, message, category, hour_start, hour_end)
-            VALUES ('朝活エンジニア', 'おはよう', 'enter', 5, 8);
+             INSERT INTO cassette VALUES (1.0, 'Test Cassette');
+             INSERT INTO user VALUES (1, 'Alice');
+             INSERT INTO user VALUES (2, 'Bob');
 
-            -- Test messages: 夜型 [22, 3) wrap-around
-            INSERT INTO chat (name, message, category, hour_start, hour_end)
-            VALUES ('深夜勉強勢', '静かな夜に集中', 'during', 22, 3);
-            INSERT INTO chat (name, message, category, hour_start, hour_end)
-            VALUES ('深夜勉強勢', '眠いけどもう少し', 'during', 22, 3);
-
-            -- Test messages: all-day [0, 24)
-            INSERT INTO chat (name, message, category, hour_start, hour_end)
-            VALUES ('受験生A', 'がんばるぞ', 'during', 6, 23);
-
-            -- Hourly density
-            INSERT INTO hourly_density VALUES (0, 1.67);
-            INSERT INTO hourly_density VALUES (1, 1.69);
-            INSERT INTO hourly_density VALUES (5, 1.32);
-            INSERT INTO hourly_density VALUES (12, 0.47);
-            INSERT INTO hourly_density VALUES (20, 0.27);
-            INSERT INTO hourly_density VALUES (22, 0.86);
+             -- Monday 08:30 (at=510)
+             INSERT INTO message VALUES (1, 1, 510, 'Good morning');
+             -- Monday 08:30 (same time, different user)
+             INSERT INTO message VALUES (2, 2, 510, 'Morning!');
+             -- Monday 09:00 (at=540)
+             INSERT INTO message VALUES (3, 1, 540, 'Coffee time');
+             -- Friday 18:00 (at=6360)
+             INSERT INTO message VALUES (4, 2, 6360, 'Weekend soon');
+             -- Sunday 23:30 (at=10050)
+             INSERT INTO message VALUES (5, 1, 10050, 'Good night');
             ",
         )
         .unwrap();
@@ -175,83 +270,74 @@ mod tests {
     }
 
     #[test]
-    fn load_messages_normal_range() {
-        let conn = setup_test_db();
-        // Hour 6: 朝活 [5,8) active, 受験生 [6,23) active
-        let msgs = load_messages(&conn, 6);
-        assert_eq!(msgs.len(), 3); // 2 朝活 during + 1 受験生 during
-        let names: Vec<&str> = msgs.iter().map(|m| m.name.as_str()).collect();
-        assert!(names.contains(&"朝活エンジニア"));
-        assert!(names.contains(&"受験生A"));
+    fn next_message_finds_closest() {
+        let conn = setup_test_hz();
+        let msg = next_message(&conn, 500).unwrap();
+        assert_eq!(msg.at, 510);
+        assert_eq!(msg.id, 1); // First message at 510 by id order
     }
 
     #[test]
-    fn load_messages_outside_range() {
-        let conn = setup_test_db();
-        // Hour 4: nobody active (朝活 starts at 5, 夜型 ends at 3)
-        let msgs = load_messages(&conn, 4);
-        assert!(msgs.is_empty());
+    fn next_message_exact_match() {
+        let conn = setup_test_hz();
+        let msg = next_message(&conn, 510).unwrap();
+        assert_eq!(msg.at, 510);
     }
 
     #[test]
-    fn load_messages_wrap_around() {
-        let conn = setup_test_db();
-        // Hour 23: 夜型 [22,3) active
-        let msgs = load_messages(&conn, 23);
-        assert_eq!(msgs.len(), 2);
-        assert_eq!(msgs[0].name, "深夜勉強勢");
-
-        // Hour 1: 夜型 [22,3) still active
-        let msgs = load_messages(&conn, 1);
-        assert_eq!(msgs.len(), 2);
-        assert_eq!(msgs[0].name, "深夜勉強勢");
+    fn next_message_after_advances_through_same_at() {
+        let conn = setup_test_hz();
+        // First at 510 is id=1 (Alice), after id=1 should get id=2 (Bob)
+        let msg = next_message_after(&conn, 510, 1).unwrap();
+        assert_eq!(msg.id, 2);
+        assert_eq!(msg.at, 510);
+        assert_eq!(msg.name, "Bob");
     }
 
     #[test]
-    fn load_messages_only_during_category() {
-        let conn = setup_test_db();
-        // Hour 6: should NOT include 'enter' messages
-        let msgs = load_messages(&conn, 6);
-        // 朝活 has 2 during + 1 enter, but only during should be returned
-        for m in &msgs {
-            // enter message "おはよう" should not appear
-            assert_ne!(m.message, "おはよう");
-        }
+    fn next_message_after_jumps_to_next_at() {
+        let conn = setup_test_hz();
+        // After id=2 (last at 510), should jump to id=3 at 540
+        let msg = next_message_after(&conn, 510, 2).unwrap();
+        assert_eq!(msg.id, 3);
+        assert_eq!(msg.at, 540);
     }
 
     #[test]
-    fn load_density_known_hour() {
-        let conn = setup_test_db();
-        let ratio = load_density(&conn, 1);
-        assert!((ratio - 1.69).abs() < 0.001);
+    fn next_message_skips_past() {
+        let conn = setup_test_hz();
+        let msg = next_message(&conn, 511).unwrap();
+        assert_eq!(msg.at, 540);
+        assert_eq!(msg.text, "Coffee time");
     }
 
     #[test]
-    fn load_density_missing_hour_returns_default() {
-        let conn = setup_test_db();
-        // Hour 10 not in test DB
-        let ratio = load_density(&conn, 10);
-        assert!((ratio - 1.0).abs() < 0.001);
+    fn next_message_past_end_returns_none() {
+        let conn = setup_test_hz();
+        assert!(next_message(&conn, 10051).is_none());
     }
 
     #[test]
-    fn interval_from_ratio_peak() {
-        // Peak: 60/1.69 ≈ 36
-        let iv = interval_from_ratio(1.69);
-        assert!(iv >= 30 && iv <= 40, "peak interval={iv}");
+    fn first_message_wraps_around() {
+        let conn = setup_test_hz();
+        let msg = first_message(&conn).unwrap();
+        assert_eq!(msg.at, 510);
     }
 
     #[test]
-    fn interval_from_ratio_quiet() {
-        // Quiet: 60/0.27 ≈ 222
-        let iv = interval_from_ratio(0.27);
-        assert!(iv >= 200 && iv <= 230, "quiet interval={iv}");
+    fn tape_position_range() {
+        let pos = current_tape_position();
+        assert!(pos >= 0 && pos < TAPE_LENGTH);
     }
 
     #[test]
-    fn interval_minimum_20s() {
-        // Very high ratio should still be >= 20
-        let iv = interval_from_ratio(100.0);
-        assert!(iv >= 20);
+    fn cassette_title_reads_correctly() {
+        // Test with in-memory isn't practical for file-based cassette_title,
+        // so we test the query logic directly
+        let conn = setup_test_hz();
+        let title: String = conn
+            .query_row("SELECT title FROM cassette", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(title, "Test Cassette");
     }
 }

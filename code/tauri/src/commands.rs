@@ -178,6 +178,45 @@ pub(crate) async fn reset_timer(
 }
 
 #[tauri::command]
+pub(crate) async fn list_cassettes(app: tauri::AppHandle) -> Result<Vec<CassetteInfo>, String> {
+    let cassette_dir = crate::presence::ensure_cassette_dir(app.app_handle());
+    let cassettes = crate::presence::list_cassettes(&cassette_dir);
+    Ok(cassettes
+        .into_iter()
+        .map(|(path, title)| CassetteInfo {
+            path: path.to_string_lossy().into_owned(),
+            title,
+        })
+        .collect())
+}
+
+#[derive(serde::Serialize, Clone)]
+pub(crate) struct CassetteInfo {
+    pub path: String,
+    pub title: String,
+}
+
+#[tauri::command]
+pub(crate) async fn switch_cassette(
+    app: tauri::AppHandle,
+    path: String,
+) -> Result<(), String> {
+    let switcher = app.state::<crate::CassetteSwitcher>();
+    let tx = switcher.0.lock().map_err(|e| e.to_string())?;
+    tx.send(std::path::PathBuf::from(path)).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub(crate) async fn open_cassette_folder(app: tauri::AppHandle) -> Result<(), String> {
+    let cassette_dir = crate::presence::ensure_cassette_dir(app.app_handle());
+    std::process::Command::new("open")
+        .arg(&cassette_dir)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 pub(crate) fn quit_app() {
     if cfg!(debug_assertions) {
         eprintln!("[52Hz] quit_app command invoked");

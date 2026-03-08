@@ -3,7 +3,7 @@
   import { listen } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { LogicalSize } from "@tauri-apps/api/dpi";
-  import { loadPresenceToast, loadPresencePosition, loadPresenceLevel, type PresencePosition, type PresenceLevel } from "../lib/settings-store";
+  import { loadPresenceToast, loadPresencePosition, loadPresenceLevel, loadPresenceMaxToasts, loadPresenceShowIcon, loadPresenceLikeIcon, type PresencePosition, type PresenceLevel, type PresenceLikeIcon } from "../lib/settings-store";
   import { emit } from "@tauri-apps/api/event";
   import { acceptBreak, skipBreakFromFocus } from "../lib/timer";
 
@@ -29,7 +29,7 @@
 
   type StackItem = ToastItem | FocusDoneItem;
 
-  const MAX_TOASTS = 10;
+  let maxToasts = $state(4);
   const DISPLAY_MS = 180_000; // 3 minutes
   const TOAST_H = 58;
   const FOCUS_DONE_H = 100;
@@ -72,6 +72,8 @@
   let level: PresenceLevel = $state("dynamic");
   let hasLikedThisSession: boolean = $state(false);
   let likedId: number | null = $state(null);
+  let showIcon = $state(true);
+  let likeIcon: PresenceLikeIcon = $state("heart");
   let raised = false; // temporarily raised from back to front
   let shown = false; // track whether window is currently shown (to avoid re-show changing Z-order)
   let needsRaise = true; // first click brings to front, second click dismisses
@@ -81,6 +83,9 @@
   let unlistenFocusDone: (() => void) | null = null;
   let unlistenPosition: (() => void) | null = null;
   let unlistenLevel: (() => void) | null = null;
+  let unlistenMaxToasts: (() => void) | null = null;
+  let unlistenShowIcon: (() => void) | null = null;
+  let unlistenLikeIcon: (() => void) | null = null;
   const win = getCurrentWindow();
   const timers = new Map<number, ReturnType<typeof setTimeout>>();
 
@@ -143,11 +148,12 @@
   function addToast(msg: ToastMessage) {
     if (!enabled) return;
 
-    // Evict oldest if at capacity
+    // Evict oldest toasts to stay within capacity
     const active = items.filter((i) => !i.leaving);
-    if (active.length >= MAX_TOASTS) {
-      const oldest = active.find((i) => i.type === "toast");
-      if (oldest) dismiss(oldest.id);
+    const toasts = active.filter((i) => i.type === "toast");
+    const excess = toasts.length - (maxToasts - 1); // -1 to make room for new one
+    for (let i = 0; i < excess; i++) {
+      dismiss(toasts[i].id);
     }
 
     const id = nextId++;
@@ -212,6 +218,9 @@
     enabled = await loadPresenceToast();
     position = await loadPresencePosition();
     level = await loadPresenceLevel();
+    maxToasts = await loadPresenceMaxToasts();
+    showIcon = await loadPresenceShowIcon();
+    likeIcon = await loadPresenceLikeIcon();
 
     unlistenMsg = (await listen<ToastMessage>("presence-message", (event) => {
       addToast(event.payload);
@@ -256,6 +265,20 @@
       raised = false;
       needsRaise = true;
     })) as unknown as () => void;
+
+    unlistenMaxToasts = (await listen<number>("presence-max-toasts-change", (event) => {
+      maxToasts = event.payload;
+    })) as unknown as () => void;
+
+    unlistenShowIcon = (await listen<boolean>("presence-show-icon-change", (event) => {
+      showIcon = event.payload;
+    })) as unknown as () => void;
+
+    unlistenLikeIcon = (await listen<string>("presence-like-icon-change", (event) => {
+      likeIcon = event.payload as PresenceLikeIcon;
+      hasLikedThisSession = false;
+      likedId = null;
+    })) as unknown as () => void;
   });
 
   onDestroy(() => {
@@ -265,6 +288,9 @@
     unlistenFocusDone?.();
     unlistenPosition?.();
     unlistenLevel?.();
+    unlistenMaxToasts?.();
+    unlistenShowIcon?.();
+    unlistenLikeIcon?.();
     for (const t of timers.values()) clearTimeout(t);
   });
 </script>
@@ -291,9 +317,9 @@
       {@const colors = personaColors(item.msg.name)}
       {@const isLiked = likedId === item.id}
       <div class="toast-card" class:leaving={item.leaving} role="button" tabindex="0" onclick={() => dismiss(item.id)}>
-        {#if isLiked}
-          <span class="bg-art bg-like">♥</span>
-        {:else}
+        {#if isLiked && likeIcon !== "none"}
+          <span class="bg-art bg-like" class:star={likeIcon === "star"}>{likeIcon === "star" ? "★" : "♥"}</span>
+        {:else if showIcon}
           <svg class="bg-art" viewBox="0 0 178 116">
             <g transform="translate(0,116) scale(0.1,-0.1)">
               <g fill={colors.body}><path d="M1324 1074 c-11 -57 2 -102 46 -160 46 -61 50 -95 16 -129 -54 -54 -113 -45 -222 31 -213 149 -370 194 -569 164 -181 -28 -328 -102 -462 -234 -85 -84 -93 -95 -93 -130 0 -33 8 -46 63 -103 34 -36 89 -84 122 -108 66 -47 182 -108 195 -103 14 5 -23 80 -60 121 -48 55 -34 62 46 23 82 -41 151 -99 195 -162 l30 -44 93 0 c197 0 404 87 566 237 64 59 141 166 189 260 35 70 57 88 120 98 57 9 128 73 138 124 5 28 4 32 -8 25 -8 -5 -51 -11 -96 -14 -60 -5 -88 -11 -103 -25 -23 -21 -22 -22 -45 27 -10 23 -35 49 -66 69 -27 17 -54 40 -60 50 -15 29 -27 23 -35 -17z m-495 -191 c55 -20 114 -72 149 -132 24 -41 27 -56 27 -136 0 -73 -4 -98 -22 -130 -75 -140 -248 -199 -386 -132 -129 64 -192 204 -153 340 49 168 215 250 385 190z M390 420 c0 -13 18 -22 24 -11 3 5 -1 11 -9 15 -8 3 -15 1 -15 -4z M450 398 c0 -2 21 -21 48 -43 26 -21 38 -28 27 -16 -19 23 -75 66 -75 59z M470 337 c16 -44 12 -101 -10 -148 -24 -54 -25 -87 -4 -117 23 -33 57 -43 95 -30 85 29 64 156 -45 274 -39 42 -45 45 -36 21z m20 -192 c0 -25 7 -43 25 -59 31 -29 31 -36 1 -36 -47 0 -76 53 -57 103 15 38 31 34 31 -8z"/></g>
@@ -306,8 +332,8 @@
         <div class="card-header">
           <span class="name">{item.msg.name}</span>
           <span class="header-right">
-            {#if !hasLikedThisSession}
-              <button class="like-btn" onclick={(e) => handleLike(item.id, e)}>♥</button>
+            {#if likeIcon !== "none" && !hasLikedThisSession}
+              <button class="like-btn" onclick={(e) => handleLike(item.id, e)}>{likeIcon === "star" ? "★" : "♥"}</button>
             {/if}
             <span class="time">{item.time}</span>
           </span>
@@ -414,6 +440,10 @@
     opacity: 0.25;
     z-index: 0;
     animation: like-pop 0.3s ease-out;
+  }
+
+  .bg-like.star {
+    color: #f0c040;
   }
 
   @keyframes like-pop {

@@ -17,6 +17,7 @@ use timer::{PhaseEvent, TimerSettings, TimerState};
 use tokio::sync::Mutex;
 
 pub type SharedTimerState = Arc<Mutex<TimerState>>;
+pub struct CassetteSwitcher(pub std::sync::Mutex<tokio::sync::watch::Sender<std::path::PathBuf>>);
 
 fn spawn_timer(app_handle: tauri::AppHandle, state: SharedTimerState) {
     tauri::async_runtime::spawn(async move {
@@ -130,6 +131,9 @@ pub fn run() {
             commands::set_tray_icon_visible,
             commands::reset_timer,
             commands::quit_app,
+            commands::list_cassettes,
+            commands::switch_cassette,
+            commands::open_cassette_folder,
         ])
         .setup(move |app| {
             if cfg!(debug_assertions) {
@@ -233,13 +237,12 @@ pub fn run() {
             // Start the timer
             spawn_timer(app.handle().clone(), timer_state.clone());
 
-            // Start presence scheduler
-            let chat_db = app
-                .path()
-                .resource_dir()
-                .expect("resource_dir")
-                .join("chat.db");
-            presence::spawn(app.handle().clone(), chat_db);
+            // Start presence scheduler with cassette
+            let cassette_dir = presence::ensure_cassette_dir(app.handle());
+            let hz_path = cassette_dir.join("default.hz");
+            let (cassette_tx, cassette_rx) = tokio::sync::watch::channel(hz_path.clone());
+            app.manage(CassetteSwitcher(std::sync::Mutex::new(cassette_tx)));
+            presence::spawn(app.handle().clone(), hz_path, cassette_rx);
 
             Ok(())
         })
