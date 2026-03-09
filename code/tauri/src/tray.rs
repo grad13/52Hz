@@ -254,7 +254,7 @@ mod tests {
 
     #[test]
     fn wide_button_with_long_title() {
-        // Wide button (icon + "20:00 (長い休憩)")
+        // Wide button (icon + "20:00 (long break)")
         let (x, _y) = calc_window_position(800.0, 1420.0, 200.0, 1440.0, 320.0);
         // x: 800 + 100 - 160 = 740
         assert!((x - 740.0).abs() < 0.01);

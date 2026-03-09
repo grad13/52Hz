@@ -6,6 +6,7 @@
   import { loadPresenceToast, loadPresencePosition, loadPresenceLevel, loadPresenceMaxToasts, loadPresenceShowIcon, loadPresenceLikeIcon, type PresencePosition, type PresenceLevel, type PresenceLikeIcon } from "../lib/settings-store";
   import { emit } from "@tauri-apps/api/event";
   import { acceptBreak, skipBreakFromFocus } from "../lib/timer";
+  import { _ } from "svelte-i18n";
 
   interface ToastMessage {
     name: string;
@@ -309,13 +310,13 @@
     {#if item.type === "focus-done"}
       <div class="toast-card focus-done-card" class:leaving={item.leaving}>
         <div class="card-header">
-          <span class="label">セッション完了</span>
+          <span class="label">{$_("focus_done.label")}</span>
           <span class="time">{item.time}</span>
         </div>
-        <span class="msg">お疲れ様です！次はどうしますか？</span>
+        <span class="msg">{$_("focus_done.message")}</span>
         <div class="actions">
-          <button class="btn primary" onclick={() => handleAcceptBreak(item.id)}>休憩する</button>
-          <button class="btn" onclick={() => handleSkip(item.id)}>スキップ</button>
+          <button class="btn primary" onclick={() => handleAcceptBreak(item.id)}>{$_("focus_done.take_break")}</button>
+          <button class="btn" onclick={() => handleSkip(item.id)}>{$_("focus_done.skip")}</button>
         </div>
       </div>
     {:else if item.type === "toast"}

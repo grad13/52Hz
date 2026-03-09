@@ -52,6 +52,8 @@
   import SettingsForm from "./SettingsForm.svelte";
   import { tick } from "svelte";
   import tickSrc from "../assets/tick.mp3";
+  import { _, locale } from "svelte-i18n";
+  import { saveLocale, type AppLocale } from "../lib/settings-store";
 
   let timerState: TimerState | null = $state(null);
   let remaining = $state("--:--");
@@ -91,6 +93,12 @@
   let tickAudio: HTMLAudioElement | null = null;
   let panelEl: HTMLDivElement;
   const win = getCurrentWindow();
+
+  async function handleLocaleChange(loc: AppLocale) {
+    locale.set(loc);
+    await saveLocale(loc);
+    await syncPanelHeight();
+  }
 
   let unlistenTick: (() => void) | null = null;
   let unlistenPhaseChanged: (() => void) | null = null;
@@ -274,10 +282,18 @@
     onPresenceLikeIconChange={handlePresenceLikeIconChange}
   />
 
+  <div class="lang-row">
+    <span class="lang-label">{$_("tray.language")}</span>
+    <div class="lang-toggle">
+      <button class="lang-btn" class:active={$locale === "en"} onclick={() => handleLocaleChange("en")}>EN</button>
+      <button class="lang-btn" class:active={$locale === "ja"} onclick={() => handleLocaleChange("ja")}>JA</button>
+    </div>
+  </div>
+
   <div class="bottom-row">
-    <button class="stop-link" onclick={resetTimer}>■ 停止</button>
+    <button class="stop-link" onclick={resetTimer}>{$_("tray.stop")}</button>
     <span class="sep">|</span>
-    <button class="quit-link" onclick={quitApp}>アプリを終了</button>
+    <button class="quit-link" onclick={quitApp}>{$_("tray.quit")}</button>
   </div>
 </div>
 
@@ -295,6 +311,50 @@
     height: 1px;
     background: var(--border);
     margin: 0.1rem 0;
+  }
+
+  .lang-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+  }
+
+  .lang-label {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+  }
+
+  .lang-toggle {
+    display: flex;
+    gap: 1px;
+  }
+
+  .lang-btn {
+    padding: 1px 6px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .lang-btn:first-child {
+    border-radius: 3px 0 0 3px;
+  }
+
+  .lang-btn:last-child {
+    border-radius: 0 3px 3px 0;
+    border-left: none;
+  }
+
+  .lang-btn.active {
+    background: var(--success);
+    color: #1a1a2e;
+    border-color: var(--success);
   }
 
   .bottom-row {

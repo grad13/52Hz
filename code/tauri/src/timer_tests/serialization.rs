@@ -75,7 +75,7 @@
         s.tick();
         assert_eq!(s.tray_title(), "00:01");
         s.tick(); // → ShortBreak (advance + transition happen atomically)
-        assert_eq!(s.tray_title(), "00:01 (休憩)");
+        assert_eq!(s.tray_title(), "00:01 (break)");
         s.tick(); // → Focus (ShortBreak(1) transitions after 1 tick)
         assert_eq!(s.tray_title(), "00:03");
     }

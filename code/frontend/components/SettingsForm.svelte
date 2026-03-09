@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PresencePosition, PresenceLevel, PresenceLikeIcon } from "../lib/settings-store";
+  import { _ } from "svelte-i18n";
 
   let {
     focusMinutes = $bindable(),
@@ -60,48 +61,48 @@
     { value: "bottom-right", label: "↘" },
   ];
 
-  const likeOptions: { value: PresenceLikeIcon; label: string }[] = [
-    { value: "heart", label: "♥" },
-    { value: "star", label: "★" },
-    { value: "none", label: "なし" },
-  ];
+  const likeOptions: { value: PresenceLikeIcon; label: string }[] = $derived([
+    { value: "heart" as PresenceLikeIcon, label: "♥" },
+    { value: "star" as PresenceLikeIcon, label: "★" },
+    { value: "none" as PresenceLikeIcon, label: $_("settings.presence_like_none") },
+  ]);
 </script>
 
 <section class="form">
   <div class="settings-grid">
     <div class="grid-cell">
-      <label for="focus">フォーカス</label>
+      <label for="focus">{$_("settings.focus")}</label>
       <div class="grid-input">
         <input id="focus" type="number" min="1" max="120" bind:value={focusMinutes} />
-        <span class="grid-unit">分</span>
+        <span class="grid-unit">{$_("settings.unit_min")}</span>
       </div>
     </div>
     <div class="grid-cell">
-      <label for="short-break">短い休憩</label>
+      <label for="short-break">{$_("settings.short_break")}</label>
       <div class="grid-input">
         <input id="short-break" type="number" min="1" bind:value={shortBreakMinutes} />
-        <span class="grid-unit">分</span>
+        <span class="grid-unit">{$_("settings.unit_min")}</span>
       </div>
     </div>
     <div class="grid-cell">
-      <label for="long-break">長い休憩</label>
+      <label for="long-break">{$_("settings.long_break")}</label>
       <div class="grid-input">
         <input id="long-break" type="number" min="1" max="30" bind:value={longBreakMinutes} />
-        <span class="grid-unit">分</span>
+        <span class="grid-unit">{$_("settings.unit_min")}</span>
       </div>
     </div>
     <div class="grid-cell">
-      <label for="cycles">サイクル</label>
+      <label for="cycles">{$_("settings.cycles")}</label>
       <div class="grid-input">
         <input id="cycles" type="number" min="1" max="10" bind:value={shortBreaksBeforeLong} />
-        <span class="grid-unit">回</span>
+        <span class="grid-unit">{$_("settings.unit_times")}</span>
       </div>
     </div>
   </div>
 
   <div class="toggle-grid">
     <div class="toggle-row">
-      <span class="toggle-label">メディア自動中断</span>
+      <span class="toggle-label">{$_("settings.auto_pause_media")}</span>
       <label class="toggle-sm">
         <input
           type="checkbox"
@@ -112,7 +113,7 @@
       </label>
     </div>
     <div class="toggle-row">
-      <span class="toggle-label">Tick音</span>
+      <span class="toggle-label">{$_("settings.tick_sound")}</span>
       <input
         class="volume-slider"
         type="range"
@@ -124,7 +125,7 @@
       />
     </div>
     <div class="toggle-row">
-      <span class="toggle-label">アイコン非表示</span>
+      <span class="toggle-label">{$_("settings.hide_icon")}</span>
       <label class="toggle-sm">
         <input
           type="checkbox"
@@ -135,7 +136,7 @@
       </label>
     </div>
     <div class="toggle-row">
-      <span class="toggle-label">自動起動</span>
+      <span class="toggle-label">{$_("settings.autostart")}</span>
       <label class="toggle-sm">
         <input
           type="checkbox"
@@ -149,7 +150,7 @@
 
   <div class="presence-section">
     <div class="presence-header">
-      <span class="section-label">みんなの存在 (On52Hz)</span>
+      <span class="section-label">{$_("settings.presence")}</span>
       <label class="toggle-sm">
         <input
           type="checkbox"
@@ -162,9 +163,9 @@
     {#if presenceToast}
       <div class="presence-options">
         <div class="sub-group">
-          <span class="sub-group-label">一般</span>
+          <span class="sub-group-label">{$_("settings.presence_general")}</span>
           <div class="presence-row">
-            <span class="toggle-label">ユーザアイコン表示</span>
+            <span class="toggle-label">{$_("settings.presence_show_icon")}</span>
             <label class="toggle-sm">
               <input
                 type="checkbox"
@@ -175,7 +176,7 @@
             </label>
           </div>
           <div class="presence-row">
-            <span class="toggle-label">いいね機能</span>
+            <span class="toggle-label">{$_("settings.presence_like")}</span>
             <div class="like-buttons">
               {#each likeOptions as opt}
                 <button
@@ -188,9 +189,9 @@
           </div>
         </div>
         <div class="sub-group">
-          <span class="sub-group-label">メッセージ</span>
+          <span class="sub-group-label">{$_("settings.presence_message")}</span>
           <div class="presence-row">
-            <span class="toggle-label">位置</span>
+            <span class="toggle-label">{$_("settings.presence_position")}</span>
             <div class="pos-buttons">
               {#each positions as pos}
                 <button
@@ -202,27 +203,27 @@
             </div>
           </div>
           <div class="presence-row">
-            <span class="toggle-label">順番</span>
+            <span class="toggle-label">{$_("settings.presence_order")}</span>
             <div class="level-buttons">
               <button
                 class="level-btn"
                 class:active={presenceLevel === "always-front"}
                 onclick={() => onPresenceLevelChange("always-front")}
-              >常に前面</button>
+              >{$_("settings.presence_order_front")}</button>
               <button
                 class="level-btn"
                 class:active={presenceLevel === "dynamic"}
                 onclick={() => onPresenceLevelChange("dynamic")}
-              >動的</button>
+              >{$_("settings.presence_order_dynamic")}</button>
               <button
                 class="level-btn"
                 class:active={presenceLevel === "always-back"}
                 onclick={() => onPresenceLevelChange("always-back")}
-              >常に背面</button>
+              >{$_("settings.presence_order_back")}</button>
             </div>
           </div>
           <div class="presence-row">
-            <span class="toggle-label">最大数</span>
+            <span class="toggle-label">{$_("settings.presence_max")}</span>
             <div class="limit-buttons">
               {#each [2, 3, 4, 5] as n}
                 <button

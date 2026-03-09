@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { acceptBreak, extendFocus, skipBreakFromFocus } from "../lib/timer";
+  import { _ } from "svelte-i18n";
 
   async function handleAcceptBreak() {
     await acceptBreak();
@@ -20,18 +21,18 @@
 
 <div class="popup">
   <div class="card">
-    <span class="label">セッション完了</span>
-    <span class="message">お疲れ様です！次はどうしますか？</span>
+    <span class="label">{$_("focus_done.label")}</span>
+    <span class="message">{$_("focus_done.message")}</span>
 
     <div class="actions">
-      <button class="btn primary" onclick={handleAcceptBreak}>休憩する</button>
-      <button class="btn" onclick={handleSkip}>スキップ</button>
+      <button class="btn primary" onclick={handleAcceptBreak}>{$_("focus_done.take_break")}</button>
+      <button class="btn" onclick={handleSkip}>{$_("focus_done.skip")}</button>
     </div>
 
     <div class="extend-actions">
-      <button class="btn-extend" onclick={() => handleExtend(60)}>+1分</button>
-      <button class="btn-extend" onclick={() => handleExtend(180)}>+3分</button>
-      <button class="btn-extend" onclick={() => handleExtend(300)}>+5分</button>
+      <button class="btn-extend" onclick={() => handleExtend(60)}>{$_("focus_done.extend_1")}</button>
+      <button class="btn-extend" onclick={() => handleExtend(180)}>{$_("focus_done.extend_3")}</button>
+      <button class="btn-extend" onclick={() => handleExtend(300)}>{$_("focus_done.extend_5")}</button>
     </div>
   </div>
 </div>

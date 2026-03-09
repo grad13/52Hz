@@ -1,0 +1,53 @@
+{
+  "settings": {
+    "focus": "Focus",
+    "short_break": "Short Break",
+    "long_break": "Long Break",
+    "cycles": "Cycles",
+    "unit_min": "min",
+    "unit_times": "x",
+    "auto_pause_media": "Auto-pause",
+    "tick_sound": "Tick",
+    "hide_icon": "Hide icon",
+    "autostart": "Launch at login",
+    "presence": "Presence (On52Hz)",
+    "presence_general": "General",
+    "presence_show_icon": "Show user icon",
+    "presence_like": "Like",
+    "presence_like_none": "Off",
+    "presence_message": "Messages",
+    "presence_position": "Position",
+    "presence_order": "Order",
+    "presence_order_front": "Front",
+    "presence_order_dynamic": "Dynamic",
+    "presence_order_back": "Back",
+    "presence_max": "Max count"
+  },
+  "timer": {
+    "resume": "▶ Resume",
+    "pause": "⏸ Pause",
+    "sessions_done": "{n} done"
+  },
+  "break": {
+    "short_title": "Rest your eyes",
+    "short_subtitle": "Look away and blink",
+    "long_title": "Stand up and stretch",
+    "long_subtitle": "Move around and take a deep breath",
+    "fallback_title": "Break time",
+    "skip": "Skip"
+  },
+  "focus_done": {
+    "label": "Session complete",
+    "message": "Great work! What's next?",
+    "take_break": "Take a break",
+    "skip": "Skip",
+    "extend_1": "+1 min",
+    "extend_3": "+3 min",
+    "extend_5": "+5 min"
+  },
+  "tray": {
+    "stop": "■ Stop",
+    "quit": "Quit",
+    "language": "Language"
+  }
+}

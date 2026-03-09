@@ -72,8 +72,8 @@ impl TimerState {
         let remaining = self.remaining_display();
         let phase_label = match self.phase {
             TimerPhase::Focus => "",
-            TimerPhase::ShortBreak => " (休憩)",
-            TimerPhase::LongBreak => " (長い休憩)",
+            TimerPhase::ShortBreak => " (break)",
+            TimerPhase::LongBreak => " (long break)",
         };
         format!("{}{}", remaining, phase_label)
     }
