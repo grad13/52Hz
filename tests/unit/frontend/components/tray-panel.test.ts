@@ -171,17 +171,20 @@ describe('TrayPanel', () => {
   it('1-1: loadSettings is called on mount', async () => {
     render(TrayPanel);
 
+    // Wait for full onMount to complete so no async leaks into next test
     await vi.waitFor(() => {
-      expect(mockLoadSettings).toHaveBeenCalledTimes(1);
+      expect(mockOnTimerTick).toHaveBeenCalled();
     });
+    expect(mockLoadSettings).toHaveBeenCalledTimes(1);
   });
 
   it('1-2: getTimerState is called on mount', async () => {
     render(TrayPanel);
 
     await vi.waitFor(() => {
-      expect(mockGetTimerState).toHaveBeenCalledTimes(1);
+      expect(mockOnTimerTick).toHaveBeenCalled();
     });
+    expect(mockGetTimerState).toHaveBeenCalledTimes(1);
   });
 
   it('1-3: onTimerTick event subscription is set up on mount', async () => {
