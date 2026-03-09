@@ -201,7 +201,6 @@
     const time = nowTime();
     items = [...items, { id, type: "focus-done", time, leaving: false }];
     syncWindow();
-    raise();
   }
 
   async function handleAcceptBreak(id: number) {
@@ -268,6 +267,12 @@
 
     unlistenMaxToasts = (await listen<number>("presence-max-toasts-change", (event) => {
       maxToasts = event.payload;
+      // Evict excess toasts immediately
+      const active = items.filter((i) => !i.leaving && i.type === "toast");
+      const excess = active.length - event.payload;
+      for (let i = 0; i < excess; i++) {
+        dismiss(active[i].id);
+      }
     })) as unknown as () => void;
 
     unlistenShowIcon = (await listen<boolean>("presence-show-icon-change", (event) => {

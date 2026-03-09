@@ -56,18 +56,19 @@ fn next_message(conn: &Connection, at: i64) -> Option<TapeMessage> {
     .ok()
 }
 
-/// Get the next message after a specific id at the same or later tape position.
-/// Used to advance through multiple messages at the same `at`.
+/// Get the next message after a specific id at the same `at`, or the first
+/// message at a later `at`.  The id filter only applies within the same tape
+/// position so that non-sequential ids don't skip future messages.
 fn next_message_after(conn: &Connection, at: i64, after_id: i64) -> Option<TapeMessage> {
     conn.prepare_cached(
         "SELECT m.id, u.name, m.text, m.at
          FROM message m JOIN user u ON m.user_id = u.id
-         WHERE m.at >= ? AND m.id > ?
+         WHERE (m.at = ?1 AND m.id > ?2) OR m.at > ?1
          ORDER BY m.at, m.id
          LIMIT 1",
     )
     .expect("prepare next_message_after query")
-    .query_row([at, after_id], |row| {
+    .query_row(rusqlite::params![at, after_id], |row| {
         Ok(TapeMessage {
             id: row.get(0)?,
             name: row.get(1)?,
