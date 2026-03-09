@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/svelte';
 
-const { mockListen, mockEmit, mockWin, mockLoadPresenceToast, mockLoadPresencePosition, mockLoadPresenceLevel } = vi.hoisted(() => ({
+const { mockListen, mockEmit, mockWin, mockLoadPresenceToast, mockLoadPresencePosition, mockLoadPresenceLevel, mockLoadPresenceMaxToasts, mockLoadPresenceShowIcon, mockLoadPresenceLikeIcon } = vi.hoisted(() => ({
   mockListen: vi.fn().mockResolvedValue(vi.fn()),
   mockEmit: vi.fn().mockResolvedValue(undefined),
   mockWin: {
@@ -19,6 +19,9 @@ const { mockListen, mockEmit, mockWin, mockLoadPresenceToast, mockLoadPresencePo
   mockLoadPresenceToast: vi.fn().mockResolvedValue(true),
   mockLoadPresencePosition: vi.fn().mockResolvedValue('top-right'),
   mockLoadPresenceLevel: vi.fn().mockResolvedValue('dynamic'),
+  mockLoadPresenceMaxToasts: vi.fn().mockResolvedValue(4),
+  mockLoadPresenceShowIcon: vi.fn().mockResolvedValue(true),
+  mockLoadPresenceLikeIcon: vi.fn().mockResolvedValue('heart'),
 }));
 
 const { mockAcceptBreak, mockSkipBreakFromFocus } = vi.hoisted(() => ({
@@ -41,6 +44,9 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
   loadPresenceToast: mockLoadPresenceToast,
   loadPresencePosition: mockLoadPresencePosition,
   loadPresenceLevel: mockLoadPresenceLevel,
+  loadPresenceMaxToasts: mockLoadPresenceMaxToasts,
+  loadPresenceShowIcon: mockLoadPresenceShowIcon,
+  loadPresenceLikeIcon: mockLoadPresenceLikeIcon,
 }));
 vi.mock('@code/frontend/lib/timer', () => ({
   acceptBreak: mockAcceptBreak,
@@ -81,10 +87,10 @@ describe('Toast', () => {
       expect(container.querySelector('.toast-stack')).toBeTruthy();
     });
 
-    it('registers 6 event listeners on mount', async () => {
+    it('registers 9 event listeners on mount', async () => {
       render(Toast);
       await flushAsync();
-      expect(mockListen).toHaveBeenCalledTimes(6);
+      expect(mockListen).toHaveBeenCalledTimes(9);
       const eventNames = mockListen.mock.calls.map((c: unknown[]) => c[0]);
       expect(eventNames).toContain('presence-message');
       expect(eventNames).toContain('presence-toast-toggle');
@@ -92,6 +98,9 @@ describe('Toast', () => {
       expect(eventNames).toContain('focus-done-toast');
       expect(eventNames).toContain('presence-position-change');
       expect(eventNames).toContain('presence-level-setting');
+      expect(eventNames).toContain('presence-max-toasts-change');
+      expect(eventNames).toContain('presence-show-icon-change');
+      expect(eventNames).toContain('presence-like-icon-change');
     });
 
     it('loads initial settings on mount', async () => {
@@ -166,6 +175,42 @@ describe('Toast', () => {
     });
   });
 
+  describe('Z-order: always-back does not raise for focus-done', () => {
+    it('focus-done in always-back mode does NOT emit presence-level-change', async () => {
+      mockLoadPresenceLevel.mockResolvedValue('always-back');
+      render(Toast);
+      await flushAsync();
+
+      mockEmit.mockClear();
+
+      const cb = getListenerCb('focus-done-toast');
+      cb({ payload: undefined });
+      await flushAsync();
+
+      const levelEmits = mockEmit.mock.calls.filter(
+        (c: unknown[]) => c[0] === 'presence-level-change'
+      );
+      expect(levelEmits.length).toBe(0);
+    });
+
+    it('focus-done in dynamic mode does NOT emit presence-level-change', async () => {
+      mockLoadPresenceLevel.mockResolvedValue('dynamic');
+      render(Toast);
+      await flushAsync();
+
+      mockEmit.mockClear();
+
+      const cb = getListenerCb('focus-done-toast');
+      cb({ payload: undefined });
+      await flushAsync();
+
+      const levelEmits = mockEmit.mock.calls.filter(
+        (c: unknown[]) => c[0] === 'presence-level-change'
+      );
+      expect(levelEmits.length).toBe(0);
+    });
+  });
+
   describe('Position-aware insertion', () => {
     it('top-right: new items are appended (last child is newest)', async () => {
       mockLoadPresencePosition.mockResolvedValue('top-right');
@@ -184,7 +229,7 @@ describe('Toast', () => {
       expect(names[1]).toBe('Second');
     });
 
-    it('bottom-left: new items are prepended (first child is newest)', async () => {
+    it('bottom-left: applies from-bottom and from-left CSS classes for visual reversal', async () => {
       mockLoadPresencePosition.mockResolvedValue('bottom-left');
       const { container } = render(Toast);
       await flushAsync();
@@ -192,13 +237,10 @@ describe('Toast', () => {
       const cb = getListenerCb('presence-message');
       cb({ payload: { name: 'First', message: 'M1' } });
       await flushAsync();
-      cb({ payload: { name: 'Second', message: 'M2' } });
-      await flushAsync();
 
-      const cards = container.querySelectorAll('.toast-card');
-      const names = Array.from(cards).map((c) => c.querySelector('.name')?.textContent);
-      expect(names[0]).toBe('Second');
-      expect(names[1]).toBe('First');
+      const stack = container.querySelector('.toast-stack');
+      expect(stack?.classList.contains('from-bottom')).toBe(true);
+      expect(stack?.classList.contains('from-left')).toBe(true);
     });
   });
 });
