@@ -1,0 +1,53 @@
+{
+  "settings": {
+    "focus": "フォーカス",
+    "short_break": "短い休憩",
+    "long_break": "長い休憩",
+    "cycles": "サイクル",
+    "unit_min": "分",
+    "unit_times": "回",
+    "auto_pause_media": "メディア自動中断",
+    "tick_sound": "Tick音",
+    "hide_icon": "アイコン非表示",
+    "autostart": "自動起動",
+    "presence": "みんなの存在 (On52Hz)",
+    "presence_general": "一般",
+    "presence_show_icon": "ユーザアイコン表示",
+    "presence_like": "いいね機能",
+    "presence_like_none": "なし",
+    "presence_message": "メッセージ",
+    "presence_position": "位置",
+    "presence_order": "順番",
+    "presence_order_front": "常に前面",
+    "presence_order_dynamic": "動的",
+    "presence_order_back": "常に背面",
+    "presence_max": "最大数"
+  },
+  "timer": {
+    "resume": "▶ 再開",
+    "pause": "⏸ 一時停止",
+    "sessions_done": "{n}回完了"
+  },
+  "break": {
+    "short_title": "目を休めましょう",
+    "short_subtitle": "遠くを見て、まばたきをしましょう",
+    "long_title": "立ち上がってストレッチ",
+    "long_subtitle": "体を動かして、深呼吸しましょう",
+    "fallback_title": "休憩中",
+    "skip": "スキップ"
+  },
+  "focus_done": {
+    "label": "セッション完了",
+    "message": "お疲れ様です！次はどうしますか？",
+    "take_break": "休憩する",
+    "skip": "スキップ",
+    "extend_1": "+1分",
+    "extend_3": "+3分",
+    "extend_5": "+5分"
+  },
+  "tray": {
+    "stop": "■ 停止",
+    "quit": "アプリを終了",
+    "language": "Language"
+  }
+}

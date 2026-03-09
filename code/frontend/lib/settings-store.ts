@@ -229,3 +229,25 @@ export async function savePresenceLikeIcon(v: PresenceLikeIcon): Promise<void> {
   await store.set("presence_like_icon", v);
 }
 
+// ---------------------------------------------------------------
+// Locale (load / save)
+// ---------------------------------------------------------------
+
+export type AppLocale = "en" | "ja";
+
+export async function loadLocale(): Promise<AppLocale | null> {
+  try {
+    const store = await getStore();
+    const val = await store.get<string>("locale");
+    if (val === "en" || val === "ja") return val;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveLocale(locale: AppLocale): Promise<void> {
+  const store = await getStore();
+  await store.set("locale", locale);
+}
+

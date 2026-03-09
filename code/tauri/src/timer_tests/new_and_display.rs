@@ -93,7 +93,7 @@
         let mut s = TimerState::new(test_settings());
         s.phase = TimerPhase::ShortBreak;
         s.phase_duration_secs = 1;
-        assert_eq!(s.tray_title(), "00:01 (休憩)");
+        assert_eq!(s.tray_title(), "00:01 (break)");
     }
 
     #[test]
@@ -101,7 +101,7 @@
         let mut s = TimerState::new(test_settings());
         s.phase = TimerPhase::LongBreak;
         s.phase_duration_secs = 2;
-        assert_eq!(s.tray_title(), "00:02 (長い休憩)");
+        assert_eq!(s.tray_title(), "00:02 (long break)");
     }
 
     #[test]

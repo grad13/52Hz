@@ -11,27 +11,13 @@
     onBreakEnd,
   } from "../lib/timer";
   import { getCurrentWindow } from "@tauri-apps/api/window";
+  import { _ } from "svelte-i18n";
 
   let remaining = $state("--:--");
   let phase: TimerPhase = $state("ShortBreak");
   let unlistenTick: (() => void) | null = null;
   let unlistenEnd: (() => void) | null = null;
   let initialized = $state(false);
-
-  const messages: Record<TimerPhase, { title: string; subtitle: string }> = {
-    ShortBreak: {
-      title: "目を休めましょう",
-      subtitle: "遠くを見て、まばたきをしましょう",
-    },
-    LongBreak: {
-      title: "立ち上がってストレッチ",
-      subtitle: "体を動かして、深呼吸しましょう",
-    },
-    Focus: {
-      title: "",
-      subtitle: "",
-    },
-  };
 
   function handleTick(state: TimerState) {
     remaining = formatTime(remainingSecs(state));
@@ -65,14 +51,14 @@
 
 <div class="overlay" class:visible={initialized}>
   <div class="content">
-    <h1>{messages[phase]?.title || "休憩中"}</h1>
-    <p class="subtitle">{messages[phase]?.subtitle || ""}</p>
+    <h1>{phase === "LongBreak" ? $_("break.long_title") : phase === "ShortBreak" ? $_("break.short_title") : $_("break.fallback_title")}</h1>
+    <p class="subtitle">{phase === "LongBreak" ? $_("break.long_subtitle") : phase === "ShortBreak" ? $_("break.short_subtitle") : ""}</p>
 
     <div class="timer-ring">
       <div class="timer">{remaining}</div>
     </div>
 
-    <button class="skip-btn" onclick={handleSkip}>スキップ</button>
+    <button class="skip-btn" onclick={handleSkip}>{$_("break.skip")}</button>
   </div>
 </div>
 

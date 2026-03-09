@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { _ } from "svelte-i18n";
+
   let { remaining, paused, cycleCompleted, cycleTotal, isLongBreak, todaySessions, onTogglePause }: {
     remaining: string;
     paused: boolean;
@@ -68,7 +70,7 @@
       </svg>
     </div>
     <div class="hover-btn">
-      <button tabindex="-1">{paused ? "▶ 再開" : "⏸ 一時停止"}</button>
+      <button tabindex="-1">{paused ? $_("timer.resume") : $_("timer.pause")}</button>
     </div>
   </div>
   <div class="cycle-dots">
@@ -76,7 +78,7 @@
       <span class="dot" class:filled={isLongBreak || i < cycleCompleted}></span>
     {/each}
     {#if todaySessions > 0}
-      <span class="session-badge">{todaySessions}回完了</span>
+      <span class="session-badge">{$_("timer.sessions_done", { values: { n: todaySessions } })}</span>
     {/if}
   </div>
 </section>
