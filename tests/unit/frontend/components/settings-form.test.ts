@@ -34,15 +34,15 @@ const defaultProps = {
 };
 
 describe('SettingsForm', () => {
-  it('3-1: 4つの入力フィールドが表示される', () => {
+  it('3-1: 4 input fields are displayed', () => {
     render(SettingsForm, { props: { ...defaultProps } });
-    expect(screen.getByLabelText('フォーカス')).toBeTruthy();
-    expect(screen.getByLabelText('短い休憩')).toBeTruthy();
-    expect(screen.getByLabelText('長い休憩')).toBeTruthy();
-    expect(screen.getByLabelText('サイクル')).toBeTruthy();
+    expect(screen.getByLabelText('Focus')).toBeTruthy();
+    expect(screen.getByLabelText('Short Break')).toBeTruthy();
+    expect(screen.getByLabelText('Long Break')).toBeTruthy();
+    expect(screen.getByLabelText('Cycles')).toBeTruthy();
   });
 
-  it('3-4: フォーカス時間フィールドの min=1, max=120', () => {
+  it('3-4: Focus time field has min=1, max=120', () => {
     render(SettingsForm, { props: { ...defaultProps } });
     const input = document.getElementById('focus') as HTMLInputElement;
     expect(input).toBeTruthy();
@@ -51,7 +51,7 @@ describe('SettingsForm', () => {
     expect(input.max).toBe('120');
   });
 
-  it('3-5: 短い休憩フィールドの min=1, max属性なし', () => {
+  it('3-5: Short break field has min=1, no max attribute', () => {
     render(SettingsForm, { props: { ...defaultProps } });
     const input = document.getElementById('short-break') as HTMLInputElement;
     expect(input).toBeTruthy();
@@ -60,7 +60,7 @@ describe('SettingsForm', () => {
     expect(input.max).toBe('');
   });
 
-  it('3-6: 長い休憩フィールドの min=1, max=30', () => {
+  it('3-6: Long break field has min=1, max=30', () => {
     render(SettingsForm, { props: { ...defaultProps } });
     const input = document.getElementById('long-break') as HTMLInputElement;
     expect(input).toBeTruthy();
@@ -69,7 +69,7 @@ describe('SettingsForm', () => {
     expect(input.max).toBe('30');
   });
 
-  it('3-7: 長い休憩までの回数フィールドの min=1, max=10', () => {
+  it('3-7: Cycles field has min=1, max=10', () => {
     render(SettingsForm, { props: { ...defaultProps } });
     const input = document.getElementById('cycles') as HTMLInputElement;
     expect(input).toBeTruthy();
@@ -78,24 +78,24 @@ describe('SettingsForm', () => {
     expect(input.max).toBe('10');
   });
 
-  it('3-8: アイコン非表示トグルが表示される', () => {
+  it('3-8: Hide icon toggle is displayed', () => {
     render(SettingsForm, { props: { ...defaultProps } });
-    expect(screen.getByText('アイコン非表示')).toBeTruthy();
+    expect(screen.getByText('Hide icon')).toBeTruthy();
   });
 
-  it('3-8b: hideTrayIcon=true のときアイコン非表示トグルがチェック済み', () => {
+  it('3-8b: Hide icon toggle is checked when hideTrayIcon=true', () => {
     const { container } = render(SettingsForm, { props: { ...defaultProps, hideTrayIcon: true } });
-    const label = screen.getByText('アイコン非表示');
+    const label = screen.getByText('Hide icon');
     const row = label.closest('.toggle-row');
     const input = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
     expect(input).toBeTruthy();
     expect(input.checked).toBe(true);
   });
 
-  it('3-8c: アイコン非表示トグル変更時に onHideTrayIconChange が呼ばれる', async () => {
+  it('3-8c: onHideTrayIconChange is called when hide icon toggle changes', async () => {
     const onHideTrayIconChange = vi.fn();
     const { container } = render(SettingsForm, { props: { ...defaultProps, onHideTrayIconChange } });
-    const label = screen.getByText('アイコン非表示');
+    const label = screen.getByText('Hide icon');
     const row = label.closest('.toggle-row');
     const input = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
     await fireEvent.click(input);

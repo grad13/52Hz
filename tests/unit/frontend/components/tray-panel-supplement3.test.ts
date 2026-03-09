@@ -131,6 +131,14 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
   savePresencePosition: vi.fn().mockResolvedValue(undefined),
   loadPresenceLevel: vi.fn().mockResolvedValue('front'),
   savePresenceLevel: vi.fn().mockResolvedValue(undefined),
+  loadPresenceMaxToasts: vi.fn().mockResolvedValue(4),
+  savePresenceMaxToasts: vi.fn().mockResolvedValue(undefined),
+  loadPresenceShowIcon: vi.fn().mockResolvedValue(true),
+  savePresenceShowIcon: vi.fn().mockResolvedValue(undefined),
+  loadPresenceLikeIcon: vi.fn().mockResolvedValue('heart'),
+  savePresenceLikeIcon: vi.fn().mockResolvedValue(undefined),
+  loadLocale: vi.fn().mockResolvedValue(null),
+  saveLocale: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- Helpers ---
@@ -183,7 +191,7 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
   // =========================================================================
 
   describe('loadPauseMediaOnBreak on mount', () => {
-    it('9-1: マウント時に loadPauseMediaOnBreak が呼ばれる', async () => {
+    it('9-1: loadPauseMediaOnBreak is called on mount', async () => {
       render(TrayPanel);
 
       await vi.waitFor(() => {
@@ -191,13 +199,13 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
       });
     });
 
-    it('9-2: loadPauseMediaOnBreak が true を返すとトグルが checked になる', async () => {
+    it('9-2: toggle is checked when loadPauseMediaOnBreak returns true', async () => {
       mockLoadPauseMediaOnBreak.mockResolvedValue(true);
 
       render(TrayPanel);
 
       await vi.waitFor(() => {
-        const label = screen.getByText('メディア自動中断');
+        const label = screen.getByText('Auto-pause');
         const row = label.closest('.toggle-row');
         const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
         expect(toggle).toBeTruthy();
@@ -205,13 +213,13 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
       });
     });
 
-    it('9-3: loadPauseMediaOnBreak が false を返すとトグルが unchecked になる', async () => {
+    it('9-3: toggle is unchecked when loadPauseMediaOnBreak returns false', async () => {
       mockLoadPauseMediaOnBreak.mockResolvedValue(false);
 
       render(TrayPanel);
 
       await vi.waitFor(() => {
-        const label = screen.getByText('メディア自動中断');
+        const label = screen.getByText('Auto-pause');
         const row = label.closest('.toggle-row');
         const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
         expect(toggle).toBeTruthy();
@@ -225,7 +233,7 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
   // =========================================================================
 
   describe('handleAutostartChange error handling', () => {
-    it('10-1: enable() が失敗しても isEnabled() で状態を再取得する', async () => {
+    it('10-1: isEnabled() re-fetches state even when enable() fails', async () => {
       mockIsEnabled.mockResolvedValue(false);
       mockEnable.mockRejectedValue(new Error('autostart error'));
       // After error, isEnabled is called again to get real state
@@ -238,7 +246,7 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
         expect(mockGetTimerState).toHaveBeenCalled();
       });
 
-      const label = screen.getByText('自動起動');
+      const label = screen.getByText('Launch at login');
       const row = label.closest('.toggle-row');
       const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
       expect(toggle).toBeTruthy();
@@ -257,7 +265,7 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
   // =========================================================================
 
   describe('loadSavedSettings null branch', () => {
-    it('11-1: loadSettings が null を返すとき updateSettings は呼ばれない（デフォルト値維持）', async () => {
+    it('11-1: updateSettings is not called when loadSettings returns null (defaults preserved)', async () => {
       mockLoadSettings.mockResolvedValue(null);
 
       render(TrayPanel);
@@ -281,7 +289,7 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
   // =========================================================================
 
   describe('handlePauseMediaChange', () => {
-    it('12-1: メディア一時停止トグル変更で savePauseMediaOnBreak が呼ばれる', async () => {
+    it('12-1: savePauseMediaOnBreak is called when media pause toggle changes', async () => {
       mockLoadPauseMediaOnBreak.mockResolvedValue(false);
 
       render(TrayPanel);
@@ -290,7 +298,7 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
         expect(mockGetTimerState).toHaveBeenCalled();
       });
 
-      const label = screen.getByText('メディア自動中断');
+      const label = screen.getByText('Auto-pause');
       const row = label.closest('.toggle-row');
       const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
       expect(toggle).toBeTruthy();
@@ -302,20 +310,20 @@ describe('TrayPanel - supplement 3 (spec-to-tests)', () => {
       });
     });
 
-    it('12-2: メディア一時停止を無効にすると savePauseMediaOnBreak(false) が呼ばれる', async () => {
+    it('12-2: savePauseMediaOnBreak(false) is called when disabling media pause', async () => {
       mockLoadPauseMediaOnBreak.mockResolvedValue(true);
 
       render(TrayPanel);
 
       await vi.waitFor(() => {
-        const label = screen.getByText('メディア自動中断');
+        const label = screen.getByText('Auto-pause');
         const row = label.closest('.toggle-row');
         const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
         expect(toggle).toBeTruthy();
         expect(toggle.checked).toBe(true);
       });
 
-      const label = screen.getByText('メディア自動中断');
+      const label = screen.getByText('Auto-pause');
       const row = label.closest('.toggle-row');
       const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
       await fireEvent.click(toggle!);
