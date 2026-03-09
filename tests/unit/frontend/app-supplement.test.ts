@@ -13,7 +13,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 import { cleanup } from '@testing-library/svelte';
 
-// --- 子コンポーネントが依存するモジュールのモック ---
+// --- Child component dependency mocks ---
 
 const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => ({
   mockTimerModule: {
@@ -37,12 +37,14 @@ const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => ({
     togglePause: vi.fn(),
     skipBreak: vi.fn(),
     updateSettings: vi.fn(),
+    resetTimer: vi.fn(),
     closeBreakOverlay: vi.fn(),
     quitApp: vi.fn(),
     acceptBreak: vi.fn(),
     extendFocus: vi.fn(),
     skipBreakFromFocus: vi.fn(),
     getTodaySessions: vi.fn().mockResolvedValue(0),
+    setTrayIconVisible: vi.fn().mockResolvedValue(undefined),
     onTimerTick: vi.fn().mockResolvedValue(vi.fn()),
     onPhaseChanged: vi.fn().mockResolvedValue(vi.fn()),
     onBreakStart: vi.fn().mockResolvedValue(vi.fn()),
@@ -55,6 +57,24 @@ const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => ({
     toDisplaySettings: vi.fn(),
     loadPauseMediaOnBreak: vi.fn().mockResolvedValue(false),
     savePauseMediaOnBreak: vi.fn().mockResolvedValue(undefined),
+    loadHideTrayIcon: vi.fn().mockResolvedValue(false),
+    saveHideTrayIcon: vi.fn().mockResolvedValue(undefined),
+    loadTickVolume: vi.fn().mockResolvedValue(0),
+    saveTickVolume: vi.fn().mockResolvedValue(undefined),
+    loadPresenceToast: vi.fn().mockResolvedValue(true),
+    savePresenceToast: vi.fn().mockResolvedValue(undefined),
+    loadPresencePosition: vi.fn().mockResolvedValue('top-right'),
+    savePresencePosition: vi.fn().mockResolvedValue(undefined),
+    loadPresenceLevel: vi.fn().mockResolvedValue('front'),
+    savePresenceLevel: vi.fn().mockResolvedValue(undefined),
+    loadPresenceMaxToasts: vi.fn().mockResolvedValue(4),
+    savePresenceMaxToasts: vi.fn().mockResolvedValue(undefined),
+    loadPresenceShowIcon: vi.fn().mockResolvedValue(true),
+    savePresenceShowIcon: vi.fn().mockResolvedValue(undefined),
+    loadPresenceLikeIcon: vi.fn().mockResolvedValue('heart'),
+    savePresenceLikeIcon: vi.fn().mockResolvedValue(undefined),
+    loadLocale: vi.fn().mockResolvedValue(null),
+    saveLocale: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -95,7 +115,7 @@ function setSearchParams(search: string) {
 }
 
 describe('App - supplement', () => {
-  it('4-3: ?view=focus-done で FocusDonePopup が表示され、BreakOverlay と TrayPanel は表示されない', async () => {
+  it('4-3: ?view=focus-done shows FocusDonePopup, not BreakOverlay or TrayPanel', async () => {
     setSearchParams('?view=focus-done');
     const { default: App } = await import('@code/frontend/App.svelte');
     render(App);

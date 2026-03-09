@@ -114,7 +114,7 @@ describe('BreakOverlay', () => {
   // 1. Mount side effects
   // =========================================================================
 
-  it('1-1: マウント時に getTimerState が呼ばれる', async () => {
+  it('1-1: getTimerState is called on mount', async () => {
     render(BreakOverlay);
 
     // getTimerState is called during onMount (async)
@@ -123,7 +123,7 @@ describe('BreakOverlay', () => {
     });
   });
 
-  it('1-2: マウント時に onTimerTick イベントリスナーが登録される', async () => {
+  it('1-2: onTimerTick event listener is registered on mount', async () => {
     render(BreakOverlay);
 
     await vi.waitFor(() => {
@@ -132,7 +132,7 @@ describe('BreakOverlay', () => {
     });
   });
 
-  it('1-3: マウント時に onBreakEnd イベントリスナーが登録される', async () => {
+  it('1-3: onBreakEnd event listener is registered on mount', async () => {
     render(BreakOverlay);
 
     await vi.waitFor(() => {
@@ -145,7 +145,7 @@ describe('BreakOverlay', () => {
   // 2. Phase message display
   // =========================================================================
 
-  it('2-1: ShortBreak フェーズで "目を休めましょう" が表示される', async () => {
+  it('2-1: ShortBreak phase shows "Rest your eyes"', async () => {
     mockGetTimerState.mockResolvedValue(
       makeTimerState({ phase: 'ShortBreak', elapsed_secs: 0, phase_duration_secs: 20 }),
     );
@@ -155,12 +155,12 @@ describe('BreakOverlay', () => {
     render(BreakOverlay);
 
     await vi.waitFor(() => {
-      expect(screen.getByText('目を休めましょう')).toBeTruthy();
-      expect(screen.getByText('遠くを見て、まばたきをしましょう')).toBeTruthy();
+      expect(screen.getByText('Rest your eyes')).toBeTruthy();
+      expect(screen.getByText('Look away and blink')).toBeTruthy();
     });
   });
 
-  it('2-2: LongBreak フェーズで "立ち上がってストレッチ" が表示される', async () => {
+  it('2-2: LongBreak phase shows "Stand up and stretch"', async () => {
     mockGetTimerState.mockResolvedValue(
       makeTimerState({ phase: 'LongBreak', elapsed_secs: 0, phase_duration_secs: 180 }),
     );
@@ -170,13 +170,13 @@ describe('BreakOverlay', () => {
     render(BreakOverlay);
 
     await vi.waitFor(() => {
-      expect(screen.getByText('立ち上がってストレッチ')).toBeTruthy();
-      expect(screen.getByText('体を動かして、深呼吸しましょう')).toBeTruthy();
+      expect(screen.getByText('Stand up and stretch')).toBeTruthy();
+      expect(screen.getByText('Move around and take a deep breath')).toBeTruthy();
     });
   });
 
-  it('2-3: Focus フェーズでフォールバック "休憩中" が表示される', async () => {
-    // Focus phase has empty strings in the messages map → fallback to "休憩中"
+  it('2-3: Focus phase shows fallback "Break time"', async () => {
+    // Focus phase has empty strings in the messages map, falls back to "Break time"
     mockGetTimerState.mockResolvedValue(
       makeTimerState({ phase: 'Focus', elapsed_secs: 0, phase_duration_secs: 1200 }),
     );
@@ -186,7 +186,7 @@ describe('BreakOverlay', () => {
     render(BreakOverlay);
 
     await vi.waitFor(() => {
-      expect(screen.getByText('休憩中')).toBeTruthy();
+      expect(screen.getByText('Break time')).toBeTruthy();
     });
   });
 
@@ -194,7 +194,7 @@ describe('BreakOverlay', () => {
   // 3. User interaction & events
   // =========================================================================
 
-  it('3-1: スキップボタンクリックで skipBreak が呼ばれる', async () => {
+  it('3-1: clicking skip button calls skipBreak', async () => {
     render(BreakOverlay);
 
     await vi.waitFor(() => {
@@ -207,7 +207,7 @@ describe('BreakOverlay', () => {
     expect(mockSkipBreak).toHaveBeenCalledTimes(1);
   });
 
-  it('3-2: break-end イベント受信で getCurrentWindow().close() が呼ばれる', async () => {
+  it('3-2: getCurrentWindow().close() is called on break-end event', async () => {
     render(BreakOverlay);
 
     await vi.waitFor(() => {
@@ -227,7 +227,7 @@ describe('BreakOverlay', () => {
   // 4. Visibility / CSS class
   // =========================================================================
 
-  it('4-1: initialized=false 時は .visible クラスが付与されない', () => {
+  it('4-1: .visible class is not applied when initialized=false', () => {
     // Make getTimerState never resolve so initialized stays false
     mockGetTimerState.mockReturnValue(new Promise(() => {}));
 
@@ -238,7 +238,7 @@ describe('BreakOverlay', () => {
     expect(overlay!.classList.contains('visible')).toBe(false);
   });
 
-  it('4-2: 初期タイマー状態取得後に initialized=true → .visible クラスが付与される', async () => {
+  it('4-2: .visible class is applied after initial timer state is fetched (initialized=true)', async () => {
     mockGetTimerState.mockResolvedValue(makeTimerState());
 
     const { container } = render(BreakOverlay);

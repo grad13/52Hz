@@ -88,10 +88,10 @@ describe('FocusDonePopup', () => {
   // 1. handleAcceptBreak (spec 3.1 / 5.3)
   // =========================================================================
 
-  it('1-1: 「休憩する」ボタン押下で acceptBreak が呼ばれる', async () => {
+  it('1-1: clicking "Take a break" button calls acceptBreak', async () => {
     render(FocusDonePopup);
 
-    const acceptButton = screen.getByText('休憩する');
+    const acceptButton = screen.getByText('Take a break');
     await fireEvent.click(acceptButton);
 
     await vi.waitFor(() => {
@@ -99,10 +99,10 @@ describe('FocusDonePopup', () => {
     });
   });
 
-  it('1-2: 「休憩する」ボタン押下後にウィンドウが閉じられる（IPC → close の順序保証）', async () => {
+  it('1-2: window is closed after clicking "Take a break" (IPC then close order)', async () => {
     render(FocusDonePopup);
 
-    const acceptButton = screen.getByText('休憩する');
+    const acceptButton = screen.getByText('Take a break');
     await fireEvent.click(acceptButton);
 
     await vi.waitFor(() => {
@@ -117,10 +117,10 @@ describe('FocusDonePopup', () => {
   // 2. handleSkip (spec 3.3 / 5.3)
   // =========================================================================
 
-  it('2-1: 「スキップ」ボタン押下で skipBreakFromFocus が呼ばれる', async () => {
+  it('2-1: clicking "Skip" button calls skipBreakFromFocus', async () => {
     render(FocusDonePopup);
 
-    const skipButton = screen.getByText('スキップ');
+    const skipButton = screen.getByText('Skip');
     await fireEvent.click(skipButton);
 
     await vi.waitFor(() => {
@@ -128,10 +128,10 @@ describe('FocusDonePopup', () => {
     });
   });
 
-  it('2-2: 「スキップ」ボタン押下後にウィンドウが閉じられる（IPC → close の順序保証）', async () => {
+  it('2-2: window is closed after clicking "Skip" (IPC then close order)', async () => {
     render(FocusDonePopup);
 
-    const skipButton = screen.getByText('スキップ');
+    const skipButton = screen.getByText('Skip');
     await fireEvent.click(skipButton);
 
     await vi.waitFor(() => {
@@ -146,10 +146,10 @@ describe('FocusDonePopup', () => {
   // 3. handleExtend (spec 3.2 / 5.3)
   // =========================================================================
 
-  it('3-1: 「+1分」ボタン押下で extendFocus(60) が呼ばれる', async () => {
+  it('3-1: clicking "+1 min" button calls extendFocus(60)', async () => {
     render(FocusDonePopup);
 
-    const btn = screen.getByText('+1分');
+    const btn = screen.getByText('+1 min');
     await fireEvent.click(btn);
 
     await vi.waitFor(() => {
@@ -157,10 +157,10 @@ describe('FocusDonePopup', () => {
     });
   });
 
-  it('3-2: 「+3分」ボタン押下で extendFocus(180) が呼ばれる', async () => {
+  it('3-2: clicking "+3 min" button calls extendFocus(180)', async () => {
     render(FocusDonePopup);
 
-    const btn = screen.getByText('+3分');
+    const btn = screen.getByText('+3 min');
     await fireEvent.click(btn);
 
     await vi.waitFor(() => {
@@ -168,10 +168,10 @@ describe('FocusDonePopup', () => {
     });
   });
 
-  it('3-3: 「+5分」ボタン押下で extendFocus(300) が呼ばれる', async () => {
+  it('3-3: clicking "+5 min" button calls extendFocus(300)', async () => {
     render(FocusDonePopup);
 
-    const btn = screen.getByText('+5分');
+    const btn = screen.getByText('+5 min');
     await fireEvent.click(btn);
 
     await vi.waitFor(() => {
@@ -179,10 +179,10 @@ describe('FocusDonePopup', () => {
     });
   });
 
-  it('3-4: 延長ボタン押下後にウィンドウが閉じられる（IPC → close の順序保証）', async () => {
+  it('3-4: window is closed after clicking extend button (IPC then close order)', async () => {
     render(FocusDonePopup);
 
-    const btn = screen.getByText('+1分');
+    const btn = screen.getByText('+1 min');
     await fireEvent.click(btn);
 
     await vi.waitFor(() => {

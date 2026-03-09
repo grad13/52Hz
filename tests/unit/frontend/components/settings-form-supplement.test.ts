@@ -6,7 +6,7 @@
  * Runtime: JS-ESM (Svelte 5)
  *
  * Supplement for: tests/unit/frontend/components/settings-form.test.ts
- * Covers: 自動起動トグル, メディア自動中断トグル
+ * Covers: autostart toggle, auto-pause media toggle
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
@@ -44,67 +44,67 @@ function getToggleByLabel(labelText: string): HTMLInputElement {
 
 describe('SettingsForm - supplement', () => {
   // =========================================================================
-  // 3-8: 自動起動トグル
+  // 3-8: Autostart toggle
   // =========================================================================
 
-  it('3-8a: 自動起動トグルが「自動起動」ラベルで表示される', () => {
+  it('3-8a: autostart toggle is displayed with "Launch at login" label', () => {
     render(SettingsForm, { props: { ...defaultProps } });
-    expect(screen.getByText('自動起動')).toBeTruthy();
+    expect(screen.getByText('Launch at login')).toBeTruthy();
   });
 
-  it('3-8b: 自動起動トグルが checkbox である', () => {
+  it('3-8b: autostart toggle is a checkbox', () => {
     render(SettingsForm, { props: { ...defaultProps } });
-    const input = getToggleByLabel('自動起動');
+    const input = getToggleByLabel('Launch at login');
     expect(input).toBeTruthy();
     expect(input.type).toBe('checkbox');
   });
 
-  it('3-8c: autostartEnabled=true のときチェック済み', () => {
+  it('3-8c: checked when autostartEnabled=true', () => {
     render(SettingsForm, { props: { ...defaultProps, autostartEnabled: true } });
-    const input = getToggleByLabel('自動起動');
+    const input = getToggleByLabel('Launch at login');
     expect(input.checked).toBe(true);
   });
 
-  it('3-8d: トグル変更で onAutostartChange が呼ばれる', async () => {
+  it('3-8d: onAutostartChange is called when toggle changes', async () => {
     const onAutostartChange = vi.fn();
     render(SettingsForm, { props: { ...defaultProps, onAutostartChange } });
-    const input = getToggleByLabel('自動起動');
+    const input = getToggleByLabel('Launch at login');
     await fireEvent.click(input);
     expect(onAutostartChange).toHaveBeenCalledTimes(1);
   });
 
   // =========================================================================
-  // 3-9: メディア自動中断トグル
+  // 3-9: Auto-pause media toggle
   // =========================================================================
 
-  it('3-9a: メディア自動中断トグルが「メディア自動中断」ラベルで表示される', () => {
+  it('3-9a: auto-pause toggle is displayed with "Auto-pause" label', () => {
     render(SettingsForm, { props: { ...defaultProps } });
-    expect(screen.getByText('メディア自動中断')).toBeTruthy();
+    expect(screen.getByText('Auto-pause')).toBeTruthy();
   });
 
-  it('3-9b: メディア自動中断トグルが checkbox である', () => {
+  it('3-9b: auto-pause toggle is a checkbox', () => {
     render(SettingsForm, { props: { ...defaultProps } });
-    const input = getToggleByLabel('メディア自動中断');
+    const input = getToggleByLabel('Auto-pause');
     expect(input).toBeTruthy();
     expect(input.type).toBe('checkbox');
   });
 
-  it('3-9c: pauseMediaOnBreak=true のときチェック済み', () => {
+  it('3-9c: checked when pauseMediaOnBreak=true', () => {
     render(SettingsForm, { props: { ...defaultProps, pauseMediaOnBreak: true } });
-    const input = getToggleByLabel('メディア自動中断');
+    const input = getToggleByLabel('Auto-pause');
     expect(input.checked).toBe(true);
   });
 
-  it('3-9d: pauseMediaOnBreak=false のとき未チェック', () => {
+  it('3-9d: unchecked when pauseMediaOnBreak=false', () => {
     render(SettingsForm, { props: { ...defaultProps, pauseMediaOnBreak: false } });
-    const input = getToggleByLabel('メディア自動中断');
+    const input = getToggleByLabel('Auto-pause');
     expect(input.checked).toBe(false);
   });
 
-  it('3-9e: トグル変更で onPauseMediaChange が呼ばれる', async () => {
+  it('3-9e: onPauseMediaChange is called when toggle changes', async () => {
     const onPauseMediaChange = vi.fn();
     render(SettingsForm, { props: { ...defaultProps, onPauseMediaChange } });
-    const input = getToggleByLabel('メディア自動中断');
+    const input = getToggleByLabel('Auto-pause');
     await fireEvent.click(input);
     expect(onPauseMediaChange).toHaveBeenCalledTimes(1);
   });

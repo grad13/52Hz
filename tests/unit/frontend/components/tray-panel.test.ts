@@ -27,7 +27,12 @@ vi.mock('@tauri-apps/api/event', () => ({
 vi.mock('@tauri-apps/api/window', () => ({
   getCurrentWindow: vi.fn().mockReturnValue({
     close: vi.fn(),
+    setSize: vi.fn().mockResolvedValue(undefined),
   }),
+}));
+
+vi.mock('@tauri-apps/api/dpi', () => ({
+  LogicalSize: vi.fn(),
 }));
 
 // --- timer.ts mock ---
@@ -112,6 +117,14 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
   savePresencePosition: vi.fn().mockResolvedValue(undefined),
   loadPresenceLevel: vi.fn().mockResolvedValue('dynamic'),
   savePresenceLevel: vi.fn().mockResolvedValue(undefined),
+  loadPresenceMaxToasts: vi.fn().mockResolvedValue(4),
+  savePresenceMaxToasts: vi.fn().mockResolvedValue(undefined),
+  loadPresenceShowIcon: vi.fn().mockResolvedValue(true),
+  savePresenceShowIcon: vi.fn().mockResolvedValue(undefined),
+  loadPresenceLikeIcon: vi.fn().mockResolvedValue('heart'),
+  savePresenceLikeIcon: vi.fn().mockResolvedValue(undefined),
+  loadLocale: vi.fn().mockResolvedValue(null),
+  saveLocale: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- Helpers ---
@@ -155,7 +168,7 @@ describe('TrayPanel', () => {
   // 1. Mount side effects
   // =========================================================================
 
-  it('1-1: マウント時に loadSettings が呼ばれる', async () => {
+  it('1-1: loadSettings is called on mount', async () => {
     render(TrayPanel);
 
     await vi.waitFor(() => {
@@ -163,7 +176,7 @@ describe('TrayPanel', () => {
     });
   });
 
-  it('1-2: マウント時に getTimerState が呼ばれる', async () => {
+  it('1-2: getTimerState is called on mount', async () => {
     render(TrayPanel);
 
     await vi.waitFor(() => {
@@ -171,7 +184,7 @@ describe('TrayPanel', () => {
     });
   });
 
-  it('1-3: マウント時に onTimerTick でイベント購読される', async () => {
+  it('1-3: onTimerTick event subscription is set up on mount', async () => {
     render(TrayPanel);
 
     await vi.waitFor(() => {
@@ -184,7 +197,7 @@ describe('TrayPanel', () => {
   // 2. UI rendering
   // =========================================================================
 
-  it('2-1: remaining タイマー表示が正しくレンダリングされる', async () => {
+  it('2-1: remaining timer display is rendered correctly', async () => {
     render(TrayPanel);
 
     await vi.waitFor(() => {
@@ -192,7 +205,7 @@ describe('TrayPanel', () => {
     });
   });
 
-  it('2-2: tray-panel クラスのコンテナが存在する', async () => {
+  it('2-2: tray-panel class container exists', async () => {
     const { container } = render(TrayPanel);
 
     await vi.waitFor(() => {
@@ -201,19 +214,19 @@ describe('TrayPanel', () => {
     });
   });
 
-  it('2-3: 停止ボタンが表示される', async () => {
+  it('2-3: stop button is displayed', async () => {
     render(TrayPanel);
 
     await vi.waitFor(() => {
-      expect(screen.getByText('■ 停止')).toBeTruthy();
+      expect(screen.getByText('■ Stop')).toBeTruthy();
     });
   });
 
-  it('2-4: アプリ終了ボタンが表示される', async () => {
+  it('2-4: quit button is displayed', async () => {
     render(TrayPanel);
 
     await vi.waitFor(() => {
-      expect(screen.getByText('アプリを終了')).toBeTruthy();
+      expect(screen.getByText('Quit')).toBeTruthy();
     });
   });
 
@@ -221,35 +234,35 @@ describe('TrayPanel', () => {
   // 3. Settings save flow
   // =========================================================================
 
-  it('3-1: 設定変更後に debounce で updateSettings → saveSettings が呼ばれる', async () => {
+  it('3-1: after settings change, updateSettings and saveSettings are called via debounce', async () => {
     mockUpdateSettings.mockResolvedValue(undefined);
     mockSaveSettings.mockResolvedValue(undefined);
 
     render(TrayPanel);
 
-    // settingsLoaded が true になるのを待つ
+    // Wait for settingsLoaded to become true
     await vi.waitFor(() => {
       expect(mockLoadSettings).toHaveBeenCalled();
     });
 
-    // $effect の初回発火による保存を待つ
+    // Wait for $effect initial fire to save
     await new Promise(r => setTimeout(r, 600));
 
-    // 変更前の呼び出し回数を記録
+    // Record call counts before change
     const updateCallsBefore = mockUpdateSettings.mock.calls.length;
     const saveCallsBefore = mockSaveSettings.mock.calls.length;
 
-    // 設定値を変更（input イベントでトリガー）
+    // Change settings value (trigger via input event)
     const focusInput = document.getElementById('focus') as HTMLInputElement;
     await fireEvent.input(focusInput, { target: { value: '30' } });
 
-    // debounce (500ms) 後に追加の保存が呼ばれるのを待つ
+    // Wait for additional save calls after debounce (500ms)
     await vi.waitFor(() => {
       expect(mockUpdateSettings.mock.calls.length).toBeGreaterThan(updateCallsBefore);
       expect(mockSaveSettings.mock.calls.length).toBeGreaterThan(saveCallsBefore);
     }, { timeout: 2000 });
 
-    // 最後の呼び出しペアで順序確認: updateSettings が saveSettings より先
+    // Verify order of last call pair: updateSettings before saveSettings
     const lastUpdateOrder = mockUpdateSettings.mock.invocationCallOrder[mockUpdateSettings.mock.calls.length - 1];
     const lastSaveOrder = mockSaveSettings.mock.invocationCallOrder[mockSaveSettings.mock.calls.length - 1];
     expect(lastUpdateOrder).toBeLessThan(lastSaveOrder);

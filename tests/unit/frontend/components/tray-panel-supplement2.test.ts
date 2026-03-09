@@ -126,6 +126,14 @@ vi.mock('@code/frontend/lib/settings-store', () => ({
   savePresencePosition: vi.fn().mockResolvedValue(undefined),
   loadPresenceLevel: vi.fn().mockResolvedValue('front'),
   savePresenceLevel: vi.fn().mockResolvedValue(undefined),
+  loadPresenceMaxToasts: vi.fn().mockResolvedValue(4),
+  savePresenceMaxToasts: vi.fn().mockResolvedValue(undefined),
+  loadPresenceShowIcon: vi.fn().mockResolvedValue(true),
+  savePresenceShowIcon: vi.fn().mockResolvedValue(undefined),
+  loadPresenceLikeIcon: vi.fn().mockResolvedValue('heart'),
+  savePresenceLikeIcon: vi.fn().mockResolvedValue(undefined),
+  loadLocale: vi.fn().mockResolvedValue(null),
+  saveLocale: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- Helpers ---
@@ -179,7 +187,7 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
   // =========================================================================
 
   describe('handleAutostartChange', () => {
-    it('5-1: 自動起動を有効にするとき enable() が呼ばれる', async () => {
+    it('5-1: enable() is called when enabling autostart', async () => {
       mockIsEnabled.mockResolvedValue(false);
 
       render(TrayPanel);
@@ -188,7 +196,7 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
         expect(mockGetTimerState).toHaveBeenCalled();
       });
 
-      const label = screen.getByText('自動起動');
+      const label = screen.getByText('Launch at login');
       const row = label.closest('.toggle-row');
       const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
       expect(toggle).toBeTruthy();
@@ -199,7 +207,7 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
       });
     });
 
-    it('5-2: 自動起動を無効にするとき disable() が呼ばれる', async () => {
+    it('5-2: disable() is called when disabling autostart', async () => {
       mockIsEnabled.mockResolvedValue(true);
 
       render(TrayPanel);
@@ -208,7 +216,7 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
         expect(mockGetTimerState).toHaveBeenCalled();
       });
 
-      const label = screen.getByText('自動起動');
+      const label = screen.getByText('Launch at login');
       const row = label.closest('.toggle-row');
       const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
       expect(toggle).toBeTruthy();
@@ -224,14 +232,14 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
   // 6. quitApp (spec 7.2)
   // =========================================================================
 
-  it('6-1: 「アプリを終了」ボタンクリックで quitApp が呼ばれる', async () => {
+  it('6-1: clicking "Quit" button calls quitApp', async () => {
     render(TrayPanel);
 
     await vi.waitFor(() => {
       expect(mockGetTimerState).toHaveBeenCalled();
     });
 
-    const quitButton = screen.getByText('アプリを終了');
+    const quitButton = screen.getByText('Quit');
     await fireEvent.click(quitButton);
 
     expect(mockQuitApp).toHaveBeenCalledTimes(1);
@@ -241,7 +249,7 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
   // 7. onDestroy cleanup (spec 6.3)
   // =========================================================================
 
-  it('7-1: アンマウント時に timer-tick の unlisten が呼ばれる', async () => {
+  it('7-1: timer-tick unlisten is called on unmount', async () => {
     const { unmount } = render(TrayPanel);
 
     await vi.waitFor(() => {
@@ -253,7 +261,7 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
     expect(mockUnlistenTick).toHaveBeenCalledTimes(1);
   });
 
-  it('7-2: アンマウント時に phase-changed の unlisten が呼ばれる', async () => {
+  it('7-2: phase-changed unlisten is called on unmount', async () => {
     const { unmount } = render(TrayPanel);
 
     await vi.waitFor(() => {
@@ -269,7 +277,7 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
   // 8. todaySessions (spec R6 / 6.1)
   // =========================================================================
 
-  it('8-1: マウント時に getTodaySessions が呼ばれる', async () => {
+  it('8-1: getTodaySessions is called on mount', async () => {
     render(TrayPanel);
 
     await vi.waitFor(() => {
@@ -277,13 +285,13 @@ describe('TrayPanel - supplement (spec-to-tests)', () => {
     });
   });
 
-  it('8-2: セッション数が「N回完了」として表示される', async () => {
+  it('8-2: session count is displayed as "N done"', async () => {
     mockGetTodaySessions.mockResolvedValue(3);
 
     render(TrayPanel);
 
     await vi.waitFor(() => {
-      expect(screen.getByText('3回完了')).toBeTruthy();
+      expect(screen.getByText('3 done')).toBeTruthy();
     });
   });
 });

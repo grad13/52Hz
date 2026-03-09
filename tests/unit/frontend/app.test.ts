@@ -12,16 +12,16 @@ import { cleanup } from '@testing-library/svelte';
 import type { TimerState } from '@code/frontend/lib/timer';
 
 /**
- * App.svelte は window.location.search を参照して
- * BreakOverlay / TrayPanel を排他的にマウントする。
- * テストでは Object.defineProperty で search を差し替える。
+ * App.svelte reads window.location.search to exclusively mount
+ * either BreakOverlay or TrayPanel.
+ * Tests use Object.defineProperty to override search.
  *
- * 子コンポーネント (BreakOverlay, TrayPanel) は onMount で
- * Tauri API を呼ぶため、依存モジュールをモックして
- * Unhandled Rejection を防止する。
+ * Child components (BreakOverlay, TrayPanel) call Tauri API
+ * in onMount, so dependencies are mocked to prevent
+ * Unhandled Rejection.
  */
 
-// --- 子コンポーネントが依存するモジュールのモック ---
+// --- Child component dependency mocks ---
 
 const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => {
   const defaultState: TimerState = {
@@ -76,6 +76,14 @@ const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => {
     savePresencePosition: vi.fn().mockResolvedValue(undefined),
     loadPresenceLevel: vi.fn().mockResolvedValue('front'),
     savePresenceLevel: vi.fn().mockResolvedValue(undefined),
+    loadPresenceMaxToasts: vi.fn().mockResolvedValue(4),
+    savePresenceMaxToasts: vi.fn().mockResolvedValue(undefined),
+    loadPresenceShowIcon: vi.fn().mockResolvedValue(true),
+    savePresenceShowIcon: vi.fn().mockResolvedValue(undefined),
+    loadPresenceLikeIcon: vi.fn().mockResolvedValue('heart'),
+    savePresenceLikeIcon: vi.fn().mockResolvedValue(undefined),
+    loadLocale: vi.fn().mockResolvedValue(null),
+    saveLocale: vi.fn().mockResolvedValue(undefined),
   },
   };
 });
@@ -101,7 +109,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  // location を元に戻す
+  // Restore location
   Object.defineProperty(window, 'location', {
     value: originalLocation,
     writable: true,
@@ -118,9 +126,9 @@ function setSearchParams(search: string) {
 }
 
 describe('App', () => {
-  it('4-1: ?view=break で BreakOverlay コンポーネントが表示される', async () => {
+  it('4-1: ?view=break shows BreakOverlay component', async () => {
     setSearchParams('?view=break');
-    // 動的インポートで location.search 変更後にモジュールを読み込む
+    // Dynamic import to load module after location.search change
     const { default: App } = await import('@code/frontend/App.svelte');
     render(App);
     const breakOverlay = document.querySelector('[data-testid="break-overlay"]')
@@ -130,7 +138,7 @@ describe('App', () => {
     expect(trayPanel).toBeNull();
   });
 
-  it('4-2: パラメータなしで TrayPanel コンポーネントが表示される', async () => {
+  it('4-2: TrayPanel component is shown with no parameters', async () => {
     setSearchParams('');
     const { default: App } = await import('@code/frontend/App.svelte');
     render(App);

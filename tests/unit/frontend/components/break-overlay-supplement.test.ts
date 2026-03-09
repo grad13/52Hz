@@ -116,7 +116,7 @@ describe('BreakOverlay - onDestroy cleanup', () => {
 
   afterEach(() => { cleanup(); });
 
-  it('unmount 時に unlistenTick と unlistenEnd が呼ばれる', async () => {
+  it('unlistenTick and unlistenEnd are called on unmount', async () => {
     // Trace: onMount → getTimerState() → handleTick(state)
     //   → onTimerTick(handleTick) resolves to mockUnlistenTick → stored in unlistenTick
     //   → onBreakEnd(handleBreakEnd) resolves to mockUnlistenEnd → stored in unlistenEnd
@@ -137,7 +137,7 @@ describe('BreakOverlay - onDestroy cleanup', () => {
     expect(mockUnlistenEnd).toHaveBeenCalledTimes(1);
   });
 
-  it('onMount 未完了で unmount された場合、unlisten は呼ばれない（null safety）', async () => {
+  it('unlisten is not called when unmounted before onMount completes (null safety)', async () => {
     // Trace: onMount starts but getTimerState never resolves
     //   → unlistenTick remains null, unlistenEnd remains null
     // onDestroy → unlistenTick?.() → no-op (null)

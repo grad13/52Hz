@@ -17,6 +17,7 @@ export default defineConfig({
       '@testing-library/svelte': path.resolve(codeRoot, 'node_modules/@testing-library/svelte'),
       '@testing-library/jest-dom': path.resolve(codeRoot, 'node_modules/@testing-library/jest-dom'),
       'vitest-mock-extended': path.resolve(codeRoot, 'node_modules/vitest-mock-extended'),
+      'svelte-i18n': path.resolve(codeRoot, 'node_modules/svelte-i18n'),
     },
   },
   server: {
@@ -27,6 +28,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['../tests/unit/**/*.test.ts'],
+    setupFiles: ['../tests/unit/frontend/setup.ts'],
     globals: false,
   },
 });

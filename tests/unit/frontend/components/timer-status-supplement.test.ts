@@ -20,7 +20,7 @@ afterEach(() => { cleanup(); });
 function renderWithCycleDots(overrides: Record<string, unknown> = {}) {
   return render(TimerStatus, {
     props: {
-      phaseLabel: 'フォーカス中',
+      phaseLabel: 'Focusing',
       remaining: '20:00',
       paused: false,
       cycleCompleted: 0,
@@ -36,21 +36,21 @@ describe('TimerStatus - cycle dots (supplement)', () => {
   // Spec 5.1: cycleTotal controls dot count
   // =========================================================================
 
-  it('S1-1: cycleTotal=3 で .dot が 3 個描画される', () => {
+  it('S1-1: cycleTotal=3 renders 3 .dot elements', () => {
     const { container } = renderWithCycleDots({ cycleTotal: 3 });
 
     const dots = container.querySelectorAll('.dot');
     expect(dots.length).toBe(3);
   });
 
-  it('S1-2: cycleTotal=1 で .dot が 1 個描画される', () => {
+  it('S1-2: cycleTotal=1 renders 1 .dot element', () => {
     const { container } = renderWithCycleDots({ cycleTotal: 1 });
 
     const dots = container.querySelectorAll('.dot');
     expect(dots.length).toBe(1);
   });
 
-  it('S1-3: cycleTotal=0 で .dot が描画されない', () => {
+  it('S1-3: cycleTotal=0 renders no .dot elements', () => {
     const { container } = renderWithCycleDots({ cycleTotal: 0 });
 
     const dots = container.querySelectorAll('.dot');
@@ -62,7 +62,7 @@ describe('TimerStatus - cycle dots (supplement)', () => {
   // Condition: i < cycleCompleted → .filled
   // =========================================================================
 
-  it('S2-1: cycleCompleted=2, cycleTotal=3 → 最初の 2 個に .filled クラス', () => {
+  it('S2-1: cycleCompleted=2, cycleTotal=3 fills first 2 dots', () => {
     const { container } = renderWithCycleDots({
       cycleTotal: 3,
       cycleCompleted: 2,
@@ -75,7 +75,7 @@ describe('TimerStatus - cycle dots (supplement)', () => {
     expect(dots[2].classList.contains('filled')).toBe(false);
   });
 
-  it('S2-2: cycleCompleted=0, cycleTotal=3 → .filled なし', () => {
+  it('S2-2: cycleCompleted=0, cycleTotal=3 has no .filled', () => {
     const { container } = renderWithCycleDots({
       cycleTotal: 3,
       cycleCompleted: 0,
@@ -88,7 +88,7 @@ describe('TimerStatus - cycle dots (supplement)', () => {
     });
   });
 
-  it('S2-3: cycleCompleted=3, cycleTotal=3 → 全ドットに .filled', () => {
+  it('S2-3: cycleCompleted=3, cycleTotal=3 fills all dots', () => {
     const { container } = renderWithCycleDots({
       cycleTotal: 3,
       cycleCompleted: 3,
@@ -106,7 +106,7 @@ describe('TimerStatus - cycle dots (supplement)', () => {
   // Condition: isLongBreak || i < cycleCompleted → .filled
   // =========================================================================
 
-  it('S3-1: isLongBreak=true → cycleCompleted に関わらず全ドットに .filled', () => {
+  it('S3-1: isLongBreak=true fills all dots regardless of cycleCompleted', () => {
     const { container } = renderWithCycleDots({
       cycleTotal: 3,
       cycleCompleted: 0,
@@ -120,7 +120,7 @@ describe('TimerStatus - cycle dots (supplement)', () => {
     });
   });
 
-  it('S3-2: isLongBreak=false, cycleCompleted=1 → 部分的に .filled', () => {
+  it('S3-2: isLongBreak=false, cycleCompleted=1 partially fills dots', () => {
     const { container } = renderWithCycleDots({
       cycleTotal: 4,
       cycleCompleted: 1,
@@ -139,7 +139,7 @@ describe('TimerStatus - cycle dots (supplement)', () => {
   // Spec 5.1: .cycle-dots container exists
   // =========================================================================
 
-  it('S4-1: .cycle-dots コンテナが描画される', () => {
+  it('S4-1: .cycle-dots container is rendered', () => {
     const { container } = renderWithCycleDots({ cycleTotal: 3 });
 
     const dotsContainer = container.querySelector('.cycle-dots');

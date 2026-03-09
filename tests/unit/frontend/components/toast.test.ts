@@ -135,12 +135,12 @@ describe('Toast', () => {
       await flushAsync();
 
       const label = container.querySelector('.label');
-      expect(label?.textContent).toBe('セッション完了');
+      expect(label?.textContent).toBe('Session complete');
 
       const buttons = container.querySelectorAll('.actions .btn');
       expect(buttons.length).toBe(2);
-      expect(buttons[0].textContent).toBe('休憩する');
-      expect(buttons[1].textContent).toBe('スキップ');
+      expect(buttons[0].textContent).toBe('Take a break');
+      expect(buttons[1].textContent).toBe('Skip');
     });
   });
 
