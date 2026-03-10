@@ -1,6 +1,6 @@
 [package]
 name = "hz52"
-version = "0.6.2"
+version = "0.7.0"
 description = "A break reminder app inspired by DeskRest"
 authors = []
 license = "BUSL-1.1"

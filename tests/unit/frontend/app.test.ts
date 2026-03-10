@@ -58,6 +58,10 @@ const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => {
     acceptBreak: vi.fn(),
     extendFocus: vi.fn(),
     skipBreakFromFocus: vi.fn(),
+    setTrayIconVisible: vi.fn().mockResolvedValue(undefined),
+    listCassettes: vi.fn().mockResolvedValue([]),
+    switchCassette: vi.fn().mockResolvedValue(undefined),
+    openCassetteFolder: vi.fn().mockResolvedValue(undefined),
   },
   mockSettingsStoreModule: {
     loadSettings: vi.fn().mockResolvedValue(null),
@@ -91,8 +95,22 @@ const { mockTimerModule, mockSettingsStoreModule } = vi.hoisted(() => {
 vi.mock('@code/frontend/lib/timer', () => mockTimerModule);
 vi.mock('@code/frontend/lib/settings-store', () => mockSettingsStoreModule);
 
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(),
+}));
+
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: vi.fn().mockResolvedValue(vi.fn()),
+  emit: vi.fn().mockResolvedValue(undefined),
+  emitTo: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@tauri-apps/api/dpi', () => ({
+  LogicalSize: vi.fn(),
+}));
+
 vi.mock('@tauri-apps/api/window', () => ({
-  getCurrentWindow: vi.fn().mockReturnValue({ close: vi.fn() }),
+  getCurrentWindow: vi.fn().mockReturnValue({ close: vi.fn(), setSize: vi.fn().mockResolvedValue(undefined) }),
 }));
 
 vi.mock('@tauri-apps/plugin-autostart', () => ({

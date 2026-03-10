@@ -97,6 +97,10 @@ vi.mock('@code/frontend/lib/timer', () => ({
   acceptBreak: vi.fn(),
   extendFocus: vi.fn(),
   skipBreakFromFocus: vi.fn(),
+  setTrayIconVisible: vi.fn().mockResolvedValue(undefined),
+  listCassettes: vi.fn().mockResolvedValue([]),
+  switchCassette: vi.fn().mockResolvedValue(undefined),
+  openCassetteFolder: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- settings-store mock ---

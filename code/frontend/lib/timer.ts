@@ -104,3 +104,20 @@ export async function getTodaySessions(): Promise<number> {
 export async function setTrayIconVisible(visible: boolean): Promise<void> {
   return invoke("set_tray_icon_visible", { visible });
 }
+
+export interface CassetteInfo {
+  path: string;
+  title: string;
+}
+
+export async function listCassettes(): Promise<CassetteInfo[]> {
+  return invoke("list_cassettes");
+}
+
+export async function switchCassette(path: string): Promise<void> {
+  return invoke("switch_cassette", { path });
+}
+
+export async function openCassetteFolder(): Promise<void> {
+  return invoke("open_cassette_folder");
+}

@@ -21,7 +21,10 @@
     "presence_order_front": "常に前面",
     "presence_order_dynamic": "動的",
     "presence_order_back": "常に背面",
-    "presence_max": "最大数"
+    "presence_max": "最大数",
+    "presence_cassette": "カセット",
+    "presence_cassette_users": "{n}人",
+    "presence_cassette_folder": "フォルダを開く"
   },
   "timer": {
     "resume": "▶ 再開",
