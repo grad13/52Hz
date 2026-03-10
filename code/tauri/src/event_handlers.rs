@@ -120,7 +120,9 @@ fn register_focus_done(app: &tauri::App, timer_state: SharedTimerState) {
     app.listen("focus-done", move |_event| {
         if std::env::var("FIFTYTWOHZ_HEADLESS").is_ok() {
             // Headless: skip popup, auto-accept break
-            eprintln!("[52Hz] focus-done-popup → skipped (headless)");
+            if cfg!(debug_assertions) {
+                eprintln!("[52Hz] focus-done-popup → skipped (headless)");
+            }
             let state = timer_state.clone();
             let handle = app_handle.clone();
             tauri::async_runtime::spawn(async move {

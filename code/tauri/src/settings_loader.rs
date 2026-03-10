@@ -36,11 +36,15 @@ pub(super) fn load_and_apply(app: &tauri::App, timer_state: &SharedTimerState) {
                     short_breaks_before_long: sbbl.map(|v| v as u32).unwrap_or(3),
                 };
                 timer_state.try_lock().unwrap().apply_settings(settings);
-                eprintln!("[52Hz] Loaded saved settings from store");
+                if cfg!(debug_assertions) {
+                    eprintln!("[52Hz] Loaded saved settings from store");
+                }
             }
         }
         Err(_) => {
-            eprintln!("[52Hz] No settings store found, using defaults");
+            if cfg!(debug_assertions) {
+                eprintln!("[52Hz] No settings store found, using defaults");
+            }
         }
     }
 }
