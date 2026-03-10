@@ -138,9 +138,12 @@ describe('Toast', () => {
       expect(label?.textContent).toBe('Session complete');
 
       const buttons = container.querySelectorAll('.actions .btn');
-      expect(buttons.length).toBe(2);
+      expect(buttons.length).toBe(5);
       expect(buttons[0].textContent).toBe('Take a break');
       expect(buttons[1].textContent).toBe('Skip');
+      expect(buttons[2].textContent).toBe('+1m');
+      expect(buttons[3].textContent).toBe('+3m');
+      expect(buttons[4].textContent).toBe('+5m');
     });
   });
 
@@ -175,8 +178,8 @@ describe('Toast', () => {
     });
   });
 
-  describe('Z-order: always-back does not raise for focus-done', () => {
-    it('focus-done in always-back mode does NOT emit presence-level-change', async () => {
+  describe('Z-order: focus-done does not raise to always-front', () => {
+    it('focus-done in always-back mode does NOT emit presence-level-change with "always-front"', async () => {
       mockLoadPresenceLevel.mockResolvedValue('always-back');
       render(Toast);
       await flushAsync();
@@ -187,13 +190,15 @@ describe('Toast', () => {
       cb({ payload: undefined });
       await flushAsync();
 
-      const levelEmits = mockEmit.mock.calls.filter(
-        (c: unknown[]) => c[0] === 'presence-level-change'
+      // syncWindow emits presence-level-change to re-apply the current level after show(),
+      // but it should NOT raise to "always-front" for focus-done.
+      const raiseEmits = mockEmit.mock.calls.filter(
+        (c: unknown[]) => c[0] === 'presence-level-change' && c[1] === 'always-front'
       );
-      expect(levelEmits.length).toBe(0);
+      expect(raiseEmits.length).toBe(0);
     });
 
-    it('focus-done in dynamic mode does NOT emit presence-level-change', async () => {
+    it('focus-done in dynamic mode does NOT emit presence-level-change with "always-front"', async () => {
       mockLoadPresenceLevel.mockResolvedValue('dynamic');
       render(Toast);
       await flushAsync();
@@ -204,10 +209,197 @@ describe('Toast', () => {
       cb({ payload: undefined });
       await flushAsync();
 
-      const levelEmits = mockEmit.mock.calls.filter(
-        (c: unknown[]) => c[0] === 'presence-level-change'
+      // syncWindow emits presence-level-change to re-apply the current level after show(),
+      // but it should NOT raise to "always-front" for focus-done.
+      const raiseEmits = mockEmit.mock.calls.filter(
+        (c: unknown[]) => c[0] === 'presence-level-change' && c[1] === 'always-front'
       );
-      expect(levelEmits.length).toBe(0);
+      expect(raiseEmits.length).toBe(0);
+    });
+  });
+
+  describe('Like feature', () => {
+    it('like button is visible on toast cards by default (likeIcon=heart)', async () => {
+      mockLoadPresenceLikeIcon.mockResolvedValue('heart');
+      const { container } = render(Toast);
+      await flushAsync();
+
+      const cb = getListenerCb('presence-message');
+      cb({ payload: { name: 'Alice', message: 'Hi' } });
+      await flushAsync();
+
+      const likeBtn = container.querySelector('.like-btn');
+      expect(likeBtn).toBeTruthy();
+      expect(likeBtn?.textContent).toBe('♥');
+    });
+
+    it('like button shows star when likeIcon=star', async () => {
+      mockLoadPresenceLikeIcon.mockResolvedValue('star');
+      const { container } = render(Toast);
+      await flushAsync();
+
+      const cb = getListenerCb('presence-message');
+      cb({ payload: { name: 'Alice', message: 'Hi' } });
+      await flushAsync();
+
+      const likeBtn = container.querySelector('.like-btn');
+      expect(likeBtn).toBeTruthy();
+      expect(likeBtn?.textContent).toBe('★');
+    });
+
+    it('like button is hidden when likeIcon=none', async () => {
+      mockLoadPresenceLikeIcon.mockResolvedValue('none');
+      const { container } = render(Toast);
+      await flushAsync();
+
+      const cb = getListenerCb('presence-message');
+      cb({ payload: { name: 'Alice', message: 'Hi' } });
+      await flushAsync();
+
+      const likeBtn = container.querySelector('.like-btn');
+      expect(likeBtn).toBeNull();
+    });
+
+    it('clicking like button hides it (hasLikedThisSession guard)', async () => {
+      mockLoadPresenceLikeIcon.mockResolvedValue('heart');
+      const { container } = render(Toast);
+      await flushAsync();
+
+      const cb = getListenerCb('presence-message');
+      cb({ payload: { name: 'Alice', message: 'Hi' } });
+      await flushAsync();
+
+      const likeBtn = container.querySelector('.like-btn') as HTMLButtonElement;
+      expect(likeBtn).toBeTruthy();
+      likeBtn.click();
+      await flushAsync();
+
+      // After liking, the like button should disappear (hasLikedThisSession = true)
+      const likeBtnAfter = container.querySelector('.like-btn');
+      expect(likeBtnAfter).toBeNull();
+    });
+
+    it('clicking like button shows bg-like art on the liked card', async () => {
+      mockLoadPresenceLikeIcon.mockResolvedValue('heart');
+      const { container } = render(Toast);
+      await flushAsync();
+
+      const cb = getListenerCb('presence-message');
+      cb({ payload: { name: 'Alice', message: 'Hi' } });
+      await flushAsync();
+
+      const likeBtn = container.querySelector('.like-btn') as HTMLButtonElement;
+      likeBtn.click();
+      await flushAsync();
+
+      const bgLike = container.querySelector('.bg-like');
+      expect(bgLike).toBeTruthy();
+      expect(bgLike?.textContent).toBe('♥');
+    });
+
+    it('second click on a different toast like button is ignored', async () => {
+      mockLoadPresenceLikeIcon.mockResolvedValue('heart');
+      const { container } = render(Toast);
+      await flushAsync();
+
+      const cb = getListenerCb('presence-message');
+      cb({ payload: { name: 'Alice', message: 'Msg1' } });
+      await flushAsync();
+      cb({ payload: { name: 'Bob', message: 'Msg2' } });
+      await flushAsync();
+
+      // Click like on the first toast
+      const likeBtns = container.querySelectorAll('.like-btn');
+      expect(likeBtns.length).toBe(2);
+      (likeBtns[0] as HTMLButtonElement).click();
+      await flushAsync();
+
+      // All like buttons should now be gone
+      const likeBtnsAfter = container.querySelectorAll('.like-btn');
+      expect(likeBtnsAfter.length).toBe(0);
+
+      // Only one bg-like should exist (on the first card)
+      const bgLikes = container.querySelectorAll('.bg-like');
+      expect(bgLikes.length).toBe(1);
+    });
+
+    it('focus-done resets like state so like buttons reappear', async () => {
+      mockLoadPresenceLikeIcon.mockResolvedValue('heart');
+      const { container } = render(Toast);
+      await flushAsync();
+
+      const msgCb = getListenerCb('presence-message');
+      msgCb({ payload: { name: 'Alice', message: 'Hi' } });
+      await flushAsync();
+
+      // Like the toast
+      const likeBtn = container.querySelector('.like-btn') as HTMLButtonElement;
+      likeBtn.click();
+      await flushAsync();
+      expect(container.querySelector('.like-btn')).toBeNull();
+
+      // Add a new toast after liking (before focus-done) - should have no like button
+      msgCb({ payload: { name: 'Bob', message: 'Hey' } });
+      await flushAsync();
+      expect(container.querySelectorAll('.like-btn').length).toBe(0);
+
+      // Trigger focus-done to reset
+      const focusDoneCb = getListenerCb('focus-done-toast');
+      focusDoneCb({ payload: undefined });
+      await flushAsync();
+
+      // Add another toast - like button should be back
+      msgCb({ payload: { name: 'Carol', message: 'World' } });
+      await flushAsync();
+
+      const likeBtnsAfter = container.querySelectorAll('.like-btn');
+      expect(likeBtnsAfter.length).toBeGreaterThan(0);
+    });
+
+    it('bg-like shows star icon when likeIcon=star', async () => {
+      mockLoadPresenceLikeIcon.mockResolvedValue('star');
+      const { container } = render(Toast);
+      await flushAsync();
+
+      const cb = getListenerCb('presence-message');
+      cb({ payload: { name: 'Alice', message: 'Hi' } });
+      await flushAsync();
+
+      const likeBtn = container.querySelector('.like-btn') as HTMLButtonElement;
+      likeBtn.click();
+      await flushAsync();
+
+      const bgLike = container.querySelector('.bg-like');
+      expect(bgLike).toBeTruthy();
+      expect(bgLike?.classList.contains('star')).toBe(true);
+      expect(bgLike?.textContent).toBe('★');
+    });
+
+    it('presence-like-icon-change event resets like state', async () => {
+      mockLoadPresenceLikeIcon.mockResolvedValue('heart');
+      const { container } = render(Toast);
+      await flushAsync();
+
+      const msgCb = getListenerCb('presence-message');
+      msgCb({ payload: { name: 'Alice', message: 'Hi' } });
+      await flushAsync();
+
+      // Like a toast
+      const likeBtn = container.querySelector('.like-btn') as HTMLButtonElement;
+      likeBtn.click();
+      await flushAsync();
+      expect(container.querySelector('.like-btn')).toBeNull();
+
+      // Change like icon setting -> should reset like state
+      const likeIconCb = getListenerCb('presence-like-icon-change');
+      likeIconCb({ payload: 'star' });
+      await flushAsync();
+
+      // Add new toast - like button should be available again
+      msgCb({ payload: { name: 'Bob', message: 'Hey' } });
+      await flushAsync();
+      const likeBtnsAfter = container.querySelectorAll('.like-btn');
+      expect(likeBtnsAfter.length).toBeGreaterThan(0);
     });
   });
 

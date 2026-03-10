@@ -1,6 +1,6 @@
 // meta: checked=2026-03-07
 use std::ffi::c_void;
-use std::sync::atomic::{AtomicPtr, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 use std::sync::OnceLock;
 
 use tauri::Manager;
@@ -15,6 +15,7 @@ use crate::hover_poll;
 
 static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
 static STATUS_ITEM_PTR: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
+static TRAY_ICON_VISIBLE: AtomicBool = AtomicBool::new(true);
 
 fn get_status_item<'a>() -> Option<&'a NSStatusItem> {
     let ptr = STATUS_ITEM_PTR.load(Ordering::Acquire);
@@ -170,6 +171,8 @@ pub(crate) fn build_tray(
 }
 
 pub(crate) fn set_tray_icon_visible(visible: bool) {
+    TRAY_ICON_VISIBLE.store(visible, Ordering::Release);
+
     let mtm = unsafe { MainThreadMarker::new_unchecked() };
     let Some(item) = get_status_item() else {
         return;
@@ -185,6 +188,7 @@ pub(crate) fn set_tray_icon_visible(visible: bool) {
             }
         } else {
             button.setImage(None);
+            button.setTitle(&NSString::from_str(""));
         }
     }
 }
@@ -195,7 +199,11 @@ pub(crate) fn update_tray_title(title: &str) {
         return;
     };
     if let Some(button) = item.button(mtm) {
-        button.setTitle(&NSString::from_str(title));
+        if TRAY_ICON_VISIBLE.load(Ordering::Acquire) {
+            button.setTitle(&NSString::from_str(title));
+        } else {
+            button.setTitle(&NSString::from_str(""));
+        }
     }
 }
 

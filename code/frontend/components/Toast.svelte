@@ -5,7 +5,7 @@
   import { LogicalSize } from "@tauri-apps/api/dpi";
   import { loadPresenceToast, loadPresencePosition, loadPresenceLevel, loadPresenceMaxToasts, loadPresenceShowIcon, loadPresenceLikeIcon, type PresencePosition, type PresenceLevel, type PresenceLikeIcon } from "../lib/settings-store";
   import { emit } from "@tauri-apps/api/event";
-  import { acceptBreak, skipBreakFromFocus } from "../lib/timer";
+  import { acceptBreak, skipBreakFromFocus, extendFocus } from "../lib/timer";
   import { _ } from "svelte-i18n";
 
   interface ToastMessage {
@@ -33,7 +33,7 @@
   let maxToasts = $state(4);
   const DISPLAY_MS = 180_000; // 3 minutes
   const TOAST_H = 58;
-  const FOCUS_DONE_H = 100;
+  const FOCUS_DONE_H = 128;
   const GAP = 6;
   const PAD = 8;
   const WIN_W = 276;
@@ -114,9 +114,16 @@
       const h = winHeight(active);
       await win.setSize(new LogicalSize(WIN_W, h));
       await emit("presence-reposition", position);
-      if (!shown) {
+      if (level === "dynamic") {
+        // dynamic mode: call show() every time to bring window to front
         await win.show();
         shown = true;
+        await emit("presence-level-change", level);
+      } else if (!shown) {
+        await win.show();
+        shown = true;
+        // Re-apply NSWindow level after show() which may reset it
+        await emit("presence-level-change", level);
       }
     }
   }
@@ -173,8 +180,11 @@
     if (level === "always-back") {
       raised = true;
       emit("presence-level-change", "always-front");
+    } else if (level === "dynamic") {
+      // dynamic: bring window to front by re-showing (level stays at 0)
+      win.show();
     }
-    // dynamic: do nothing — let the window stay wherever it is
+    // always-front: do nothing — already in front
   }
 
   function restoreIfNeeded() {
@@ -214,6 +224,11 @@
     dismiss(id);
   }
 
+  async function handleExtend(id: number, minutes: number) {
+    await extendFocus(minutes * 60);
+    dismiss(id);
+  }
+
   onMount(async () => {
     enabled = await loadPresenceToast();
     position = await loadPresencePosition();
@@ -233,14 +248,15 @@
 
     // Handle first-click from native global event monitor
     // First click: bring to front. Second click: dismiss oldest toast.
-    unlistenClick = (await listen("presence-toast-click", () => {
+    unlistenClick = (await listen("presence-toast-click", async () => {
       // Two-click interaction only applies in "always-back" mode:
       // first click raises to front, second click dismisses.
       if (level === "always-back" && needsRaise) {
         if (!raised) {
           raise();
         }
-        win.show();
+        await win.show();
+        await emit("presence-level-change", "always-front");
         needsRaise = false;
         return;
       }
@@ -317,6 +333,11 @@
         <div class="actions">
           <button class="btn primary" onclick={() => handleAcceptBreak(item.id)}>{$_("focus_done.take_break")}</button>
           <button class="btn" onclick={() => handleSkip(item.id)}>{$_("focus_done.skip")}</button>
+        </div>
+        <div class="actions extend-actions">
+          <button class="btn btn-extend" onclick={() => handleExtend(item.id, 1)}>+1m</button>
+          <button class="btn btn-extend" onclick={() => handleExtend(item.id, 3)}>+3m</button>
+          <button class="btn btn-extend" onclick={() => handleExtend(item.id, 5)}>+5m</button>
         </div>
       </div>
     {:else if item.type === "toast"}
@@ -547,6 +568,22 @@
 
   .btn.primary:hover {
     background: #5de8b5;
+  }
+
+  .extend-actions {
+    margin-top: 0;
+    gap: 4px;
+  }
+
+  .btn-extend {
+    padding: 3px 0;
+    font-size: 0.68rem;
+    font-weight: 400;
+    opacity: 0.7;
+  }
+
+  .btn-extend:hover {
+    opacity: 1;
   }
 
 </style>
