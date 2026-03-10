@@ -11,11 +11,13 @@ init({
   initialLocale: "en",
 });
 
-// Load saved locale preference and apply (non-blocking)
-export function applySavedLocale(): void {
-  loadLocale()
-    .then((saved) => {
-      if (saved) locale.set(saved);
-    })
-    .catch(() => {});
+// Load saved locale preference and apply.
+// Returns a promise so callers can await before mounting UI.
+export async function applySavedLocale(): Promise<void> {
+  try {
+    const saved = await loadLocale();
+    if (saved) locale.set(saved);
+  } catch {
+    // ignore — falls back to "en"
+  }
 }
