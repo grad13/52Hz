@@ -21,7 +21,10 @@
     "presence_order_front": "Front",
     "presence_order_dynamic": "Dynamic",
     "presence_order_back": "Back",
-    "presence_max": "Max count"
+    "presence_max": "Max count",
+    "presence_cassette": "Cassette",
+    "presence_cassette_users": "{n} users",
+    "presence_cassette_folder": "Open folder"
   },
   "timer": {
     "resume": "▶ Resume",

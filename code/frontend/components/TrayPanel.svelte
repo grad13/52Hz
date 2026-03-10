@@ -13,6 +13,10 @@
     quitApp,
     getTodaySessions,
     setTrayIconVisible,
+    listCassettes,
+    switchCassette,
+    openCassetteFolder,
+    type CassetteInfo,
   } from "../lib/timer";
   import {
     loadSettings,
@@ -89,6 +93,8 @@
   let presenceMaxToasts = $state(4);
   let presenceShowIcon = $state(true);
   let presenceLikeIcon: PresenceLikeIcon = $state("heart");
+  let cassettes: CassetteInfo[] = $state([]);
+  let currentCassette = $state("");
   let todaySessions = $state(0);
   let tickAudio: HTMLAudioElement | null = null;
   let panelEl: HTMLDivElement;
@@ -181,6 +187,15 @@
     await emitTo("presence-toast", "presence-like-icon-change", v);
   }
 
+  async function handleCassetteChange(path: string) {
+    currentCassette = path;
+    await switchCassette(path);
+  }
+
+  async function handleOpenCassetteFolder() {
+    await openCassetteFolder();
+  }
+
   async function handleHideTrayIconChange(enabled: boolean) {
     hideTrayIcon = enabled;
     await saveHideTrayIcon(enabled);
@@ -233,6 +248,8 @@
     presenceMaxToasts = await loadPresenceMaxToasts();
     presenceShowIcon = await loadPresenceShowIcon();
     presenceLikeIcon = await loadPresenceLikeIcon();
+    cassettes = await listCassettes().catch(() => []);
+    if (cassettes.length > 0) currentCassette = cassettes[0].path;
     tickAudio = new Audio(tickSrc);
     todaySessions = await getTodaySessions();
     const state = await getTimerState();
@@ -280,6 +297,10 @@
     onPresenceShowIconChange={handlePresenceShowIconChange}
     {presenceLikeIcon}
     onPresenceLikeIconChange={handlePresenceLikeIconChange}
+    {cassettes}
+    {currentCassette}
+    onCassetteChange={handleCassetteChange}
+    onOpenCassetteFolder={handleOpenCassetteFolder}
   />
 
   <div class="lang-row">

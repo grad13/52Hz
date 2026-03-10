@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PresencePosition, PresenceLevel, PresenceLikeIcon } from "../lib/settings-store";
+  import type { CassetteInfo } from "../lib/timer";
   import { _ } from "svelte-i18n";
 
   let {
@@ -27,6 +28,10 @@
     onPresenceShowIconChange,
     presenceLikeIcon = "heart" as PresenceLikeIcon,
     onPresenceLikeIconChange,
+    cassettes = [] as CassetteInfo[],
+    currentCassette = "",
+    onCassetteChange,
+    onOpenCassetteFolder,
   }: {
     focusMinutes: number;
     shortBreakMinutes: number;
@@ -52,7 +57,17 @@
     onPresenceShowIconChange: (v: boolean) => void;
     presenceLikeIcon: PresenceLikeIcon;
     onPresenceLikeIconChange: (v: PresenceLikeIcon) => void;
+    cassettes: CassetteInfo[];
+    currentCassette: string;
+    onCassetteChange: (path: string) => void;
+    onOpenCassetteFolder: () => void;
   } = $props();
+
+  let cassetteListOpen = $state(false);
+
+  const currentCassetteTitle = $derived(
+    cassettes.find(c => c.path === currentCassette)?.title ?? "default"
+  );
 
   const positions: { value: PresencePosition; label: string }[] = [
     { value: "top-left", label: "↖" },
@@ -235,6 +250,36 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="sub-group">
+        <span class="sub-group-label">{$_("settings.presence_cassette")}</span>
+        <div class="cassette-card" onclick={() => cassetteListOpen = !cassetteListOpen} onkeydown={(e) => { if (e.key === 'Enter') cassetteListOpen = !cassetteListOpen; }} role="button" tabindex="0">
+          <div class="cassette-tape">
+            <div class="cassette-reel"></div>
+            <div class="cassette-reel"></div>
+          </div>
+          <div class="cassette-info">
+            <div class="cassette-title">{currentCassetteTitle}</div>
+          </div>
+          <span class="cassette-chevron" class:open={cassetteListOpen}>›</span>
+        </div>
+        {#if cassetteListOpen}
+          <div class="cassette-list">
+            {#each cassettes as c}
+              <button
+                class="cassette-item"
+                class:active={c.path === currentCassette}
+                onclick={() => { onCassetteChange(c.path); cassetteListOpen = false; }}
+              >
+                <span class="cassette-item-radio"></span>
+                <span class="cassette-item-name">{c.title}</span>
+              </button>
+            {/each}
+            <button class="cassette-folder-btn" onclick={(e) => { e.stopPropagation(); onOpenCassetteFolder(); }}>
+              📂 {$_("settings.presence_cassette_folder")}
+            </button>
+          </div>
+        {/if}
       </div>
     {/if}
   </div>
@@ -493,5 +538,136 @@
     color: #1a1a2e;
     border-color: var(--success);
     font-weight: 600;
+  }
+
+  /* Cassette card */
+  .cassette-card {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    margin-left: 0.5rem;
+    background: rgba(108, 92, 231, 0.08);
+    border: 1px solid rgba(108, 92, 231, 0.15);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color 150ms;
+  }
+
+  .cassette-card:hover {
+    border-color: rgba(108, 92, 231, 0.3);
+  }
+
+  .cassette-tape {
+    width: 28px;
+    height: 18px;
+    background: var(--bg-elevated);
+    border-radius: 3px;
+    border: 1px solid rgba(108, 92, 231, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .cassette-reel {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: 1px solid var(--accent-light);
+  }
+
+  .cassette-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cassette-title {
+    font-size: 0.7rem;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cassette-chevron {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    transition: transform 150ms;
+    flex-shrink: 0;
+  }
+
+  .cassette-chevron.open {
+    transform: rotate(90deg);
+  }
+
+  .cassette-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-left: 0.5rem;
+    margin-top: 0.15rem;
+  }
+
+  .cassette-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 150ms;
+    font-size: 0.65rem;
+    color: var(--text-tertiary);
+    border: none;
+    background: transparent;
+    text-align: left;
+  }
+
+  .cassette-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .cassette-item.active {
+    color: var(--accent-light);
+  }
+
+  .cassette-item-radio {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1px solid var(--text-tertiary);
+    flex-shrink: 0;
+  }
+
+  .cassette-item.active .cassette-item-radio {
+    border-color: var(--accent-light);
+    background: var(--accent-light);
+    box-shadow: inset 0 0 0 2px var(--bg);
+  }
+
+  .cassette-item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cassette-folder-btn {
+    padding: 3px 6px;
+    font-size: 0.6rem;
+    color: var(--text-tertiary);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    border-top: 1px solid var(--border);
+    margin-top: 2px;
+    padding-top: 5px;
+    transition: color 150ms;
+  }
+
+  .cassette-folder-btn:hover {
+    color: var(--text-secondary);
   }
 </style>
