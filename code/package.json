@@ -2,6 +2,11 @@
   "name": "hz52",
   "private": true,
   "version": "0.6.2",
+  "license": "BUSL-1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grad13/52Hz.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

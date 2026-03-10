@@ -2,9 +2,9 @@
 name = "hz52"
 version = "0.6.2"
 description = "A break reminder app inspired by DeskRest"
-authors = ["you"]
-license = ""
-repository = ""
+authors = []
+license = "BUSL-1.1"
+repository = "https://github.com/grad13/52Hz"
 edition = "2021"
 rust-version = "1.77.2"
 

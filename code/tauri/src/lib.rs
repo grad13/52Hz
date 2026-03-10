@@ -88,7 +88,9 @@ fn spawn_timer(app_handle: tauri::AppHandle, state: SharedTimerState) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let timer_settings = if std::env::var("FIFTYTWOHZ_TEST_FAST_TIMER").is_ok() {
-        eprintln!("[52Hz] Using fast timer settings for testing");
+        if cfg!(debug_assertions) {
+            eprintln!("[52Hz] Using fast timer settings for testing");
+        }
         TimerSettings {
             focus_duration_secs: 5,
             short_break_duration_secs: 3,
@@ -105,7 +107,9 @@ pub fn run() {
         s.tray_title()
     };
 
-    eprintln!("[52Hz] Starting...");
+    if cfg!(debug_assertions) {
+        eprintln!("[52Hz] Starting...");
+    }
     tauri::Builder::default()
         .plugin(tauri_plugin_positioner::init())
         .plugin(tauri_plugin_notification::init())
