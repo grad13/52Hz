@@ -226,6 +226,12 @@ pub fn run() {
                 .skip_taskbar(true)
                 .build()?;
 
+                // Make toast window click-through so it doesn't block
+                // screenshot drag or other mouse interactions on
+                // transparent areas. The global click monitor in
+                // setup_toast_click_monitor handles interaction.
+                toast_window.set_ignore_cursor_events(true)?;
+
                 #[cfg(target_os = "macos")]
                 macos_window::setup_toast_transparency(
                     &toast_window,
