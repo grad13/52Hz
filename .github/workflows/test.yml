@@ -1,0 +1,26 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  rust-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit tests
+        run: cd code/tauri && cargo test --lib
+      - name: Integration tests
+        run: cd code/tauri && cargo test --test app_lifecycle -- --test-threads=1
+
+  frontend-check:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: cd code && npm ci
+      - name: Type check
+        run: cd code && npx svelte-check

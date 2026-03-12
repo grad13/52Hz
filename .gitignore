@@ -9,3 +9,4 @@ _*
 **/.*
 !.gitignore
 !.face/
+!.github/
