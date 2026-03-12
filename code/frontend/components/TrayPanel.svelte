@@ -103,12 +103,12 @@
   async function handleLocaleChange(loc: AppLocale) {
     locale.set(loc);
     await saveLocale(loc);
-    await syncPanelHeight();
   }
 
   let unlistenTick: (() => void) | null = null;
   let unlistenPhaseChanged: (() => void) | null = null;
   let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+  let resizeObserver: ResizeObserver | null = null;
 
   function handleTick(state: TimerState) {
     timerState = state;
@@ -140,19 +140,20 @@
     await saveTickVolume(volume);
   }
 
+  let lastSyncedH = 0;
   async function syncPanelHeight() {
-    await tick();
-    if (panelEl) {
-      const h = panelEl.scrollHeight;
-      await win.setSize(new LogicalSize(320, h));
-    }
+    if (!panelEl) return;
+    const h = panelEl.scrollHeight;
+    if (h === lastSyncedH) return;
+    lastSyncedH = h;
+    const maxH = Math.floor(window.screen.availHeight * 0.85);
+    await win.setSize(new LogicalSize(320, Math.min(h, maxH)));
   }
 
   async function handlePresenceToastChange(enabled: boolean) {
     presenceToast = enabled;
     await savePresenceToast(enabled);
     await emitTo("presence-toast", "presence-toast-toggle", enabled);
-    await syncPanelHeight();
   }
 
   async function handlePresencePositionChange(pos: PresencePosition) {
@@ -258,12 +259,15 @@
     unlistenPhaseChanged = (await onPhaseChanged(async () => {
       todaySessions = await getTodaySessions();
     })) as unknown as () => void;
-    await syncPanelHeight();
+    // Auto-sync window height whenever panel content changes size
+    resizeObserver = new ResizeObserver(() => syncPanelHeight());
+    resizeObserver.observe(panelEl);
   });
 
   onDestroy(() => {
     unlistenTick?.();
     unlistenPhaseChanged?.();
+    resizeObserver?.disconnect();
   });
 </script>
 
@@ -326,6 +330,7 @@
     gap: 0.5rem;
     background: var(--bg);
     border-radius: 10px;
+    overflow-y: auto;
   }
 
   .divider {
