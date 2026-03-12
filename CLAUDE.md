@@ -38,6 +38,7 @@ Built with Tauri v2 + Svelte 5 + Rust.
 │
 ├── _documents/              # Documentation
 │   ├── spec/ plan/ reference/ reports/ archive/
+│   └── handoff/            # 他プロジェクトからの引き継ぎ指示
 │
 └── externals/              # User-provided reference materials
 ```
@@ -95,6 +96,12 @@ cd code && npx svelte-check
 - `NSApplicationPresentationOptions` — UI lock during breaks (HideDock, HideMenuBar, DisableProcessSwitching, DisableHideApplication, DisableForceQuit)
 - `activateIgnoringOtherApps` — focus management for tray popup
 - `NSWindow::setLevel(1000)` + `NSWindowCollectionBehavior` — fullscreen overlay display
+
+## Handoff
+
+- `_documents/handoff/` には他プロジェクトからの引き継ぎ指示が置かれることがある
+- セッション開始時にこのディレクトリを確認し、未対応の handoff があれば内容を把握する
+- 対応完了後は handoff ファイルに完了記録を追記するか、`_documents/archive/` に移動する
 
 ## Timer Architecture
 
