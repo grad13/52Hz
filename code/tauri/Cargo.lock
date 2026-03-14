@@ -1695,7 +1695,7 @@ dependencies = [
 
 [[package]]
 name = "hz52"
-version = "0.7.0"
+version = "0.7.2"
 dependencies = [
  "block2",
  "chrono",
