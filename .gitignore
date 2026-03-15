@@ -1,7 +1,11 @@
 **/node_modules/
+**/.DS_Store
+**/__pycache__/
 code/dist/
 code/tauri/target/
 code/tauri/gen/schemas
+code/_prototype/
+code/_archive/
 
 # Private (not tracked on main)
 CLAUDE.md
