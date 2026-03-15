@@ -29,7 +29,7 @@ git checkout local -- \
   tests/ \
   documents/spec/ \
   documents/cassette-spec.md \
-  .face/ \
+  code/.face/ \
   .github/ \
   README.md \
   LICENSE
