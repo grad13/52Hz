@@ -3,10 +3,18 @@ code/node_modules/
 code/dist/
 code/tauri/target/
 code/tauri/gen/schemas
-_*
-.*
-**/_*
-**/.*
-!.gitignore
-!.face/
-!.github/
+
+# Private (not tracked on main)
+CLAUDE.md
+.claude/
+project-meta.json
+documents/plan/
+documents/handoff/
+documents/reference/
+documents/reports/
+documents/archive/
+documents/CHANGELOG.md
+.refactor-*/
+.code-to-*/
+.spec-to-*/
+.tests-to-*/
