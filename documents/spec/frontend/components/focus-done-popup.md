@@ -1,10 +1,10 @@
 ---
 Created: 2026-03-01
-Updated: 2026-03-01
+Updated: 2026-03-14
 Verified: -
-Deprecated: -
+Deprecated: 2026-03-14
 Format: spec-v2.1
-Source: frontend/components/FocusDonePopup.svelte
+Source: (deleted) frontend/components/FocusDonePopup.svelte
 ---
 
 # FocusDonePopup spec
@@ -159,7 +159,11 @@ None. No listener registration, so no cleanup processing is needed.
 - Window lifecycle management (creation, display) is handled by the Rust side (`lib.rs`).
 - The popup window is expected to be created by the Rust side when the Focus phase completes; this component itself does not control when the window is created.
 
-### 6.3 Testing Considerations
+### 6.3 Deprecation Notice
+
+This component (`FocusDonePopup.svelte`) has been deleted. The focus-done UI has been migrated to a toast card within `Toast.svelte`. The Rust side now emits `"focus-done-toast"` (via `event_handlers.rs`) instead of creating a `WebviewWindow`. The toast card is rendered inline in the `Toast.svelte` stack.
+
+### 6.4 Testing Considerations
 
 - Whether `acceptBreak()` is called when the "Take a break" button is pressed, and the window is subsequently closed
 - Whether `skipBreakFromFocus()` is called when the "Skip" button is pressed, and the window is subsequently closed
