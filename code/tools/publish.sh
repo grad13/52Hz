@@ -46,5 +46,21 @@ if ! git diff --cached --quiet; then
 fi
 
 git push origin main
+
+# タグが local のコミットを指している場合、main のコミットに付け替えて push
+for tag in $(git tag --points-at local 2>/dev/null); do
+  echo "Re-tagging $tag to main..."
+  git tag -d "$tag"
+  git tag "$tag" main
+done
+
+# main に付いている未 push のタグを push
+for tag in $(git tag --merged main); do
+  if ! git ls-remote --tags origin "refs/tags/$tag" | grep -q "$tag"; then
+    echo "Pushing tag $tag..."
+    git push origin "$tag"
+  fi
+done
+
 git checkout local
 echo "Published successfully."
