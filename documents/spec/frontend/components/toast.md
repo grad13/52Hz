@@ -14,7 +14,7 @@ Source: frontend/components/Toast.svelte
 Root component of a transparent overlay window that manages a stack of presence notification cards and focus-done action cards.
 
 - Runtime: JS-ESM (Svelte 5 component)
-- File: `code/frontend/components/Toast.svelte`
+- File: `code/app/frontend/components/Toast.svelte`
 - Props: None (root component of the toast window)
 
 ## 2. Responsibility

@@ -15,7 +15,7 @@ Source: tauri/src/commands.rs
 |------|-------|
 | Runtime | Rust (Tauri v2) |
 | Test Type | Integration (process launch + IPC invocation) |
-| Target File | `code/tauri/src/commands.rs` (245 lines) |
+| Target File | `code/app/tauri/src/commands.rs` (245 lines) |
 | Responsibility | A thin command layer that receives IPC calls from the frontend and performs timer state manipulation, UI control, and app termination |
 
 ## 1. Contract

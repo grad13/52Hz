@@ -14,7 +14,7 @@ Source: tauri/src/overlay.rs
 | Item | Value |
 |---|---|
 | Module | `overlay` |
-| File | `code/tauri/src/overlay.rs` |
+| File | `code/app/tauri/src/overlay.rs` |
 | Runtime | Rust (Tauri v2) |
 | Lines | 102 |
 | Responsibility | Creation/destruction of the break overlay window and macOS UI lock control |

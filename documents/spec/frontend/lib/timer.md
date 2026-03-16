@@ -212,7 +212,7 @@ Listener functions return `Promise<UnlistenFn>`. The component's `onDestroy` / c
 
 - `remainingSecs` and `formatTime` are pure functions and are easy to unit test
 - invoke wrappers and listeners depend on Tauri IPC and require mocking or integration tests
-- The backend timer logic itself has 69 unit tests in `code/tauri/src/timer.rs`
+- The backend timer logic itself has 69 unit tests in `code/app/tauri/src/timer.rs`
 
 ### Caveats
 

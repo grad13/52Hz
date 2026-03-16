@@ -14,7 +14,7 @@ Source: frontend/components/TimerControls.svelte
 A presentational component providing UI button groups for timer pause/resume and stop operations.
 
 - Runtime: JS-ESM (Svelte 5 component)
-- Path: `code/frontend/components/TimerControls.svelte`
+- Path: `code/app/frontend/components/TimerControls.svelte`
 - Lines: 49
 
 ## 2. Responsibility

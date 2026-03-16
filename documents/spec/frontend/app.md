@@ -14,7 +14,7 @@ Source: frontend/App.svelte
 | Field | Value |
 |-------|-------|
 | Runtime | JS-ESM (Svelte 5 component) |
-| File | `code/frontend/App.svelte` |
+| File | `code/app/frontend/App.svelte` |
 | Role | Application root / view router |
 | Lines | 17 |
 

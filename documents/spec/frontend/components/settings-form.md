@@ -17,7 +17,7 @@ A timer settings input form UI component.
 A logic-free, purely Presentational component that arranges 4 numeric input fields and 4 toggles in a 2x2 grid, with a volume slider and a dedicated presence section.
 
 - Runtime: JS-ESM (Svelte 5 component)
-- File: `code/frontend/components/SettingsForm.svelte`
+- File: `code/app/frontend/components/SettingsForm.svelte`
 
 ## 2. Responsibility
 

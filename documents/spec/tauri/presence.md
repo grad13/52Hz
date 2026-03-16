@@ -15,7 +15,7 @@ Runtime: Rust
 
 | Item | Value |
 |---|---|
-| File | `code/tauri/src/presence.rs` |
+| File | `code/app/tauri/src/presence.rs` |
 | Responsibility | A scheduler that reads messages from .hz cassettes (SQLite) along a weekly time-tape and emits them to the frontend |
 | Lines | ~343 (main ~231, tests ~112) |
 | Visibility | `pub` -- `PresenceMessage`, `ensure_cassette_dir`, `list_cassettes`, `spawn` |

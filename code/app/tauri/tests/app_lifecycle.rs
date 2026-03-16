@@ -1,0 +1,1 @@
+../../../../tests/integration/app_lifecycle.rs

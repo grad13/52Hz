@@ -15,7 +15,7 @@ Runtime: Rust
 
 | Item | Value |
 |---|---|
-| File | `code/tauri/src/tray.rs` |
+| File | `code/app/tauri/src/tray.rs` |
 | Responsibility | Building the macOS menu bar icon, click event handling, and title updates |
 | Lines | ~265 (main ~204, tests ~61) |
 | Visibility | `pub(crate)` -- crate-internal only |

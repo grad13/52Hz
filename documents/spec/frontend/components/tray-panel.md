@@ -14,7 +14,7 @@ Source: frontend/components/TrayPanel.svelte
 Root component of the tray popup window. Integrates timer state display, pause/resume/stop operations, and settings editing/saving into a single panel.
 
 - **Runtime**: JS-ESM (Svelte 5 component)
-- **File**: `code/frontend/components/TrayPanel.svelte`
+- **File**: `code/app/frontend/components/TrayPanel.svelte`
 
 ## 2. Responsibility
 

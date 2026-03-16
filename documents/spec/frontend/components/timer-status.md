@@ -15,7 +15,7 @@ A Svelte 5 component that visually displays the current timer state.
 A pure display component consisting of three elements: phase name, remaining time, and a paused badge.
 
 - Runtime: JS-ESM (Svelte 5 component)
-- File: `code/frontend/components/TimerStatus.svelte`
+- File: `code/app/frontend/components/TimerStatus.svelte`
 - Lines: 72
 
 ## 2. Responsibility
