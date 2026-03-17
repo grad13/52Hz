@@ -1,3 +1,4 @@
+// meta: updated=2026-03-16 07:20 checked=-
 import { defineConfig } from 'vitest/config';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import path from 'path';

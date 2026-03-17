@@ -1,4 +1,5 @@
 #!/bin/bash
+# meta: updated=2026-03-17 07:42 checked=-
 set -e
 
 current=$(git branch --show-current)
@@ -47,15 +48,19 @@ fi
 
 git push origin main
 
-# タグが local のコミットを指している場合、main のコミットに付け替える
+# タグが local のコミットを指している場合、main のコミットに付け替えて push
+retagged=()
 for tag in $(git tag --points-at local 2>/dev/null); do
   echo "Re-tagging $tag to main..."
   git tag -d "$tag"
   git tag "$tag" main
+  retagged+=("$tag")
 done
 
-# 未 push のタグを一括 push
-git push origin --tags
+for tag in "${retagged[@]}"; do
+  echo "Pushing tag $tag..."
+  git push origin "$tag"
+done
 
 git checkout local
 echo "Published successfully."

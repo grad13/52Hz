@@ -1,7 +1,6 @@
 ---
-Created: 2026-02-26
-Updated: 2026-03-03
-Verified: -
+updated: 2026-03-16 07:20
+checked: -
 Deprecated: -
 Format: spec-v2.1
 Source: frontend/components/TimerStatus.svelte

@@ -1,3 +1,4 @@
+// meta: updated=2026-03-16 07:20 checked=-
 import { addMessages, init, locale } from "svelte-i18n";
 import { loadLocale } from "./settings-store";
 import en from "../locales/en.json";

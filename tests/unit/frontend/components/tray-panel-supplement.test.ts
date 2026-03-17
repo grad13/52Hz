@@ -1,7 +1,5 @@
+// meta: updated=2026-03-11 06:10 checked=-
 // Supplement: L1/L2 gaps from code-to-tests
-// @created: 2026-02-26
-// @updated: 2026-02-26
-// @checked: -
 /**
  * TrayPanel - Supplement Tests
  *

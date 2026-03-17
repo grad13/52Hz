@@ -1,7 +1,6 @@
 ---
-Created: 2026-02-26
-Updated: 2026-03-08
-Verified: -
+updated: 2026-03-15 09:02
+checked: -
 Retired: -
 Format: spec-v2.1
 Source: tauri/src/lib.rs

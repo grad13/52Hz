@@ -1,3 +1,4 @@
+// meta: updated=2026-03-14 11:40 checked=-
 use serial_test::serial;
 use std::io::Read;
 use std::process::{Child, Command, Stdio};

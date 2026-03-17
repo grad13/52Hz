@@ -1,3 +1,4 @@
+// meta: updated=2026-03-16 07:20 checked=-
 use std::process::Command;
 
 /// Supported media apps for AppleScript control.

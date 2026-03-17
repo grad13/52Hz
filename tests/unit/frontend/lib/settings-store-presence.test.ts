@@ -1,3 +1,4 @@
+// meta: updated=2026-03-07 14:55 checked=-
 /**
  * settings-store - Presence & Tick Volume Unit Tests
  *

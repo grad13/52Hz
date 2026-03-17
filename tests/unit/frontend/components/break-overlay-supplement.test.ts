@@ -1,6 +1,4 @@
-// @created: 2026-03-02
-// @updated: 2026-03-02
-// @checked: -
+// meta: updated=2026-03-09 23:56 checked=-
 /**
  * BreakOverlay - Supplement Tests (onDestroy unlisten)
  *

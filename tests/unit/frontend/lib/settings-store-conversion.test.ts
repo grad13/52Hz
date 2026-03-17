@@ -1,3 +1,4 @@
+// meta: updated=2026-03-07 06:55 checked=-
 /**
  * settings-store - Conversion Unit Tests
  *

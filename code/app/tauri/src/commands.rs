@@ -1,3 +1,4 @@
+// meta: updated=2026-03-16 07:20 checked=-
 use crate::timer::{PhaseEvent, TimerSettings};
 use crate::{overlay, SharedTimerState};
 use tauri::{Emitter, Manager};

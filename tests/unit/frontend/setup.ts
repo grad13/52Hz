@@ -1,3 +1,4 @@
+// meta: updated=2026-03-13 00:38 checked=-
 /**
  * Vitest setup for frontend tests.
  *

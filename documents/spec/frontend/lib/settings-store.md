@@ -1,8 +1,6 @@
 ---
-Created: 2026-02-26
-Updated: 2026-03-08
-
-Verified: -
+updated: 2026-03-15 09:02
+checked: -
 Deprecated: -
 Format: spec-v2.1
 Source: frontend/lib/settings-store.ts

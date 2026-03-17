@@ -1,7 +1,6 @@
 ---
-Created: 2026-03-01
-Updated: 2026-03-14
-Verified: -
+updated: 2026-03-15 09:02
+checked: -
 Deprecated: 2026-03-14
 Format: spec-v2.1
 Source: (deleted) frontend/components/FocusDonePopup.svelte

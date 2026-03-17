@@ -1,7 +1,6 @@
 ---
-Created: 2026-02-26
-Updated: 2026-03-07
-Verified: -
+updated: 2026-03-16 07:20
+checked: -
 Retired: -
 Format: spec-v2.1
 Source: tauri/src/tray.rs

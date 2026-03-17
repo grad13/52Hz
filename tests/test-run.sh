@@ -1,4 +1,5 @@
 #!/bin/bash
+# meta: updated=2026-02-28 02:47 checked=-
 # テスト用スクリプト: tauri devを経由せず直接バイナリを実行
 set -e
 

@@ -1,4 +1,4 @@
-// meta: checked=2026-03-07
+// meta: updated=2026-03-16 07:20 checked=2026-03-07
 use crate::timer::TimerSettings;
 use crate::tray;
 use crate::SharedTimerState;

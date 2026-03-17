@@ -1,4 +1,4 @@
-// meta: checked=2026-03-07
+// meta: updated=2026-03-16 07:20 checked=2026-03-07
 use std::ffi::c_void;
 use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 use std::sync::OnceLock;
@@ -188,7 +188,6 @@ pub(crate) fn set_tray_icon_visible(visible: bool) {
             }
         } else {
             button.setImage(None);
-            button.setTitle(&NSString::from_str(""));
         }
     }
 }
@@ -199,11 +198,7 @@ pub(crate) fn update_tray_title(title: &str) {
         return;
     };
     if let Some(button) = item.button(mtm) {
-        if TRAY_ICON_VISIBLE.load(Ordering::Acquire) {
-            button.setTitle(&NSString::from_str(title));
-        } else {
-            button.setTitle(&NSString::from_str(""));
-        }
+        button.setTitle(&NSString::from_str(title));
     }
 }
 

@@ -1,7 +1,6 @@
 ---
-Created: 2026-02-26
-Updated: 2026-03-02
-Verified: 2026-03-02
+updated: 2026-03-15 09:02
+checked: 2026-03-02 00:00
 Retired: -
 Format: spec-v2.1
 Source: tauri/src/timer.rs

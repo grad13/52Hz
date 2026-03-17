@@ -1,7 +1,6 @@
 ---
-Created: 2026-03-06
-Updated: 2026-03-08
-Verified: -
+updated: 2026-03-16 07:20
+checked: -
 Deprecated: -
 Format: spec-v2.1
 Source: frontend/components/Toast.svelte

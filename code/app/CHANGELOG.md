@@ -1,6 +1,14 @@
+---
+updated: 2026-03-16 07:20
+checked: -
+---
+
 # Changelog
 
-## [Unreleased]
+## [0.7.4] - 2026-03-17
+
+### Fixed
+- Tray icon hide no longer hides the timer title — only the icon image is removed
 
 ### Added
 - i18n support with English as default language and Japanese translation

@@ -1,3 +1,4 @@
+<!-- meta: updated=2026-03-16 07:20 checked=- -->
 <script lang="ts">
   import type { PresencePosition, PresenceLevel, PresenceLikeIcon } from "../lib/settings-store";
   import type { CassetteInfo } from "../lib/timer";

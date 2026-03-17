@@ -1,3 +1,4 @@
+<!-- meta: updated=2026-03-17 06:58 checked=- -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { listen } from "@tauri-apps/api/event";

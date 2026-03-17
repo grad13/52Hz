@@ -1,3 +1,4 @@
+// meta: updated=2026-03-16 07:20 checked=-
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
