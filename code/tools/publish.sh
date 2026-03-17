@@ -48,9 +48,10 @@ fi
 
 git push origin main
 
-# タグが local のコミットを指している場合、main のコミットに付け替えて push
+# タグが local 専用コミットを指している場合、main のコミットに付け替えて push
+# --points-at local だと HEAD のみ。--merged local --no-merged main で全対象を検出
 retagged=()
-for tag in $(git tag --points-at local 2>/dev/null); do
+for tag in $(git tag --merged local --no-merged main 2>/dev/null); do
   echo "Re-tagging $tag to main..."
   git tag -d "$tag"
   git tag "$tag" main
