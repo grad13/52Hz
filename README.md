@@ -8,6 +8,10 @@
   A macOS menu bar break reminder app, inspired by DeskRest.
 </p>
 
+<p align="center">
+  <a href="https://orbital-q.sakura.ne.jp/">ORBITAL-Q</a>
+</p>
+
 ## Features
 
 - <img src="code/tauri/icons/tray-icon.png" width="14" alt="tray icon"> Lives in your menu bar -- no Dock icon, no clutter
