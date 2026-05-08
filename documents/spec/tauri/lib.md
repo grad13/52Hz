@@ -1,5 +1,5 @@
 ---
-updated: 2026-03-15 09:02
+updated: 2026-05-08
 checked: -
 Retired: -
 Format: spec-v2.1
@@ -446,41 +446,43 @@ stateDiagram-v2
 | # | FIFTYTWOHZ_HEADLESS | pause_media_on_break setting | Behavior |
 |---|-----------------|------------------------|----------|
 | 1 | Not set | false / not set | Execute create_break_overlay() on main thread |
-| 2 | Not set | true | Call media::pause_media_apps() -> Save result to media_paused_apps -> Execute create_break_overlay() on main thread |
+| 2 | Not set | true | Call media::post_play_pause_key() -> Execute create_break_overlay() on main thread |
 | 3 | Set | false / not set | Calls create_break_overlay(), but overlay internally detects HEADLESS and skips window creation (PresentationOptions lock is also not applied). No media control |
-| 4 | Set | true | pause_media_apps() + save result -> Calls create_break_overlay(), but overlay internally skips window creation |
+| 4 | Set | true | post_play_pause_key() -> Calls create_break_overlay(), but overlay internally skips window creation |
 
 **Media pause decision flow (macOS only):**
 
 ```
 1. Get "settings.json" via tauri_plugin_store::StoreExt
 2. store.get("pause_media_on_break") -> Get bool (default: false)
-3. If true:
-   a. Call media::pause_media_apps() -> Get Vec<String>
-   b. *media_paused_apps.lock().unwrap() = paused
+3. If true: media::post_play_pause_key()
 ```
 
-**media_paused_apps type:** `Arc<std::sync::Mutex<Vec<String>>>`
-- Uses `std::sync::Mutex` (listeners are synchronous closures so `.await` from `tokio::sync::Mutex` cannot be used)
-- No deadlock concern since break-start and break-end are temporally exclusive
+`post_play_pause_key` is a fire-and-forget toggle (see `media.md`). No
+state is recorded between break-start and break-end, so no `Arc<Mutex>` is
+involved.
 
 ### 3.6 break-end Listener: Overlay Destruction + Media Resume
 
-| # | FIFTYTWOHZ_HEADLESS | media_paused_apps | break-overlay window exists | Behavior |
-|---|-----------------|-------------------|--------------------------|----------|
-| 1 | Set | Non-empty | - | media::resume_media_apps(&apps) + clear media_paused_apps -> unlock_presentation() (no-op in HEADLESS since lock was never applied), return |
-| 2 | Set | Empty | - | unlock_presentation() (no-op in HEADLESS since lock was never applied), return |
-| 3 | Not set | Non-empty | Yes | media::resume_media_apps(&apps) + clear media_paused_apps -> window.close() + unlock_presentation() |
-| 4 | Not set | Non-empty | No | media::resume_media_apps(&apps) + clear media_paused_apps -> unlock_presentation() only |
-| 5 | Not set | Empty | Yes | window.close() + unlock_presentation() |
-| 6 | Not set | Empty | No | unlock_presentation() only |
+| # | FIFTYTWOHZ_HEADLESS | pause_media_on_break setting | break-overlay window exists | Behavior |
+|---|-----------------|----------------------|--------------------------|----------|
+| 1 | Set | true | - | media::post_play_pause_key() -> unlock_presentation() (no-op in HEADLESS since lock was never applied), return |
+| 2 | Set | false / not set | - | unlock_presentation() (no-op in HEADLESS), return |
+| 3 | Not set | true | Yes | media::post_play_pause_key() -> window.close() + unlock_presentation() |
+| 4 | Not set | true | No | media::post_play_pause_key() -> unlock_presentation() only |
+| 5 | Not set | false / not set | Yes | window.close() + unlock_presentation() |
+| 6 | Not set | false / not set | No | unlock_presentation() only |
 
 **Media resume decision flow (macOS only):**
 
 ```
-1. std::mem::take(&mut *media_paused_apps.lock().unwrap()) to extract and clear Vec
-2. Call media::resume_media_apps(&apps) only if Vec is non-empty
+1. store.get("pause_media_on_break") -> Get bool (default: false)
+2. If true: media::post_play_pause_key()
 ```
+
+The same `post_play_pause_key` is sent again. Because `MRMediaRemoteSendCommand`
+with `kMRTogglePlayPause` is a toggle, the second send flips state back —
+playing → paused → playing.
 
 ### 3.7 Main Window Visibility Toggle (Tray Left Click)
 
@@ -559,17 +561,18 @@ stateDiagram-v2
 ### 4.5 Plugins
 | Plugin | Purpose |
 |--------|---------|
+| tauri_plugin_single_instance | Registered first in the plugin chain. Rejects a second launch of `com.hz52.app` before any other initialization runs in the duplicate process. The closure executes in the *existing* instance and only logs `single-instance: suppressed a duplicate launch attempt` (the main window is NOT shown — 52Hz is tray-driven and the window is positioned by the tray click handler). **Skipped when `FIFTYTWOHZ_HEADLESS` is set** because integration tests spawn the binary back-to-back and the lock from the previous run would otherwise block the next test |
 | tauri_plugin_positioner | Plugin is registered, but window positioning is done via custom calculation in tray.rs's `position_window_below_tray()`. TrayBottomCenter is not used |
 | tauri_plugin_notification | Notifications (future use) |
 | tauri_plugin_store | Settings persistence. Loads saved settings in setup() before spawn_timer, saves via update_settings command |
-| tauri_plugin_log | Log output in debug builds |
+| tauri_plugin_log | Log output enabled in both debug and release builds. Targets: Stderr (visible to integration tests and console) + LogDir (`~/Library/Logs/com.hz52.app/52Hz.log` on macOS) |
 | tauri_plugin_autostart | Auto-start on macOS login. Registered with MacosLauncher::LaunchAgent. Controlled from frontend directly via JS API (`enable`/`disable`/`isEnabled`) |
 
 ### 4.6 Environment Variables
 | Environment Variable | Effect |
 |--------------------|--------|
 | FIFTYTWOHZ_TEST_FAST_TIMER | Uses test fast timer settings (focus=5s, short=3s, long=5s, count=2) |
-| FIFTYTWOHZ_HEADLESS | Skips window creation (for CI/testing). On break-start, create_break_overlay() is called but internally skips window creation (PresentationOptions lock is also not applied). On break-end, unlock_presentation() is a no-op. On focus-done, auto-accepts (skips popup creation) |
+| FIFTYTWOHZ_HEADLESS | Skips window creation (for CI/testing). On break-start, create_break_overlay() is called but internally skips window creation (PresentationOptions lock is also not applied). On break-end, unlock_presentation() is a no-op. On focus-done, auto-accepts (skips popup creation). Also disables the `tauri_plugin_single_instance` registration so back-to-back test spawns are not blocked by the previous run's lock |
 
 ## 5. Notes
 

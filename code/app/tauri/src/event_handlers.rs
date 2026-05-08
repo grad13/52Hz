@@ -19,7 +19,9 @@ pub(super) fn register_listeners(app: &tauri::App, timer_state: SharedTimerState
 fn register_break_start(app: &tauri::App) {
     let app_handle = app.handle().clone();
     app.listen("break-start", move |_event| {
-        log::info!("break-start → opening overlay");
+        if cfg!(debug_assertions) {
+            eprintln!("[52Hz] break-start → opening overlay");
+        }
 
         #[cfg(target_os = "macos")]
         {
@@ -31,7 +33,9 @@ fn register_break_start(app: &tauri::App) {
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
             if should_pause {
-                log::info!("break-start → posting Play/Pause key");
+                if cfg!(debug_assertions) {
+                    eprintln!("[52Hz] break-start → posting Play/Pause key");
+                }
                 media::post_play_pause_key();
             }
         }
@@ -46,7 +50,9 @@ fn register_break_start(app: &tauri::App) {
 fn register_break_end(app: &tauri::App) {
     let app_handle = app.handle().clone();
     app.listen("break-end", move |_event| {
-        log::info!("break-end → closing overlay");
+        if cfg!(debug_assertions) {
+            eprintln!("[52Hz] break-end → closing overlay");
+        }
 
         #[cfg(target_os = "macos")]
         {
@@ -58,7 +64,9 @@ fn register_break_end(app: &tauri::App) {
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
             if should_pause {
-                log::info!("break-end → posting Play/Pause key");
+                if cfg!(debug_assertions) {
+                    eprintln!("[52Hz] break-end → posting Play/Pause key");
+                }
                 media::post_play_pause_key();
             }
         }

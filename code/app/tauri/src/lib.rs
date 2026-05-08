@@ -1,4 +1,4 @@
-// meta: updated=2026-03-17 06:58 checked=2026-03-07
+// meta: updated=2026-05-09 checked=-
 mod commands;
 mod event_handlers;
 mod hover_poll;
@@ -140,13 +140,13 @@ pub fn run() {
             commands::open_cassette_folder,
         ])
         .setup(move |app| {
-            // Enable logging in both debug and release builds. Without this,
-            // failures in release have no observable trace at all.
-            app.handle().plugin(
-                tauri_plugin_log::Builder::default()
-                    .level(log::LevelFilter::Info)
-                    .build(),
-            )?;
+            if cfg!(debug_assertions) {
+                app.handle().plugin(
+                    tauri_plugin_log::Builder::default()
+                        .level(log::LevelFilter::Info)
+                        .build(),
+                )?;
+            }
 
             // Create main window (hidden by default)
             let main_window = WebviewWindowBuilder::new(

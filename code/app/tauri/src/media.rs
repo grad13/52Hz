@@ -78,8 +78,65 @@ pub fn post_play_pause_key() {
     let send_command: SendCommand = unsafe { std::mem::transmute(func_ptr) };
 
     let ok = unsafe { send_command(MR_TOGGLE_PLAY_PAUSE, std::ptr::null_mut()) };
-    log::info!(
-        "media: MRMediaRemoteSendCommand(TogglePlayPause) → {}",
-        ok
-    );
+    if cfg!(debug_assertions) {
+        eprintln!(
+            "[52Hz] media: MRMediaRemoteSendCommand(TogglePlayPause) → {}",
+            ok
+        );
+    }
+}
+
+#[cfg(all(test, target_os = "macos"))]
+mod tests {
+    use super::*;
+
+    /// `kMRTogglePlayPause` is documented as 2 in class-dumped MediaRemote.h.
+    /// If this value drifts, every break call becomes a different command.
+    #[test]
+    fn toggle_play_pause_command_id_is_2() {
+        assert_eq!(MR_TOGGLE_PLAY_PAUSE, 2);
+    }
+
+    /// The framework path is hard-coded; if the constant gets edited the
+    /// dlopen call would silently fall over to a panic at runtime.
+    #[test]
+    fn media_remote_path_points_at_private_framework() {
+        assert!(MEDIA_REMOTE_PATH.starts_with("/System/Library/PrivateFrameworks/"));
+        assert!(MEDIA_REMOTE_PATH.ends_with("/MediaRemote.framework/MediaRemote"));
+    }
+
+    /// The dlopen path and symbol must resolve on the build host. Note that
+    /// `Path::exists()` is unreliable here — MediaRemote.framework lives in
+    /// dyld_shared_cache and may not exist as an on-disk file. dlopen still
+    /// resolves it via the cache. If a future macOS removes the framework
+    /// or renames the symbol, this test fails in CI rather than panicking
+    /// at the user's first break.
+    #[test]
+    fn media_remote_framework_dlopens_and_symbol_resolves() {
+        let path = std::ffi::CString::new(MEDIA_REMOTE_PATH).unwrap();
+        let handle = unsafe { dlopen(path.as_ptr(), RTLD_NOW) };
+        assert!(
+            !handle.is_null(),
+            "dlopen({}) failed: {}",
+            MEDIA_REMOTE_PATH,
+            last_dl_error()
+        );
+
+        let symbol = std::ffi::CString::new("MRMediaRemoteSendCommand").unwrap();
+        let func_ptr = unsafe { dlsym(handle, symbol.as_ptr()) };
+        assert!(
+            !func_ptr.is_null(),
+            "dlsym(MRMediaRemoteSendCommand) failed: {}",
+            last_dl_error()
+        );
+    }
+
+    /// `last_dl_error` must tolerate a NULL pointer (no error pending) and
+    /// return an empty string, never panic.
+    #[test]
+    fn last_dl_error_returns_empty_when_no_error_pending() {
+        // Drain any prior error from the thread-local dlerror state.
+        let _ = last_dl_error();
+        assert_eq!(last_dl_error(), "");
+    }
 }
