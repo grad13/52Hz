@@ -140,13 +140,13 @@ pub fn run() {
             commands::open_cassette_folder,
         ])
         .setup(move |app| {
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
+            // Enable logging in both debug and release builds. Without this,
+            // failures in release have no observable trace at all.
+            app.handle().plugin(
+                tauri_plugin_log::Builder::default()
+                    .level(log::LevelFilter::Info)
+                    .build(),
+            )?;
 
             // Create main window (hidden by default)
             let main_window = WebviewWindowBuilder::new(

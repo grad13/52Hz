@@ -1,6 +1,4 @@
-// meta: updated=2026-03-16 07:20 checked=2026-03-07
-use std::sync::Arc;
-
+// meta: updated=2026-05-08 checked=-
 use tauri::{Emitter, Listener, Manager};
 
 use crate::macos_window;
@@ -11,31 +9,18 @@ use crate::SharedTimerState;
 
 /// Register all event listeners for the app lifecycle.
 pub(super) fn register_listeners(app: &tauri::App, timer_state: SharedTimerState) {
-    // Media pause tracking: stores which apps were paused by us
-    let media_paused_apps: Arc<std::sync::Mutex<Vec<String>>> =
-        Arc::new(std::sync::Mutex::new(Vec::new()));
-    let browser_toggled_apps: Arc<std::sync::Mutex<Vec<String>>> =
-        Arc::new(std::sync::Mutex::new(Vec::new()));
-
-    register_break_start(app, media_paused_apps.clone(), browser_toggled_apps.clone());
-    register_break_end(app, media_paused_apps, browser_toggled_apps);
+    register_break_start(app);
+    register_break_end(app);
     register_focus_done(app, timer_state);
     register_presence_level_change(app);
     register_presence_reposition(app);
 }
 
-fn register_break_start(
-    app: &tauri::App,
-    media_paused_apps: Arc<std::sync::Mutex<Vec<String>>>,
-    browser_toggled_apps: Arc<std::sync::Mutex<Vec<String>>>,
-) {
+fn register_break_start(app: &tauri::App) {
     let app_handle = app.handle().clone();
     app.listen("break-start", move |_event| {
-        if cfg!(debug_assertions) {
-            eprintln!("[52Hz] break-start → opening overlay");
-        }
+        log::info!("break-start → opening overlay");
 
-        // Pause media if setting is enabled
         #[cfg(target_os = "macos")]
         {
             use tauri_plugin_store::StoreExt;
@@ -46,15 +31,8 @@ fn register_break_start(
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
             if should_pause {
-                if cfg!(debug_assertions) {
-                    eprintln!("[52Hz] break-start → pausing media");
-                }
-                let paused = media::pause_media_apps();
-                *media_paused_apps.lock().unwrap() = paused;
-
-                // Also toggle browser media (YouTube etc.)
-                let toggled = media::toggle_browser_media();
-                *browser_toggled_apps.lock().unwrap() = toggled;
+                log::info!("break-start → posting Play/Pause key");
+                media::post_play_pause_key();
             }
         }
 
@@ -65,37 +43,23 @@ fn register_break_start(
     });
 }
 
-fn register_break_end(
-    app: &tauri::App,
-    media_paused_apps: Arc<std::sync::Mutex<Vec<String>>>,
-    browser_toggled_apps: Arc<std::sync::Mutex<Vec<String>>>,
-) {
+fn register_break_end(app: &tauri::App) {
     let app_handle = app.handle().clone();
     app.listen("break-end", move |_event| {
-        if cfg!(debug_assertions) {
-            eprintln!("[52Hz] break-end → closing overlay");
-        }
+        log::info!("break-end → closing overlay");
 
-        // Resume media if we paused it
         #[cfg(target_os = "macos")]
         {
-            let apps: Vec<String> =
-                std::mem::take(&mut *media_paused_apps.lock().unwrap());
-            if !apps.is_empty() {
-                if cfg!(debug_assertions) {
-                    eprintln!("[52Hz] break-end → resuming media: {:?}", apps);
-                }
-                media::resume_media_apps(&apps);
-            }
-
-            // Resume browser media if we toggled it
-            let browsers: Vec<String> =
-                std::mem::take(&mut *browser_toggled_apps.lock().unwrap());
-            if !browsers.is_empty() {
-                if cfg!(debug_assertions) {
-                    eprintln!("[52Hz] break-end → resuming browser media: {:?}", browsers);
-                }
-                media::toggle_browser_media();
+            use tauri_plugin_store::StoreExt;
+            let should_pause = app_handle
+                .store("settings.json")
+                .ok()
+                .and_then(|s| s.get("pause_media_on_break"))
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            if should_pause {
+                log::info!("break-end → posting Play/Pause key");
+                media::post_play_pause_key();
             }
         }
 
