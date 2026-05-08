@@ -110,7 +110,31 @@ pub fn run() {
     if cfg!(debug_assertions) {
         eprintln!("[52Hz] Starting...");
     }
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default();
+
+    // Single-instance plugin: rejects a second launch of `com.hz52.app`
+    // before any other initialization runs in the duplicate process. The
+    // closure executes in the *existing* instance — we only log here. We
+    // deliberately do NOT show the main window: 52Hz is a tray app, and
+    // its window is positioned by the tray click handler. Showing it from
+    // here puts it at an unrelated location.
+    //
+    // Skipped when FIFTYTWOHZ_HEADLESS is set: integration tests spawn the
+    // binary back-to-back and the lock from the previous run would
+    // otherwise block the next test.
+    if std::env::var("FIFTYTWOHZ_HEADLESS").is_err() {
+        builder = builder.plugin(tauri_plugin_single_instance::init(
+            |_app, _args, _cwd| {
+                if cfg!(debug_assertions) {
+                    eprintln!(
+                        "[52Hz] single-instance: suppressed a duplicate launch attempt"
+                    );
+                }
+            },
+        ));
+    }
+
+    builder
         .plugin(tauri_plugin_positioner::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::default().build())

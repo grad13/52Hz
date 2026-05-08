@@ -565,7 +565,7 @@ playing → paused → playing.
 | tauri_plugin_positioner | Plugin is registered, but window positioning is done via custom calculation in tray.rs's `position_window_below_tray()`. TrayBottomCenter is not used |
 | tauri_plugin_notification | Notifications (future use) |
 | tauri_plugin_store | Settings persistence. Loads saved settings in setup() before spawn_timer, saves via update_settings command |
-| tauri_plugin_log | Log output enabled in both debug and release builds. Targets: Stderr (visible to integration tests and console) + LogDir (`~/Library/Logs/com.hz52.app/52Hz.log` on macOS) |
+| tauri_plugin_log | Log output in debug builds only (registered behind `cfg!(debug_assertions)`) |
 | tauri_plugin_autostart | Auto-start on macOS login. Registered with MacosLauncher::LaunchAgent. Controlled from frontend directly via JS API (`enable`/`disable`/`isEnabled`) |
 
 ### 4.6 Environment Variables
