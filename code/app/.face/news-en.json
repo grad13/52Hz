@@ -1,0 +1,46 @@
+[
+  {
+    "date": 1778258719,
+    "text": "Prevent duplicate launches"
+  },
+  {
+    "date": 1778247528,
+    "text": "Reworked break-time video pause to support all browsers (including Firefox, etc.)"
+  },
+  {
+    "date": 1773728849,
+    "text": "Fixed a bug where the timer time disappeared when the icon was hidden"
+  },
+  {
+    "date": 1773699794,
+    "text": "Always show the focus-done panel & removed the extend-time button"
+  },
+  {
+    "date": 1773177056,
+    "text": "Cassette selector & multilingual support"
+  },
+  {
+    "date": 1772759030,
+    "text": "Tick sound slider & presence display customization"
+  },
+  {
+    "date": 1772625265,
+    "text": "Auto-pause browser videos during breaks"
+  },
+  {
+    "date": 1772608329,
+    "text": "\"Everyone's presence\" toast system"
+  },
+  {
+    "date": 1772569141,
+    "text": "Wall-clock second-hand sound"
+  },
+  {
+    "date": 1772478980,
+    "text": "Refreshed app icon"
+  },
+  {
+    "date": 1772038044,
+    "text": "Initial release"
+  }
+]

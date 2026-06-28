@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="code/tauri/icons/128x128.png" width="96" alt="52Hz app icon">
+  <img src="code/app/tauri/icons/128x128.png" width="96" alt="52Hz app icon">
 </p>
 
 <h1 align="center">52Hz</h1>
@@ -14,7 +14,7 @@
 
 ## Features
 
-- <img src="code/tauri/icons/tray-icon.png" width="14" alt="tray icon"> Lives in your menu bar -- no Dock icon, no clutter
+- <img src="code/app/tauri/icons/tray-icon.png" width="14" alt="tray icon"> Lives in your menu bar -- no Dock icon, no clutter
 - Pomodoro-style work/break timer with configurable durations
 - Fullscreen break overlay with media auto-pause
 - Tick sound during work sessions
@@ -23,9 +23,8 @@
 
 ## Install
 
-Download the latest DMG from [Releases](https://github.com/grad13/52Hz/releases).
-
-Or build from source (see below).
+Download the latest build from [Releases](https://github.com/grad13/52Hz/releases),
+or build from source (see below).
 
 ## Build from Source
 
@@ -36,16 +35,16 @@ Prerequisites:
 - Tauri CLI v2
 
 ```bash
-cd code && npm install
+cd code/app && npm install
 npx tauri build --bundles app
 ```
 
-The built app will be in `code/tauri/target/release/bundle/macos/`.
+The built app will be in `code/app/tauri/target/release/bundle/macos/`.
 
 ## Development
 
 ```bash
-cd code && npm install
+cd code/app && npm install
 npx tauri dev
 ```
 
@@ -54,19 +53,19 @@ npx tauri dev
 Rust unit tests:
 
 ```bash
-cd code/tauri && cargo test --lib
+cd code/app/tauri && cargo test --lib
 ```
 
 Frontend tests:
 
 ```bash
-cd code && npx vitest run
+cd code/app && npx vitest run
 ```
 
 Type checking:
 
 ```bash
-cd code && npx svelte-check
+cd code/app && npx svelte-check
 ```
 
 ## License

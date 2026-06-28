@@ -1,6 +1,7 @@
 {
   "name": "52Hz",
   "description": "休憩リマインダーアプリ",
+  "description-en": "Break reminder app",
   "url": "https://github.com/grad13/52Hz",
   "thumbnail": "thumbnail.png"
 }
