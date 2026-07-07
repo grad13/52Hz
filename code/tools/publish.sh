@@ -26,10 +26,9 @@ git checkout local -- \
   code/app/tsconfig.json \
   code/app/vite.config.ts \
   code/app/vitest.config.ts \
-  code/app/CHANGELOG.md \
   tests/ \
   documents/spec/ \
-  documents/cassette-spec.md \
+  documents/CHANGELOG.md \
   code/app/.face/ \
   .github/ \
   README.md \
