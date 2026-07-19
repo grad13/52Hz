@@ -10,4 +10,4 @@ Source-mirrored names (mirror the module); no date prefix.
 
 ## Frontmatter
 
-Managed by `set-frontmatter` (run it; do not hand-edit).
+Managed by `normalize-frontmatter` (run it; do not hand-edit).

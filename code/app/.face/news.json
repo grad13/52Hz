@@ -1,46 +1,79 @@
 [
   {
     "date": 1778258719,
-    "text": "多重起動を防止"
+    "text": {
+      "ja": "多重起動を防止",
+      "en": "Prevent duplicate launches"
+    }
   },
   {
     "date": 1778247528,
-    "text": "休憩中の動画一時停止を全ブラウザ対応に刷新（Firefox等にも対応）"
+    "text": {
+      "ja": "休憩中の動画一時停止を全ブラウザ対応に刷新（Firefox等にも対応）",
+      "en": "Reworked break-time video pause to support all browsers (including Firefox, etc.)"
+    }
   },
   {
     "date": 1773728849,
-    "text": "アイコン非表示時にタイマー時刻が消えるバグを修正"
+    "text": {
+      "ja": "アイコン非表示時にタイマー時刻が消えるバグを修正",
+      "en": "Fixed a bug where the timer time disappeared when the icon was hidden"
+    }
   },
   {
     "date": 1773699794,
-    "text": "focus終了パネルを常時表示 & 時間延長ボタン削除"
+    "text": {
+      "ja": "focus終了パネルを常時表示 & 時間延長ボタン削除",
+      "en": "Always show the focus-done panel & removed the extend-time button"
+    }
   },
   {
     "date": 1773177056,
-    "text": "カセットセレクター & 多言語対応"
+    "text": {
+      "ja": "カセットセレクター & 多言語対応",
+      "en": "Cassette selector & multilingual support"
+    }
   },
   {
     "date": 1772759030,
-    "text": "Tick音スライダー & 存在表示カスタマイズ"
+    "text": {
+      "ja": "Tick音スライダー & 存在表示カスタマイズ",
+      "en": "Tick sound slider & presence display customization"
+    }
   },
   {
     "date": 1772625265,
-    "text": "休憩中にブラウザ動画を自動一時停止"
+    "text": {
+      "ja": "休憩中にブラウザ動画を自動一時停止",
+      "en": "Auto-pause browser videos during breaks"
+    }
   },
   {
     "date": 1772608329,
-    "text": "「みんなの存在」トーストシステム"
+    "text": {
+      "ja": "「みんなの存在」トーストシステム",
+      "en": "\"Everyone's presence\" toast system"
+    }
   },
   {
     "date": 1772569141,
-    "text": "壁掛け時計の秒針音"
+    "text": {
+      "ja": "壁掛け時計の秒針音",
+      "en": "Wall-clock second-hand sound"
+    }
   },
   {
     "date": 1772478980,
-    "text": "アプリアイコン刷新"
+    "text": {
+      "ja": "アプリアイコン刷新",
+      "en": "Refreshed app icon"
+    }
   },
   {
     "date": 1772038044,
-    "text": "初版リリース"
+    "text": {
+      "ja": "初版リリース",
+      "en": "Initial release"
+    }
   }
 ]

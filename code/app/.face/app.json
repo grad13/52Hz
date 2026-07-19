@@ -1,7 +1,10 @@
 {
   "name": "52Hz",
-  "description": "休憩リマインダーアプリ",
-  "description-en": "Break reminder app",
+  "description": {
+    "ja": "休憩リマインダーアプリ",
+    "en": "Break reminder app"
+  },
   "url": "https://github.com/grad13/52Hz",
+  "category": "productivity",
   "thumbnail": "thumbnail.png"
 }
